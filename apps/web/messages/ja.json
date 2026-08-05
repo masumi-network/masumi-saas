@@ -2469,6 +2469,10 @@
         "resource": "リソース",
         "amountLine": "{amount} · {asset}"
       }
+    },
+    "NetworkRegister": {
+      "continueFailedTitle": "登録を完了できませんでした",
+      "openAiAgents": "AIエージェントを開く"
     }
   },
   "Components": {

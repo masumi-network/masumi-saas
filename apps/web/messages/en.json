@@ -1497,6 +1497,10 @@
     "UserProfile": {
       "unavailable": "User unavailable"
     },
+    "NetworkRegister": {
+      "continueFailedTitle": "Registration could not finish",
+      "openAiAgents": "Open AI agents"
+    },
     "Verification": {
       "title": "Identity Verification",
       "description": "Complete your identity verification to unlock full access to Masumi.",

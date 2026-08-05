@@ -629,10 +629,17 @@ describe("/api/agents POST", () => {
                 chain: "EVM",
                 network: "not-caip2",
                 scheme: "Exact",
-                asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-                amount: "10000",
-                decimals: 6,
                 payTo: "0x1111111111111111111111111111111111111111",
+                pricing: {
+                  pricingType: "Fixed",
+                  fixed: [
+                    {
+                      asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                      amount: "10000",
+                      decimals: 6,
+                    },
+                  ],
+                },
               },
             ],
           }),
@@ -662,10 +669,17 @@ describe("/api/agents POST", () => {
                 chain: "EVM",
                 network: "eip155:84532",
                 scheme: "Exact",
-                asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-                amount: "10000",
-                decimals: 6,
                 payTo: "0x1111111111111111111111111111111111111111",
+                pricing: {
+                  pricingType: "Fixed",
+                  fixed: [
+                    {
+                      asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                      amount: "10000",
+                      decimals: 6,
+                    },
+                  ],
+                },
               },
             ],
           }),
@@ -697,10 +711,17 @@ describe("/api/agents POST", () => {
                 chain: "EVM",
                 network: "eip155:84532",
                 scheme: "Exact",
-                asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-                amount: "10000",
-                decimals: 6,
                 payTo: "0x1111111111111111111111111111111111111111",
+                pricing: {
+                  pricingType: "Fixed",
+                  fixed: [
+                    {
+                      asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                      amount: "10000",
+                      decimals: 6,
+                    },
+                  ],
+                },
               },
             ],
           }),

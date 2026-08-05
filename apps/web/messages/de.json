@@ -2469,6 +2469,10 @@
         "resource": "Ressource",
         "amountLine": "{amount} · {asset}"
       }
+    },
+    "NetworkRegister": {
+      "continueFailedTitle": "Registrierung konnte nicht abgeschlossen werden",
+      "openAiAgents": "KI-Agenten öffnen"
     }
   },
   "Components": {

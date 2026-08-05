@@ -1,6 +1,7 @@
 "use client";
 
 import type { SupportedPaymentSource } from "@masumi/payment-source-x402/payment-source";
+import { getEvmFixedPrice } from "@masumi/payment-source-x402/payment-source";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
@@ -19,7 +20,9 @@ type EvmPaymentSource = Extract<SupportedPaymentSource, { chain: "EVM" }>;
 export function agentHasX402Options(
   sources: SupportedPaymentSource[] | null | undefined,
 ): boolean {
-  return (sources ?? []).some((source) => source.chain === "EVM");
+  return (sources ?? []).some(
+    (source) => source.chain === "EVM" && getEvmFixedPrice(source) != null,
+  );
 }
 
 export function shouldShowAgentX402Options(
@@ -70,26 +73,29 @@ export function AgentX402TableCell({
   }
 
   const evmSources = (sources ?? []).filter(
-    (source): source is EvmPaymentSource => source.chain === "EVM",
+    (source): source is EvmPaymentSource =>
+      source.chain === "EVM" && getEvmFixedPrice(source) != null,
   );
 
   return (
     <div className="space-y-2">
       {evmSources.map((source) => {
+        const fixed = getEvmFixedPrice(source);
+        if (!fixed) return null;
         const network = networks.find(
           (item) => item.caip2Id === source.network,
         );
         const chainName = network?.displayName ?? source.network;
         const assetLabel = assetDisplayLabel(
           source.network,
-          source.asset,
+          fixed.asset,
           network?.defaultAsset,
         );
-        const amountLabel = `${formatX402Amount(source.amount, source.decimals)} ${assetLabel}`;
+        const amountLabel = `${formatX402Amount(fixed.amount, fixed.decimals)} ${assetLabel}`;
 
         return (
           <div
-            key={`${source.network}-${source.asset}-${source.payTo}`}
+            key={`${source.network}-${fixed.asset}-${source.payTo}`}
             className="min-w-0"
             title={`${chainName} · ${amountLabel}`}
           >
@@ -116,7 +122,8 @@ export function AgentX402Options({
     allEnvironments: true,
   });
   const evmSources = (sources ?? []).filter(
-    (source): source is EvmPaymentSource => source.chain === "EVM",
+    (source): source is EvmPaymentSource =>
+      source.chain === "EVM" && getEvmFixedPrice(source) != null,
   );
   const chainIconSlugs = useChainRegistryIcons(
     useMemo(() => evmSources.map((source) => source.network), [evmSources]),
@@ -140,19 +147,21 @@ export function AgentX402Options({
 
       <div className="space-y-2">
         {evmSources.map((source, index) => {
+          const fixed = getEvmFixedPrice(source);
+          if (!fixed) return null;
           const network = networks.find(
             (item) => item.caip2Id === source.network,
           );
           const chainName = network?.displayName ?? source.network;
           const assetLabel = assetDisplayLabel(
             source.network,
-            source.asset,
+            fixed.asset,
             network?.defaultAsset,
           );
 
           return (
             <div
-              key={`${source.network}-${source.asset}-${source.payTo}`}
+              key={`${source.network}-${fixed.asset}-${source.payTo}`}
               className="rounded-lg border border-border/80 bg-background p-3 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
@@ -174,11 +183,11 @@ export function AgentX402Options({
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="font-mono text-sm font-medium tabular-nums">
-                    {formatX402Amount(source.amount, source.decimals)}
+                    {formatX402Amount(fixed.amount, fixed.decimals)}
                   </p>
                   <p
                     className="mt-0.5 font-mono text-xs text-muted-foreground"
-                    title={source.asset}
+                    title={fixed.asset}
                   >
                     {assetLabel}
                   </p>

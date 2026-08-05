@@ -25,6 +25,16 @@ describe("serializeSupportedPaymentSources", () => {
     expect(serialized?.[0]).toMatchObject({
       chain: "EVM",
       extra: { assetTransferMethod: "permit2", decimals: 6 },
+      pricing: {
+        pricingType: "Fixed",
+        fixed: [
+          {
+            asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+            amount: "100000",
+            decimals: 6,
+          },
+        ],
+      },
     });
   });
 });

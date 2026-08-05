@@ -8,7 +8,9 @@ import prisma from "@masumi/database/client";
 import {
   normalizeSupportedPaymentSourceInput,
   PaymentSourceType,
+  PricingType,
   type SupportedPaymentSource,
+  type SupportedPaymentSourcePricing,
   validateSupportedPaymentSourcesOrThrow,
 } from "@masumi/payment-source-x402/payment-source";
 import {
@@ -87,6 +89,13 @@ export type RegisterAgentParams = {
   icon: string | null;
   agentPricing: AgentPricing;
   payoutAddress?: string;
+  /**
+   * Requested Cardano address for NFT delivery (browser / paper / existing).
+   * Stored for ops and future external mint support. Payment-node currently
+   * only mints to managed hot wallets, so registerAgent still targets the
+   * managed selling wallet.
+   */
+  registryNftRecipientAddress?: string;
   supportedPaymentSources?: SupportedPaymentSource[];
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
   capabilityName: string;
@@ -114,11 +123,13 @@ export type CompleteRegistrationResult =
 
 type RegistrationPayloadStored = {
   sellingWalletAddress?: string;
+  registryNftRecipientAddress?: string;
   fundingWalletId?: string;
   fundingWalletVkey?: string;
   fundingWalletAddress?: string;
   /** Payment source contract used for registry ops (deregister must match). */
   smartContractAddress?: string;
+  paymentSourceType?: string;
   lastRegisterAttemptAt?: string;
   registrationPayload?: {
     exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
@@ -134,6 +145,24 @@ type RegistrationPayloadStored = {
     agentPricing: AgentPricing;
   };
 };
+
+function toCardanoSourcePricing(
+  agentPricing: AgentPricing,
+): SupportedPaymentSourcePricing {
+  if (agentPricing.pricingType === "Free") {
+    return { pricingType: PricingType.Free };
+  }
+  if (agentPricing.pricingType === "Dynamic") {
+    return { pricingType: PricingType.Dynamic };
+  }
+  return {
+    pricingType: PricingType.Fixed,
+    fixed: agentPricing.Pricing.map((price) => ({
+      asset: price.unit,
+      amount: price.amount,
+    })),
+  };
+}
 
 function shouldDeferRegisterRetry(lastRegisterAttemptAt?: string): boolean {
   if (!lastRegisterAttemptAt) return false;
@@ -346,19 +375,19 @@ function validateRegistrationFundingWalletNetwork(params: {
 
 /**
  * Merge and validate advertised payment sources before wallet provisioning or credit debit.
- * Throws when x402/EVM options are submitted without a V2 smart contract address.
+ * V2 always returns at least the Cardano escrow source (with source-local pricing).
  */
 export function prepareSupportedPaymentSourcesForRegistration(
   network: PaymentNodeNetwork,
   smartContractAddress: string | null | undefined,
   supportedPaymentSources: SupportedPaymentSource[] | undefined,
-): SupportedPaymentSource[] | null {
+  cardanoPricing: SupportedPaymentSourcePricing = {
+    pricingType: PricingType.Free,
+  },
+): SupportedPaymentSource[] {
   const userSources = (supportedPaymentSources ?? []).map(
     normalizeSupportedPaymentSourceInput,
   );
-  if (userSources.length === 0) {
-    return null;
-  }
 
   const contractAddress = smartContractAddress?.trim();
   if (!contractAddress) {
@@ -367,10 +396,17 @@ export function prepareSupportedPaymentSourcesForRegistration(
     );
   }
 
+  const hasEvm = userSources.some((source) => source.chain === "EVM");
+  // x402-first ads: keep Cardano escrow Free so we do not require Cardano fixed units.
+  const resolvedCardanoPricing = hasEvm
+    ? { pricingType: PricingType.Free as const }
+    : cardanoPricing;
+
   const mergedSources = mergeWithDefaultCardanoSource(
     network,
     contractAddress,
     userSources,
+    resolvedCardanoPricing,
   );
   validateSupportedPaymentSourcesOrThrow(
     mergedSources,
@@ -393,11 +429,8 @@ function formatSupportedPaymentSourceError(error: unknown): string {
 export async function validateAgentRegistrationPaymentSourcesPreflight(
   network: PaymentNodeNetwork,
   supportedPaymentSources: SupportedPaymentSource[] | undefined,
+  agentPricing: AgentPricing = { pricingType: "Free" },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!supportedPaymentSources?.length) {
-    return { ok: true };
-  }
-
   let baseUrl: string;
   let adminKey: string;
   let paymentSourceId: string;
@@ -439,11 +472,22 @@ export async function validateAgentRegistrationPaymentSourcesPreflight(
     };
   }
 
+  if (configuredPaymentSource.paymentSourceType !== "Web3CardanoV2") {
+    if (supportedPaymentSources?.length) {
+      return {
+        ok: false,
+        error: "x402 payment sources require a V2 payment source.",
+      };
+    }
+    return { ok: true };
+  }
+
   try {
     prepareSupportedPaymentSourcesForRegistration(
       network,
       configuredPaymentSource.smartContractAddress,
       supportedPaymentSources,
+      toCardanoSourcePricing(agentPricing),
     );
     return { ok: true };
   } catch (error) {
@@ -484,12 +528,14 @@ async function registerAgentOnChainUntilSetup(
   let payoutAddress = "";
   if (!isFreePricing) {
     payoutAddress = normalizePayoutAddress(params.payoutAddress ?? "");
-    const payoutAddressError = validatePayoutAddressForNetwork(
-      payoutAddress,
-      network,
-    );
-    if (payoutAddressError) {
-      return { success: false, error: payoutAddressError };
+    if (payoutAddress) {
+      const payoutAddressError = validatePayoutAddressForNetwork(
+        payoutAddress,
+        network,
+      );
+      if (payoutAddressError) {
+        return { success: false, error: payoutAddressError };
+      }
     }
   }
 
@@ -581,24 +627,48 @@ async function registerAgentOnChainUntilSetup(
   }
 
   let mergedSupportedPaymentSources: SupportedPaymentSource[] | null = null;
-  try {
-    mergedSupportedPaymentSources =
-      prepareSupportedPaymentSourcesForRegistration(
-        network,
-        configuredPaymentSource.smartContractAddress,
-        params.supportedPaymentSources,
-      );
-  } catch (error) {
+  if (configuredPaymentSource.paymentSourceType === "Web3CardanoV2") {
+    try {
+      mergedSupportedPaymentSources =
+        prepareSupportedPaymentSourcesForRegistration(
+          network,
+          configuredPaymentSource.smartContractAddress,
+          params.supportedPaymentSources,
+          toCardanoSourcePricing(params.agentPricing),
+        );
+    } catch (error) {
+      return {
+        success: false,
+        error: formatSupportedPaymentSourceError(error),
+      };
+    }
+  } else if (params.supportedPaymentSources?.length) {
     return {
       success: false,
-      error: formatSupportedPaymentSourceError(error),
+      error: "x402 payment sources require a V2 payment source.",
     };
   }
 
   const sellingWallet = await adminClient.generateWallet(network);
-  const collectionAddress = isFreePricing
-    ? sellingWallet.walletAddress
-    : payoutAddress;
+  let registryNftRecipientAddress = "";
+  if (params.registryNftRecipientAddress?.trim()) {
+    registryNftRecipientAddress = normalizePayoutAddress(
+      params.registryNftRecipientAddress,
+    );
+    const recipientError = validatePayoutAddressForNetwork(
+      registryNftRecipientAddress,
+      network,
+    );
+    if (recipientError) {
+      return { success: false, error: recipientError };
+    }
+  }
+
+  // Managed path: when Fixed/Dynamic pricing has no payout yet, collect to the
+  // new selling wallet (same as Free). External NFT recipients also become the
+  // collection address when payout was omitted.
+  const collectionAddress =
+    payoutAddress || registryNftRecipientAddress || sellingWallet.walletAddress;
   const paymentSource = await adminClient.addWalletsToPaymentSource({
     paymentSourceId,
     AddSellingWallets: [
@@ -742,11 +812,15 @@ async function registerAgentOnChainUntilSetup(
       status: "PENDING",
       metadata: {
         sellingWalletAddress: sellingWallet.walletAddress,
+        ...(registryNftRecipientAddress ? { registryNftRecipientAddress } : {}),
         collectionAddress,
         fundingWalletId: fundingWalletResult.wallet.id,
         fundingWalletVkey: fundingWalletResult.wallet.walletVkey,
         fundingWalletAddress: fundingWalletResult.wallet.walletAddress,
         paymentSourceId,
+        ...(configuredPaymentSource.paymentSourceType
+          ? { paymentSourceType: configuredPaymentSource.paymentSourceType }
+          : {}),
         ...((paymentSource.smartContractAddress ||
           configuredPaymentSource.smartContractAddress) && {
           smartContractAddress:
@@ -834,6 +908,9 @@ export async function completeOnChainRegistration(
     return { status: "pending" };
   }
   const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
+  // Payment-node recipientWalletAddress must be a managed hot wallet on the
+  // payment source. External paper/browser addresses are stored in metadata for
+  // later delivery, but mint + funding always target the managed selling wallet.
   const address = meta.sellingWalletAddress;
   const payload = meta.registrationPayload;
   if (!address || !payload) {
@@ -993,6 +1070,59 @@ export async function completeOnChainRegistration(
 
     const registryImage = resolveAgentRegistryImage(agent.icon);
 
+    const storedSources = await loadSupportedPaymentSourcesForAgent(agent.id);
+    let smartContractAddress =
+      typeof existingMeta.smartContractAddress === "string"
+        ? existingMeta.smartContractAddress.trim()
+        : typeof meta.smartContractAddress === "string"
+          ? meta.smartContractAddress.trim()
+          : "";
+    let paymentSourceType =
+      typeof existingMeta.paymentSourceType === "string"
+        ? existingMeta.paymentSourceType
+        : typeof meta.paymentSourceType === "string"
+          ? meta.paymentSourceType
+          : undefined;
+    try {
+      const paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
+      const configuredPaymentSource = await getConfiguredPaymentSource(
+        adminClient,
+        paymentSourceId,
+      );
+      if (!paymentSourceType) {
+        paymentSourceType = configuredPaymentSource?.paymentSourceType;
+      }
+      if (!smartContractAddress) {
+        smartContractAddress =
+          configuredPaymentSource?.smartContractAddress?.trim() ?? "";
+      }
+    } catch {
+      // Keep metadata-derived values; retry as pending if still unresolved.
+    }
+
+    if (!paymentSourceType) {
+      const existing = await tx.agent.findUniqueOrThrow({
+        where: { id: agent.id },
+      });
+      return { agent: existing, eventType: null, pending: true };
+    }
+
+    const isV2 = paymentSourceType === PaymentSourceType.Web3CardanoV2;
+    if (isV2 && !smartContractAddress) {
+      throw new Error(
+        "Configured payment source smart contract address is missing for agent registration.",
+      );
+    }
+
+    const supportedPaymentSources = isV2
+      ? prepareSupportedPaymentSourcesForRegistration(
+          network,
+          smartContractAddress,
+          (storedSources ?? []).filter((source) => source.chain !== "Cardano"),
+          toCardanoSourcePricing(payload.agentPricing),
+        )
+      : null;
+
     const registerPromise = adminClient.registerAgent({
       network,
       sellingWalletVkey: fundingWalletVkey,
@@ -1024,15 +1154,9 @@ export async function completeOnChainRegistration(
             },
           }
         : {}),
-      AgentPricing: payload.agentPricing,
-      ...(await (async () => {
-        const supportedPaymentSources =
-          await loadSupportedPaymentSourcesForAgent(agent.id);
-        return supportedPaymentSources != null &&
-          supportedPaymentSources.length > 0
-          ? { supportedPaymentSources }
-          : {};
-      })()),
+      ...(isV2 && supportedPaymentSources
+        ? { supportedPaymentSources }
+        : { AgentPricing: payload.agentPricing }),
     });
     let timeoutId: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {

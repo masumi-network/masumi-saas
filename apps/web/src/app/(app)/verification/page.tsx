@@ -19,7 +19,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function VerificationPage() {
+export default async function VerificationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>;
+}) {
   const { user, session } = await getAuthContextWithHeaders();
 
   if (!user || !session) {
@@ -30,6 +34,7 @@ export default async function VerificationPage() {
     redirect("/");
   }
 
+  const { returnTo } = await searchParams;
   const result = await getKycStatusAction();
   const kycStatus = result.success
     ? (result.data?.kycStatus ?? "PENDING")
@@ -40,6 +45,22 @@ export default async function VerificationPage() {
   const kycCompletedAt = result.success
     ? (result.data?.kycCompletedAt ?? null)
     : null;
+
+  if (kycStatus === "APPROVED" && returnTo) {
+    try {
+      const appOrigin = new URL(
+        process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+          process.env.BETTER_AUTH_URL?.trim() ||
+          "http://localhost:2999",
+      ).origin;
+      const target = new URL(returnTo, appOrigin);
+      if (target.origin === appOrigin) {
+        redirect(`${target.pathname}${target.search}${target.hash}`);
+      }
+    } catch {
+      // ignore invalid returnTo
+    }
+  }
 
   return (
     <AppPage className="mx-auto max-w-3xl">

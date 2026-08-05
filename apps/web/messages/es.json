@@ -2469,6 +2469,10 @@
         "resource": "Recurso",
         "amountLine": "{amount} · {asset}"
       }
+    },
+    "NetworkRegister": {
+      "continueFailedTitle": "No se pudo completar el registro",
+      "openAiAgents": "Abrir agentes de IA"
     }
   },
   "Components": {

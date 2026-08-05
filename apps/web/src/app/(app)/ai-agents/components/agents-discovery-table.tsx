@@ -25,7 +25,7 @@ import {
 import { useFormatDate } from "@/hooks/use-format-date";
 import type { RegistryEntry } from "@/lib/api/registry-discovery.client";
 import { formatUnitAmount } from "@/lib/payment-node/format";
-import { getInitials, shortenAddress } from "@/lib/utils";
+import { formatX402Amount, getInitials, shortenAddress } from "@/lib/utils";
 
 export function getDiscoveryStatusBadgeVariant(
   status: RegistryEntry["status"],
@@ -44,6 +44,51 @@ export function getDiscoveryStatusBadgeVariant(
   }
 }
 
+function formatSupportedPaymentSources(
+  entry: RegistryEntry,
+  unavailable: string,
+) {
+  const raw = entry as RegistryEntry & {
+    supportedPaymentSources?: Array<{
+      chain?: string;
+      pricing?: {
+        pricingType?: string;
+        fixed?: Array<{
+          asset?: string;
+          amount?: string;
+          decimals?: number;
+        }>;
+      };
+    }>;
+    SupportedPaymentSources?: Array<{
+      chain?: string;
+      pricing?: {
+        pricingType?: string;
+        fixed?: Array<{
+          asset?: string;
+          amount?: string;
+          decimals?: number;
+        }>;
+      };
+    }>;
+  };
+  const sources =
+    raw.supportedPaymentSources ?? raw.SupportedPaymentSources ?? [];
+  const labels = sources.flatMap((source) => {
+    const pricing = source.pricing;
+    if (pricing?.pricingType !== "Fixed" || !pricing.fixed?.length) {
+      return [];
+    }
+    return pricing.fixed.map((price) => {
+      if (source.chain === "EVM" && price.decimals != null) {
+        return formatX402Amount(price.amount ?? "0", price.decimals);
+      }
+      return formatUnitAmount(price.asset ?? "", price.amount ?? "0");
+    });
+  });
+  return labels.length > 0 ? labels.join(", ") : unavailable;
+}
+
 function formatPricing(
   entry: RegistryEntry,
   free: string,
@@ -51,6 +96,9 @@ function formatPricing(
   unavailable: string,
 ) {
   const pricing = entry.AgentPricing;
+  if (!pricing) {
+    return formatSupportedPaymentSources(entry, unavailable);
+  }
 
   if (pricing.pricingType === "Free") return free;
   if (pricing.pricingType === "Dynamic") return dynamic;
@@ -60,7 +108,8 @@ function formatPricing(
     ).join(", ");
   }
 
-  return unavailable;
+  const fromSources = formatSupportedPaymentSources(entry, "");
+  return fromSources || unavailable;
 }
 
 function formatPublisher(entry: RegistryEntry, fallback: string) {

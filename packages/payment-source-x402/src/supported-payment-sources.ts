@@ -4,10 +4,14 @@ import prisma from "@masumi/database/client";
 import { logger } from "./logger.js";
 import type { CardanoNetwork } from "./network.js";
 import {
+  buildEvmExactFixedPaymentSource,
+  getEvmFixedPrice,
   PaymentSourceType,
+  PricingType,
   resolveEvmRegistryExtra,
   type SupportedPaymentSource,
   SupportedPaymentSourceChain,
+  type SupportedPaymentSourcePricing,
 } from "./payment-source.js";
 
 type DbSupportedPaymentSource = {
@@ -58,12 +62,9 @@ export function serializeSupportedPaymentSources(
         return [];
       }
       return [
-        {
-          chain: SupportedPaymentSourceChain.EVM,
+        buildEvmExactFixedPaymentSource({
           network: source.network,
-          paymentSourceType: null,
           address: source.address,
-          scheme: "Exact",
           asset: source.asset,
           amount: source.amount.toString(),
           decimals: source.decimals,
@@ -73,7 +74,7 @@ export function serializeSupportedPaymentSources(
             jsonObjectToRecord(source.extra),
             source.decimals ?? undefined,
           ),
-        },
+        }),
       ];
     }
 
@@ -85,6 +86,7 @@ export function serializeSupportedPaymentSources(
       return [];
     }
 
+    // Cardano pricing is re-applied at register time from agent.pricing; Free is a safe DB default.
     return [
       {
         chain: SupportedPaymentSourceChain.Cardano,
@@ -93,6 +95,7 @@ export function serializeSupportedPaymentSources(
           | typeof PaymentSourceType.Web3CardanoV1
           | typeof PaymentSourceType.Web3CardanoV2,
         address: source.address,
+        pricing: { pricingType: PricingType.Free },
       },
     ];
   });
@@ -104,6 +107,12 @@ function toPrismaCreateRow(
   source: SupportedPaymentSource,
 ): Omit<Prisma.SupportedPaymentSourceCreateManyInput, "agentId"> {
   if (source.chain === SupportedPaymentSourceChain.EVM) {
+    const fixed = getEvmFixedPrice(source);
+    if (!fixed) {
+      throw new Error(
+        "Only Fixed Exact x402 payment sources can be persisted for agents",
+      );
+    }
     const payTo = source.payTo;
     return {
       chain: source.chain,
@@ -111,12 +120,12 @@ function toPrismaCreateRow(
       paymentSourceType: null,
       address: source.address ?? payTo,
       scheme: X402PaymentScheme.Exact,
-      asset: source.asset,
-      amount: BigInt(source.amount),
-      decimals: source.decimals,
+      asset: fixed.asset,
+      amount: BigInt(fixed.amount),
+      decimals: fixed.decimals,
       payTo,
       resource: source.resource ?? null,
-      extra: resolveEvmRegistryExtra(source.extra, source.decimals),
+      extra: resolveEvmRegistryExtra(source.extra, fixed.decimals),
     };
   }
 
@@ -192,12 +201,14 @@ export async function loadSupportedPaymentSourcesMap(
 export function buildDefaultCardanoSupportedPaymentSource(
   network: CardanoNetwork,
   smartContractAddress: string,
+  pricing: SupportedPaymentSourcePricing = { pricingType: PricingType.Free },
 ): SupportedPaymentSource {
   return {
     chain: SupportedPaymentSourceChain.Cardano,
     network,
     paymentSourceType: PaymentSourceType.Web3CardanoV2,
     address: smartContractAddress,
+    pricing,
   };
 }
 
@@ -205,13 +216,26 @@ export function mergeWithDefaultCardanoSource(
   network: CardanoNetwork,
   smartContractAddress: string,
   sources: SupportedPaymentSource[],
+  cardanoPricing: SupportedPaymentSourcePricing = {
+    pricingType: PricingType.Free,
+  },
 ): SupportedPaymentSource[] {
   const hasCardano = sources.some(
     (source) => source.chain === SupportedPaymentSourceChain.Cardano,
   );
-  if (hasCardano) return sources;
+  if (hasCardano) {
+    return sources.map((source) =>
+      source.chain === SupportedPaymentSourceChain.Cardano
+        ? { ...source, pricing: cardanoPricing }
+        : source,
+    );
+  }
   return [
-    buildDefaultCardanoSupportedPaymentSource(network, smartContractAddress),
+    buildDefaultCardanoSupportedPaymentSource(
+      network,
+      smartContractAddress,
+      cardanoPricing,
+    ),
     ...sources,
   ];
 }

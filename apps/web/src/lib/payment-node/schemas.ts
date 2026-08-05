@@ -116,7 +116,8 @@ export const registryEntrySchema = z.object({
     organization: z.string().nullable(),
   }),
   Tags: z.array(z.string()),
-  AgentPricing: agentPricingSchema,
+  AgentPricing: agentPricingSchema.nullable(),
+  supportedPaymentSources: supportedPaymentSourcesSchema.nullable().optional(),
   SmartContractWallet: z
     .object({ walletVkey: z.string(), walletAddress: z.string() })
     .optional(),
@@ -216,14 +217,16 @@ export const registerAgentInputSchema = z.object({
       other: z.string().optional(),
     })
     .optional(),
-  AgentPricing: z.union([
-    z.object({ pricingType: z.literal("Free") }),
-    z.object({ pricingType: z.literal("Dynamic") }),
-    z.object({
-      pricingType: z.literal("Fixed"),
-      Pricing: z.array(unitAmountSchema),
-    }),
-  ]),
+  AgentPricing: z
+    .union([
+      z.object({ pricingType: z.literal("Free") }),
+      z.object({ pricingType: z.literal("Dynamic") }),
+      z.object({
+        pricingType: z.literal("Fixed"),
+        Pricing: z.array(unitAmountSchema),
+      }),
+    ])
+    .optional(),
   supportedPaymentSources: supportedPaymentSourcesSchema.optional(),
   verifications: verificationsSchema.optional(),
 });

@@ -597,13 +597,20 @@ export function RegisterAgentDialog({
               chain: "EVM" as const,
               network: option.caip2Network,
               scheme: "Exact" as const,
-              asset: option.asset,
-              amount: option.amount,
-              decimals: Number(option.decimals),
               payTo: option.payTo,
               ...(option.resource.trim()
                 ? { resource: option.resource.trim() }
                 : {}),
+              pricing: {
+                pricingType: "Fixed" as const,
+                fixed: [
+                  {
+                    asset: option.asset,
+                    amount: option.amount,
+                    decimals: Number(option.decimals),
+                  },
+                ],
+              },
             }))
           : [];
 

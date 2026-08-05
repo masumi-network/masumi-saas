@@ -91,6 +91,7 @@ export const ModelName = {
   X402WalletBudget: "X402WalletBudget",
   X402PaymentAttempt: "X402PaymentAttempt",
   X402Settlement: "X402Settlement",
+  NetworkRegistrationDraft: "NetworkRegistrationDraft",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -750,6 +751,23 @@ export const X402SettlementScalarFieldEnum = {
 
 export type X402SettlementScalarFieldEnum =
   (typeof X402SettlementScalarFieldEnum)[keyof typeof X402SettlementScalarFieldEnum];
+
+export const NetworkRegistrationDraftScalarFieldEnum = {
+  id: "id",
+  email: "email",
+  name: "name",
+  payload: "payload",
+  status: "status",
+  agentId: "agentId",
+  error: "error",
+  expiresAt: "expiresAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  userId: "userId",
+} as const;
+
+export type NetworkRegistrationDraftScalarFieldEnum =
+  (typeof NetworkRegistrationDraftScalarFieldEnum)[keyof typeof NetworkRegistrationDraftScalarFieldEnum];
 
 export const SortOrder = {
   asc: "asc",
