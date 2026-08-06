@@ -18366,7 +18366,8 @@
                       }
                     },
                     "successPath": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Absolute URL on the masumi.network marketing site"
                     }
                   },
                   "required": [

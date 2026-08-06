@@ -373,7 +373,8 @@ export async function completeNetworkRegistrationWithTicket(params: {
 
   if (!fulfilled.ok) {
     if (fulfilled.needsKyc) {
-      await revokeNetworkRegistrationTicket(ticket.token);
+      // Keep the ticket alive so the marketing-site wizard can retry /complete
+      // after the user finishes KYC without sending another OTP.
       return {
         ok: false,
         error: fulfilled.error,
@@ -392,7 +393,7 @@ export async function completeNetworkRegistrationWithTicket(params: {
     agentId: fulfilled.agentId,
     status: fulfilled.status,
     notes: fulfilled.notes,
-    successPath: `/register/success?agentId=${encodeURIComponent(fulfilled.agentId)}`,
+    successPath: fulfilled.networkSiteSuccessUrl,
   };
 }
 

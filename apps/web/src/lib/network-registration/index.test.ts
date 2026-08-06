@@ -1,10 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/config/verification.config", () => ({
   isKycVerificationEnabled: () => true,
 }));
 
-import { buildNetworkRegistrationPayload } from "./index";
+import {
+  buildNetworkRegistrationPayload,
+  buildNetworkSiteSuccessUrl,
+} from "./index";
 
 const base = {
   name: "Ada",
@@ -62,5 +65,19 @@ describe("buildNetworkRegistrationPayload", () => {
       },
     });
     expect(payload.effectiveDestination).toBe("paper");
+  });
+});
+
+describe("buildNetworkSiteSuccessUrl", () => {
+  afterEach(() => {
+    delete process.env.NETWORK_SITE_URL;
+    delete process.env.NEXT_PUBLIC_NETWORK_SITE_URL;
+  });
+
+  it("returns an absolute marketing-site success URL", () => {
+    process.env.NETWORK_SITE_URL = "http://localhost:3010";
+    expect(buildNetworkSiteSuccessUrl("agent-123")).toBe(
+      "http://localhost:3010/register/success?agentId=agent-123",
+    );
   });
 });

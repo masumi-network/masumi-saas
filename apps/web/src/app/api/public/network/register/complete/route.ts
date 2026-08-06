@@ -23,7 +23,9 @@ const successSchema = z.object({
   agentId: z.string(),
   status: z.enum(["registered", "pending"]),
   notes: z.array(z.string()),
-  successPath: z.string(),
+  successPath: z
+    .string()
+    .describe("Absolute URL on the masumi.network marketing site"),
 });
 
 app.openapi(
