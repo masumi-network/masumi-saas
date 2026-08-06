@@ -18226,16 +18226,15 @@
                     "properties": {
                       "network": {
                         "type": "string",
-                        "pattern": "^eip155:\\d+$",
-                        "default": "eip155:8453"
+                        "pattern": "^eip155:\\d+$"
                       },
                       "asset": {
                         "type": "string",
-                        "minLength": 1
+                        "pattern": "^0x[a-fA-F0-9]{40}$"
                       },
                       "amount": {
                         "type": "string",
-                        "minLength": 1
+                        "pattern": "^\\d+$"
                       },
                       "decimals": {
                         "type": "integer",
@@ -18265,6 +18264,7 @@
                       }
                     },
                     "required": [
+                      "network",
                       "asset",
                       "amount",
                       "payTo"
@@ -18327,7 +18327,6 @@
                   "email",
                   "termsAccepted",
                   "agent",
-                  "payment",
                   "mint",
                   "registrationToken"
                 ]
