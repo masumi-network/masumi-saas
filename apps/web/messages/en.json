@@ -1499,7 +1499,27 @@
     },
     "NetworkRegister": {
       "continueFailedTitle": "Registration could not finish",
-      "openAiAgents": "Open AI agents"
+      "backToRegistration": "Back to registration",
+      "finishTitle": "Finishing registration",
+      "finishMessage": "Minting your registry NFT on Cardano. This usually takes under a minute — stay on this page.",
+      "finishTimedOut": "Registration is taking longer than expected. Please try again in a few minutes or contact support.",
+      "verify": {
+        "title": "Identity verification",
+        "description": "Verify your identity to finish registering your agent on Masumi Network.",
+        "gdprTitle": "Data protection",
+        "gdpr": "We only collect the minimum data required for identity verification. Your data is processed securely and handled according to our privacy policy.",
+        "biometricTitle": "Biometric checks",
+        "biometric": "You will upload an identity document and complete a selfie with liveness detection.",
+        "consentLabel": "I understand and consent to identity verification for this agent registration.",
+        "startButton": "Start verification",
+        "consentRequired": "Please accept the consent to proceed.",
+        "tokenGenerationFailed": "Could not start verification. Please try again.",
+        "verificationFailed": "Verification failed. Please try again.",
+        "processingMessage": "Reviewing your verification. This usually takes a few minutes.",
+        "finishingRegistration": "Verification approved. Finishing registration…",
+        "rejectedTitle": "Verification rejected",
+        "brandLabel": "Masumi Network"
+      }
     },
     "Verification": {
       "title": "Identity Verification",
@@ -1550,6 +1570,7 @@
         "processingTitle": "Processing Verification",
         "processingMessage": "Your verification is being processed. This may take a few moments.",
         "continueButton": "Continue to Dashboard",
+        "continueRegistrationButton": "Continue agent registration",
         "rejectedTitle": "Verification Rejected",
         "rejectedMessage": "Your verification was rejected. Please review the reason above and try again.",
         "retryButton": "Try Again"

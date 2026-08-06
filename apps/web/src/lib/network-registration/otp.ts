@@ -196,6 +196,7 @@ export async function verifyNetworkRegistrationOtp(params: {
       ok: true;
       user: { id: string; name: string | null; email: string | null };
       registrationToken: string;
+      sessionHeaders: Headers;
     }
   | { ok: false; error: string }
 > {
@@ -203,12 +204,14 @@ export async function verifyNetworkRegistrationOtp(params: {
   const otp = params.otp.trim();
 
   try {
-    const result = await auth.api.signInEmailOTP({
+    const signIn = await auth.api.signInEmailOTP({
       body: { email, otp },
       headers: params.headers,
+      returnHeaders: true,
     });
 
-    if (!result.user?.id) {
+    const result = signIn.response;
+    if (!result?.user?.id) {
       return { ok: false, error: "Invalid verification code" };
     }
 
@@ -234,6 +237,7 @@ export async function verifyNetworkRegistrationOtp(params: {
         email: result.user.email ?? null,
       },
       registrationToken,
+      sessionHeaders: signIn.headers,
     };
   } catch (error) {
     console.error("[verifyNetworkRegistrationOtp] error:", error);

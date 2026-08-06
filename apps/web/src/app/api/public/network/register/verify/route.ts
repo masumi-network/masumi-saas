@@ -1,7 +1,9 @@
 import { createRoute } from "@hono/zod-openapi";
 
+import { appendSetCookiesFromHeaders } from "@/lib/api/cors";
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import { verifyNetworkRegistrationAccount } from "@/lib/network-registration";
+import { NETWORK_REGISTER_CORS_OPTIONS } from "@/lib/network-registration/cors";
 import { errBody, noSecurity } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
@@ -13,7 +15,7 @@ const CORS_METHODS = ["POST", "OPTIONS"] as const;
 
 const app = createApiApp("/api/public/network/register/verify");
 
-app.use("*", honoCors(CORS_METHODS));
+app.use("*", honoCors(CORS_METHODS, NETWORK_REGISTER_CORS_OPTIONS));
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -85,6 +87,7 @@ app.openapi(
       },
       200,
     );
+    appendSetCookiesFromHeaders(response.headers, result.sessionHeaders);
     response.headers.set("X-RateLimit-Limit", String(rl.limit));
     response.headers.set("X-RateLimit-Remaining", String(rl.remaining));
     return response;

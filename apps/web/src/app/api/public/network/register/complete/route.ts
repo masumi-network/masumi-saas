@@ -5,6 +5,7 @@ import {
   completeNetworkRegistrationWithTicket,
   networkRegisterCompleteBodySchema,
 } from "@/lib/network-registration";
+import { NETWORK_REGISTER_CORS_OPTIONS } from "@/lib/network-registration/cors";
 import { errBody, noSecurity } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
@@ -16,7 +17,7 @@ const CORS_METHODS = ["POST", "OPTIONS"] as const;
 
 const app = createApiApp("/api/public/network/register/complete");
 
-app.use("*", honoCors(CORS_METHODS));
+app.use("*", honoCors(CORS_METHODS, NETWORK_REGISTER_CORS_OPTIONS));
 
 const successSchema = z.object({
   success: z.literal(true),
@@ -26,6 +27,13 @@ const successSchema = z.object({
   successPath: z
     .string()
     .describe("Absolute URL on the masumi.network marketing site"),
+  continueUrl: z
+    .string()
+    .url()
+    .optional()
+    .describe(
+      "When status is pending, poll registration completion on this SaaS URL before successPath",
+    ),
 });
 
 app.openapi(
@@ -109,6 +117,7 @@ app.openapi(
         status: result.status,
         notes: result.notes,
         successPath: result.successPath,
+        ...(result.continueUrl ? { continueUrl: result.continueUrl } : {}),
       },
       200,
     );

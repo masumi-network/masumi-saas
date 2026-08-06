@@ -5,6 +5,7 @@ import {
   networkRegisterAccountBodySchema,
   startNetworkRegistrationAccount,
 } from "@/lib/network-registration";
+import { NETWORK_REGISTER_CORS_OPTIONS } from "@/lib/network-registration/cors";
 import { errBody, noSecurity } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
@@ -16,7 +17,7 @@ const CORS_METHODS = ["POST", "OPTIONS"] as const;
 
 const app = createApiApp("/api/public/network/register");
 
-app.use("*", honoCors(CORS_METHODS));
+app.use("*", honoCors(CORS_METHODS, NETWORK_REGISTER_CORS_OPTIONS));
 
 const successSchema = z.object({
   success: z.literal(true),

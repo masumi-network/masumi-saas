@@ -22,8 +22,8 @@ import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
 import { z } from "@/lib/zod-openapi";
 
 const DRAFT_TTL_MS = 1000 * 60 * 60 * 24; // 24h
-const COMPLETE_POLL_ATTEMPTS = 4;
-const COMPLETE_POLL_DELAY_MS = 4_000;
+const COMPLETE_POLL_ATTEMPTS = 24;
+const COMPLETE_POLL_DELAY_MS = 5_000;
 
 type DraftStatus =
   | "PENDING"
@@ -250,6 +250,7 @@ export async function verifyNetworkRegistrationAccount(params: {
       ok: true;
       email: string;
       registrationToken: string;
+      sessionHeaders: Headers;
     }
   | { ok: false; error: string; status: 401 }
 > {
@@ -270,6 +271,7 @@ export async function verifyNetworkRegistrationAccount(params: {
       verified.user.email?.trim().toLowerCase() ||
       params.email.trim().toLowerCase(),
     registrationToken: verified.registrationToken,
+    sessionHeaders: verified.sessionHeaders,
   };
 }
 
@@ -328,6 +330,7 @@ export async function completeNetworkRegistrationWithTicket(params: {
       status: "registered" | "pending";
       notes: string[];
       successPath: string;
+      continueUrl?: string;
     }
   | {
       ok: false;
@@ -386,7 +389,7 @@ export async function completeNetworkRegistrationWithTicket(params: {
         ok: false,
         error: fulfilled.error,
         needsKyc: true,
-        kycContinueUrl: buildNetworkKycReturnUrl(draft.draftId),
+        kycContinueUrl: buildNetworkKycVerifyUrl(draft.draftId),
         status: 403,
       };
     }
@@ -395,12 +398,18 @@ export async function completeNetworkRegistrationWithTicket(params: {
 
   await revokeNetworkRegistrationTicket(ticket.token);
 
+  const continueUrl =
+    fulfilled.status === "pending"
+      ? buildNetworkKycReturnUrl(draft.draftId)
+      : undefined;
+
   return {
     ok: true,
     agentId: fulfilled.agentId,
     status: fulfilled.status,
     notes: fulfilled.notes,
     successPath: fulfilled.networkSiteSuccessUrl,
+    ...(continueUrl ? { continueUrl } : {}),
   };
 }
 
@@ -820,6 +829,17 @@ export function buildNetworkKycReturnUrl(draftId: string): string {
     "http://localhost:2999";
   return new URL(
     `/network-register/continue?draftId=${encodeURIComponent(draftId)}`,
+    app,
+  ).toString();
+}
+
+export function buildNetworkKycVerifyUrl(draftId: string): string {
+  const app =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.BETTER_AUTH_URL?.trim() ||
+    "http://localhost:2999";
+  return new URL(
+    `/network-register/verify?draftId=${encodeURIComponent(draftId)}`,
     app,
   ).toString();
 }
