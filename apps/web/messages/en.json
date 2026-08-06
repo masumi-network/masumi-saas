@@ -1501,7 +1501,7 @@
       "continueFailedTitle": "Registration could not finish",
       "backToRegistration": "Back to registration",
       "finishTitle": "Finishing registration",
-      "finishMessage": "Minting your registry NFT on Cardano. This usually takes under a minute — stay on this page.",
+      "finishMessage": "Minting your registry NFT on Cardano. This usually takes under a minute. Stay on this page.",
       "finishTimedOut": "Registration is taking longer than expected. Please try again in a few minutes or contact support.",
       "verify": {
         "title": "Identity verification",
@@ -1516,7 +1516,7 @@
         "tokenGenerationFailed": "Could not start verification. Please try again.",
         "verificationFailed": "Verification failed. Please try again.",
         "processingMessage": "Reviewing your verification. This usually takes a few minutes.",
-        "finishingRegistration": "Verification approved. Finishing registration…",
+        "finishingRegistration": "Verification approved. Continuing to registration…",
         "rejectedTitle": "Verification rejected",
         "brandLabel": "Masumi Network"
       }

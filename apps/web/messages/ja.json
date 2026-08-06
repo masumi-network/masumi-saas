@@ -2475,7 +2475,7 @@
       "continueFailedTitle": "登録を完了できませんでした",
       "backToRegistration": "登録に戻る",
       "finishTitle": "登録を完了しています",
-      "finishMessage": "Cardano 上でレジストリ NFT をミント中です。通常 1 分以内に完了します — このページを開いたままお待ちください。",
+      "finishMessage": "Cardano 上でレジストリ NFT をミント中です。通常 1 分以内に完了します。このページを開いたままお待ちください。",
       "finishTimedOut": "登録に予想より時間がかかっています。数分後に再度お試しいただくか、サポートにお問い合わせください。",
       "verify": {
         "title": "本人確認",
@@ -2490,7 +2490,7 @@
         "tokenGenerationFailed": "本人確認を開始できませんでした。もう一度お試しください。",
         "verificationFailed": "本人確認に失敗しました。もう一度お試しください。",
         "processingMessage": "本人確認を審査中です。通常、数分かかります。",
-        "finishingRegistration": "本人確認が承認されました。登録を完了しています…",
+        "finishingRegistration": "本人確認が承認されました。登録に進んでいます…",
         "rejectedTitle": "本人確認が拒否されました",
         "brandLabel": "Masumi Network"
       }
