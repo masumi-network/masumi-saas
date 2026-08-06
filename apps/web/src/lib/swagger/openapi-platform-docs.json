@@ -18366,6 +18366,11 @@
                     "successPath": {
                       "type": "string",
                       "description": "Absolute URL on the masumi.network marketing site"
+                    },
+                    "continueUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "When status is pending, poll registration completion on this SaaS URL before successPath"
                     }
                   },
                   "required": [
