@@ -18285,8 +18285,7 @@
                         "enum": [
                           "managed",
                           "browser",
-                          "paper",
-                          "existing"
+                          "external"
                         ]
                       },
                       "cardanoAddress": {

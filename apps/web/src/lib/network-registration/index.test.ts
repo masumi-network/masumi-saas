@@ -42,29 +42,29 @@ describe("buildNetworkRegistrationPayload", () => {
     expect(payload.mint.cardanoAddress).toContain("addr_test1");
   });
 
-  it("requires KYC for paper", () => {
+  it("requires KYC for external address", () => {
     expect(() =>
       buildNetworkRegistrationPayload({
         ...base,
         mint: {
           kyc: "skip",
-          destination: "paper",
+          destination: "external",
           cardanoAddress: "addr_test1qxyz",
         },
       }),
     ).toThrow(/KYC/);
   });
 
-  it("accepts paper after KYC", () => {
+  it("accepts external address after KYC", () => {
     const payload = buildNetworkRegistrationPayload({
       ...base,
       mint: {
         kyc: "kyc",
-        destination: "paper",
+        destination: "external",
         cardanoAddress: "addr_test1qxyz",
       },
     });
-    expect(payload.effectiveDestination).toBe("paper");
+    expect(payload.effectiveDestination).toBe("external");
   });
 
   it("allows registration without x402 payment details", () => {

@@ -66,8 +66,8 @@ export const networkRegisterBodySchema = z.object({
     .optional(),
   mint: z.object({
     kyc: z.enum(["skip", "kyc"]),
-    destination: z.enum(["managed", "browser", "paper", "existing"]),
-    /** Cardano receive address for paper/existing (and optional payout). */
+    destination: z.enum(["managed", "browser", "external"]),
+    /** Cardano receive address for external / browser paths (and optional payout). */
     cardanoAddress: z.string().max(250).optional().or(z.literal("")),
   }),
   cardanoNetwork: z.enum(["Preprod", "Mainnet"]).default("Preprod"),
@@ -99,7 +99,7 @@ export type NetworkRegistrationPayload = {
   payment?: NetworkRegisterBody["payment"];
   mint: NetworkRegisterBody["mint"];
   cardanoNetwork: PaymentNodeNetwork;
-  effectiveDestination: "managed" | "browser" | "paper" | "existing";
+  effectiveDestination: "managed" | "browser" | "external";
   notes: string[];
 };
 
@@ -166,7 +166,7 @@ export function buildNetworkRegistrationPayload(
   if (destination === "browser") {
     if (body.mint.kyc === "kyc") {
       throw new Error(
-        "Browser wallet mint is only available without KYC. Use managed or paper/existing after KYC.",
+        "Browser wallet mint is only available without KYC. Use managed or your Cardano address after KYC.",
       );
     }
     if (!body.mint.cardanoAddress?.trim()) {
@@ -187,12 +187,12 @@ export function buildNetworkRegistrationPayload(
     };
   }
 
-  // paper | existing
+  // external (paper / existing address — user-provided bech32 after KYC)
   if (body.mint.kyc !== "kyc") {
-    throw new Error("Paper / existing-address mint requires KYC.");
+    throw new Error("Your Cardano address mint requires KYC.");
   }
   if (!body.mint.cardanoAddress?.trim()) {
-    throw new Error("Cardano address is required for paper / existing mint.");
+    throw new Error("Cardano address is required for your-address mint.");
   }
   notes.push(
     "After KYC, your Cardano address receives the registry NFT and min-UTXO.",
