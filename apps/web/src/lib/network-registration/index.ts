@@ -72,6 +72,25 @@ export const networkRegisterBodySchema = z.object({
 
 export type NetworkRegisterBody = z.infer<typeof networkRegisterBodySchema>;
 
+export const networkRegisterAccountBodySchema = z.object({
+  name: z.string().min(1).max(120),
+  email: z.string().email(),
+  termsAccepted: z.literal(true),
+});
+
+export type NetworkRegisterAccountBody = z.infer<
+  typeof networkRegisterAccountBodySchema
+>;
+
+export const networkRegisterCompleteBodySchema =
+  networkRegisterBodySchema.extend({
+    registrationToken: z.string().min(1),
+  });
+
+export type NetworkRegisterCompleteBody = z.infer<
+  typeof networkRegisterCompleteBodySchema
+>;
+
 export type NetworkRegistrationPayload = {
   agent: NetworkRegisterBody["agent"];
   payment: NetworkRegisterBody["payment"];
@@ -181,18 +200,83 @@ export function buildNetworkRegistrationPayload(
   };
 }
 
+export async function startNetworkRegistrationAccount(params: {
+  body: NetworkRegisterAccountBody;
+}): Promise<
+  | {
+      ok: true;
+      email: string;
+      resultKey: "VerificationCodeSent";
+      devCode?: string;
+    }
+  | { ok: false; error: string; status: 400 | 429 | 500 }
+> {
+  if (!params.body.termsAccepted) {
+    return { ok: false, status: 400, error: "Terms must be accepted" };
+  }
+
+  const { sendNetworkRegistrationOtp } =
+    await import("@/lib/network-registration/otp");
+  const otp = await sendNetworkRegistrationOtp({
+    email: params.body.email,
+    name: params.body.name,
+  });
+
+  if (!otp.ok) {
+    return { ok: false, status: otp.status, error: otp.error };
+  }
+
+  return {
+    ok: true,
+    email: otp.email,
+    resultKey: "VerificationCodeSent",
+    ...(otp.devCode ? { devCode: otp.devCode } : {}),
+  };
+}
+
+export async function verifyNetworkRegistrationAccount(params: {
+  email: string;
+  otp: string;
+  headers: Headers;
+}): Promise<
+  | {
+      ok: true;
+      email: string;
+      registrationToken: string;
+    }
+  | { ok: false; error: string; status: 401 }
+> {
+  const { verifyNetworkRegistrationOtp } =
+    await import("@/lib/network-registration/otp");
+  const verified = await verifyNetworkRegistrationOtp({
+    email: params.email,
+    otp: params.otp,
+    headers: params.headers,
+  });
+  if (!verified.ok) {
+    return { ok: false, error: verified.error, status: 401 };
+  }
+
+  return {
+    ok: true,
+    email:
+      verified.user.email?.trim().toLowerCase() ||
+      params.email.trim().toLowerCase(),
+    registrationToken: verified.registrationToken,
+  };
+}
+
 export async function createNetworkRegistrationDraft(params: {
   body: NetworkRegisterBody;
-  headers: Headers;
+  userId?: string;
 }): Promise<
   | {
       ok: true;
       draftId: string;
       email: string;
       notes: string[];
-      devCode?: string;
     }
-  | { ok: false; error: string; status: 400 | 429 | 500 }
+  | { ok: false; error: string; status: 400 }
 > {
   let payload: NetworkRegistrationPayload;
   try {
@@ -216,30 +300,99 @@ export async function createNetworkRegistrationDraft(params: {
       name: params.body.name.trim(),
       payload,
       expiresAt,
+      ...(params.userId ? { userId: params.userId } : {}),
     },
   });
-
-  const { sendNetworkRegistrationOtp } =
-    await import("@/lib/network-registration/otp");
-  const otp = await sendNetworkRegistrationOtp({
-    email: params.body.email,
-    name: params.body.name,
-  });
-
-  if (!otp.ok) {
-    await prisma.networkRegistrationDraft.update({
-      where: { id: draftId },
-      data: { status: "FAILED", error: otp.error },
-    });
-    return { ok: false, status: otp.status, error: otp.error };
-  }
 
   return {
     ok: true,
     draftId,
-    email: otp.email,
+    email: params.body.email.trim().toLowerCase(),
     notes: payload.notes,
-    ...(otp.devCode ? { devCode: otp.devCode } : {}),
+  };
+}
+
+export async function completeNetworkRegistrationWithTicket(params: {
+  body: NetworkRegisterCompleteBody;
+}): Promise<
+  | {
+      ok: true;
+      agentId: string;
+      status: "registered" | "pending";
+      notes: string[];
+      successPath: string;
+    }
+  | {
+      ok: false;
+      error: string;
+      needsKyc?: boolean;
+      kycContinueUrl?: string;
+      status?: 400 | 401 | 403;
+    }
+> {
+  const email = params.body.email.trim().toLowerCase();
+  const { resolveNetworkRegistrationTicket, revokeNetworkRegistrationTicket } =
+    await import("@/lib/network-registration/otp");
+  const ticket = await resolveNetworkRegistrationTicket({
+    token: params.body.registrationToken,
+    email,
+  });
+  if (!ticket.ok) {
+    return { ok: false, error: ticket.error, status: 401 };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: ticket.userId },
+    select: { id: true, name: true, email: true },
+  });
+  if (!user) {
+    return {
+      ok: false,
+      error: "User not found for registration session",
+      status: 401,
+    };
+  }
+
+  const draft = await createNetworkRegistrationDraft({
+    body: params.body,
+    userId: user.id,
+  });
+  if (!draft.ok) {
+    return { ok: false, error: draft.error, status: 400 };
+  }
+
+  const fulfilled = await fulfillNetworkRegistrationDraft({
+    draftId: draft.draftId,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    },
+    activeOrganizationId: null,
+  });
+
+  if (!fulfilled.ok) {
+    if (fulfilled.needsKyc) {
+      await revokeNetworkRegistrationTicket(ticket.token);
+      return {
+        ok: false,
+        error: fulfilled.error,
+        needsKyc: true,
+        kycContinueUrl: buildNetworkKycReturnUrl(draft.draftId),
+        status: 403,
+      };
+    }
+    return { ok: false, error: fulfilled.error, status: 400 };
+  }
+
+  await revokeNetworkRegistrationTicket(ticket.token);
+
+  return {
+    ok: true,
+    agentId: fulfilled.agentId,
+    status: fulfilled.status,
+    notes: fulfilled.notes,
+    successPath: `/register/success?agentId=${encodeURIComponent(fulfilled.agentId)}`,
   };
 }
 
@@ -686,90 +839,4 @@ export function buildNetworkKycReturnUrl(draftId: string): string {
     `/network-register/continue?draftId=${encodeURIComponent(draftId)}`,
     app,
   ).toString();
-}
-
-export async function completeNetworkRegistrationWithOtp(params: {
-  draftId: string;
-  email: string;
-  otp: string;
-  headers: Headers;
-}): Promise<
-  | {
-      ok: true;
-      agentId: string;
-      status: "registered" | "pending";
-      notes: string[];
-      successPath: string;
-    }
-  | {
-      ok: false;
-      error: string;
-      needsKyc?: boolean;
-      kycContinueUrl?: string;
-      status?: 400 | 401 | 403;
-    }
-> {
-  const email = params.email.trim().toLowerCase();
-
-  const draft = await prisma.networkRegistrationDraft.findUnique({
-    where: { id: params.draftId },
-  });
-  if (!draft) {
-    return { ok: false, error: "Registration draft not found", status: 400 };
-  }
-  if (draft.email !== email) {
-    return {
-      ok: false,
-      error: "Email does not match this registration",
-      status: 400,
-    };
-  }
-
-  const canResumePastExpiry =
-    Boolean(draft.agentId) || draft.status === "COMPLETED";
-  if (draft.expiresAt.getTime() < Date.now() && !canResumePastExpiry) {
-    await prisma.networkRegistrationDraft.update({
-      where: { id: draft.id },
-      data: { status: "EXPIRED" },
-    });
-    return { ok: false, error: "Registration draft expired", status: 400 };
-  }
-
-  const { verifyNetworkRegistrationOtp } =
-    await import("@/lib/network-registration/otp");
-  const verified = await verifyNetworkRegistrationOtp({
-    email,
-    otp: params.otp,
-    headers: params.headers,
-  });
-  if (!verified.ok) {
-    return { ok: false, error: verified.error, status: 401 };
-  }
-
-  const fulfilled = await fulfillNetworkRegistrationDraft({
-    draftId: params.draftId,
-    user: verified.user,
-    activeOrganizationId: null,
-  });
-
-  if (!fulfilled.ok) {
-    if (fulfilled.needsKyc) {
-      return {
-        ok: false,
-        error: fulfilled.error,
-        needsKyc: true,
-        kycContinueUrl: buildNetworkKycReturnUrl(params.draftId),
-        status: 403,
-      };
-    }
-    return { ok: false, error: fulfilled.error, status: 400 };
-  }
-
-  return {
-    ok: true,
-    agentId: fulfilled.agentId,
-    status: fulfilled.status,
-    notes: fulfilled.notes,
-    successPath: `/register/success?agentId=${encodeURIComponent(fulfilled.agentId)}`,
-  };
 }

@@ -18154,13 +18154,13 @@
         }
       }
     },
-    "/api/public/network/register": {
+    "/api/public/network/register/complete": {
       "post": {
         "tags": [
           "Network"
         ],
-        "summary": "Start network-site agent registration",
-        "description": "Stores a registration draft and emails a 6-digit verification code. The client verifies the code on the marketing site, then mint completes server-side.",
+        "summary": "Complete network registration and mint",
+        "description": "Accepts a registration token from email verification plus agent/payment/mint details, then starts on-chain registration.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -18316,6 +18316,10 @@
                       "Mainnet"
                     ],
                     "default": "Preprod"
+                  },
+                  "registrationToken": {
+                    "type": "string",
+                    "minLength": 1
                   }
                 },
                 "required": [
@@ -18324,15 +18328,16 @@
                   "termsAccepted",
                   "agent",
                   "payment",
-                  "mint"
+                  "mint",
+                  "registrationToken"
                 ]
               }
             }
           }
         },
         "responses": {
-          "202": {
-            "description": "Draft stored; verification code sent (or logged in development)",
+          "200": {
+            "description": "Registration completed or pending on-chain",
             "content": {
               "application/json": {
                 "schema": {
@@ -18344,8 +18349,198 @@
                         true
                       ]
                     },
-                    "draftId": {
+                    "agentId": {
                       "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "registered",
+                        "pending"
+                      ]
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "successPath": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "agentId",
+                    "status",
+                    "notes",
+                    "successPath"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or registration failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired registration token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "KYC required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "needsKyc": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "kycContinueUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "needsKyc",
+                    "kycContinueUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/network/register": {
+      "post": {
+        "tags": [
+          "Network"
+        ],
+        "summary": "Start network registration (send email code)",
+        "description": "Creates or finds the user and emails a 6-digit verification code. Agent details are submitted only after the code is verified.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "termsAccepted": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "termsAccepted"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Verification code sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
                     },
                     "email": {
                       "type": "string",
@@ -18357,22 +18552,14 @@
                         "VerificationCodeSent"
                       ]
                     },
-                    "notes": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
                     "devCode": {
                       "type": "string"
                     }
                   },
                   "required": [
                     "success",
-                    "draftId",
                     "email",
-                    "resultKey",
-                    "notes"
+                    "resultKey"
                   ]
                 }
               }
@@ -18461,8 +18648,8 @@
         "tags": [
           "Network"
         ],
-        "summary": "Verify network registration code and mint",
-        "description": "Verifies the email OTP on the marketing site origin, then completes agent registration server-side.",
+        "summary": "Verify network registration email code",
+        "description": "Verifies the email OTP and returns a short-lived registration token used to submit agent details and mint.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -18471,10 +18658,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "draftId": {
-                    "type": "string",
-                    "minLength": 1
-                  },
                   "email": {
                     "type": "string",
                     "format": "email"
@@ -18486,7 +18669,6 @@
                   }
                 },
                 "required": [
-                  "draftId",
                   "email",
                   "otp"
                 ]
@@ -18496,7 +18678,7 @@
         },
         "responses": {
           "200": {
-            "description": "Registration completed or pending on-chain",
+            "description": "Email verified; registration token issued",
             "content": {
               "application/json": {
                 "schema": {
@@ -18508,39 +18690,25 @@
                         true
                       ]
                     },
-                    "agentId": {
-                      "type": "string"
-                    },
-                    "status": {
+                    "email": {
                       "type": "string",
-                      "enum": [
-                        "registered",
-                        "pending"
-                      ]
+                      "format": "email"
                     },
-                    "notes": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "successPath": {
+                    "registrationToken": {
                       "type": "string"
                     }
                   },
                   "required": [
                     "success",
-                    "agentId",
-                    "status",
-                    "notes",
-                    "successPath"
+                    "email",
+                    "registrationToken"
                   ]
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid request or registration failed",
+            "description": "Invalid request",
             "content": {
               "application/json": {
                 "schema": {
@@ -18584,36 +18752,6 @@
                   "required": [
                     "success",
                     "error"
-                  ]
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "KYC required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "needsKyc": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ]
-                    },
-                    "kycContinueUrl": {
-                      "type": "string",
-                      "format": "uri"
-                    }
-                  },
-                  "required": [
-                    "error",
-                    "needsKyc",
-                    "kycContinueUrl"
                   ]
                 }
               }

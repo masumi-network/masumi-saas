@@ -9,6 +9,7 @@ import {
   buildStoredOtpValue,
   createVerificationValue,
   deleteVerificationByIdentifier,
+  findVerificationByIdentifier,
 } from "@/lib/auth/auth-storage";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import {
@@ -194,6 +195,7 @@ export async function verifyNetworkRegistrationOtp(params: {
   | {
       ok: true;
       user: { id: string; name: string | null; email: string | null };
+      registrationToken: string;
     }
   | { ok: false; error: string }
 > {
@@ -219,6 +221,11 @@ export async function verifyNetworkRegistrationOtp(params: {
 
     await grantInitialCreditsIfNeeded(result.user.id);
 
+    const registrationToken = await issueNetworkRegistrationTicket({
+      userId: result.user.id,
+      email,
+    });
+
     return {
       ok: true,
       user: {
@@ -226,9 +233,93 @@ export async function verifyNetworkRegistrationOtp(params: {
         name: result.user.name ?? null,
         email: result.user.email ?? null,
       },
+      registrationToken,
     };
   } catch (error) {
     console.error("[verifyNetworkRegistrationOtp] error:", error);
     return { ok: false, error: "Invalid or expired verification code" };
   }
+}
+
+const NETWORK_REG_TICKET_TTL_MS = 1000 * 60 * 60 * 2; // 2h
+
+function networkRegTicketIdentifier(token: string) {
+  return `network-reg-ticket-${token}`;
+}
+
+async function issueNetworkRegistrationTicket(params: {
+  userId: string;
+  email: string;
+}): Promise<string> {
+  const token = randomUUID();
+  await createVerificationValue({
+    id: randomUUID(),
+    identifier: networkRegTicketIdentifier(token),
+    value: JSON.stringify({
+      userId: params.userId,
+      email: params.email.trim().toLowerCase(),
+    }),
+    expiresAt: new Date(Date.now() + NETWORK_REG_TICKET_TTL_MS),
+  });
+  return token;
+}
+
+export async function resolveNetworkRegistrationTicket(params: {
+  token: string;
+  email: string;
+}): Promise<
+  | { ok: true; userId: string; email: string; token: string }
+  | { ok: false; error: string }
+> {
+  const token = params.token.trim();
+  const email = params.email.trim().toLowerCase();
+  if (!token) {
+    return { ok: false, error: "Registration token is required" };
+  }
+
+  const identifier = networkRegTicketIdentifier(token);
+  const row = await findVerificationByIdentifier(identifier, {
+    id: true,
+    value: true,
+    expiresAt: true,
+  });
+
+  if (!row) {
+    return {
+      ok: false,
+      error: "Registration session expired. Verify your email again.",
+    };
+  }
+  if (row.expiresAt.getTime() < Date.now()) {
+    await deleteVerificationByIdentifier(identifier);
+    return {
+      ok: false,
+      error: "Registration session expired. Verify your email again.",
+    };
+  }
+
+  let parsed: { userId?: string; email?: string };
+  try {
+    parsed = JSON.parse(row.value) as { userId?: string; email?: string };
+  } catch {
+    await deleteVerificationByIdentifier(identifier);
+    return { ok: false, error: "Invalid registration session" };
+  }
+
+  if (!parsed.userId || !parsed.email || parsed.email !== email) {
+    return {
+      ok: false,
+      error: "Registration session does not match this email",
+    };
+  }
+
+  return { ok: true, userId: parsed.userId, email: parsed.email, token };
+}
+
+export async function revokeNetworkRegistrationTicket(
+  token: string,
+): Promise<void> {
+  await deleteVerificationByIdentifier(
+    networkRegTicketIdentifier(token.trim()),
+  );
 }

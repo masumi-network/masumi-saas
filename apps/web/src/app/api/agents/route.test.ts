@@ -308,7 +308,12 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(registerAgentBody()),
+        body: JSON.stringify(
+          registerAgentBody({
+            // Mainnet rejects addr_test… before registration starts.
+            payoutAddress: "addr1qqexamplepayoutaddressqqexamplepayoutqq",
+          }),
+        ),
       },
     );
 

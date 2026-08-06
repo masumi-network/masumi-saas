@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi";
 
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
-import { completeNetworkRegistrationWithOtp } from "@/lib/network-registration";
+import { verifyNetworkRegistrationAccount } from "@/lib/network-registration";
 import { errBody, noSecurity } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
@@ -16,17 +16,14 @@ const app = createApiApp("/api/public/network/register/verify");
 app.use("*", honoCors(CORS_METHODS));
 
 const bodySchema = z.object({
-  draftId: z.string().min(1),
   email: z.string().email(),
   otp: z.string().min(4).max(12),
 });
 
 const successSchema = z.object({
   success: z.literal(true),
-  agentId: z.string(),
-  status: z.enum(["registered", "pending"]),
-  notes: z.array(z.string()),
-  successPath: z.string(),
+  email: z.string().email(),
+  registrationToken: z.string(),
 });
 
 app.openapi(
@@ -34,9 +31,9 @@ app.openapi(
     method: "post",
     path: "/",
     tags: ["Network"],
-    summary: "Verify network registration code and mint",
+    summary: "Verify network registration email code",
     description:
-      "Verifies the email OTP on the marketing site origin, then completes agent registration server-side.",
+      "Verifies the email OTP and returns a short-lived registration token used to submit agent details and mint.",
     security: noSecurity,
     request: {
       body: {
@@ -46,28 +43,16 @@ app.openapi(
     },
     responses: {
       200: {
-        description: "Registration completed or pending on-chain",
+        description: "Email verified; registration token issued",
         content: { "application/json": { schema: successSchema } },
       },
       400: {
-        description: "Invalid request or registration failed",
+        description: "Invalid request",
         content: { "application/json": { schema: errBody } },
       },
       401: {
         description: "Invalid OTP",
         content: { "application/json": { schema: errBody } },
-      },
-      403: {
-        description: "KYC required",
-        content: {
-          "application/json": {
-            schema: z.object({
-              error: z.string(),
-              needsKyc: z.literal(true),
-              kycContinueUrl: z.string().url(),
-            }),
-          },
-        },
       },
       429: {
         description: "Rate limited",
@@ -82,37 +67,21 @@ app.openapi(
     );
 
     const body = c.req.valid("json");
-    const result = await completeNetworkRegistrationWithOtp({
-      draftId: body.draftId,
+    const result = await verifyNetworkRegistrationAccount({
       email: body.email,
       otp: body.otp,
       headers: c.req.raw.headers,
     });
 
     if (!result.ok) {
-      if (result.needsKyc) {
-        const response = c.json(
-          {
-            error: result.error,
-            needsKyc: true as const,
-            kycContinueUrl: result.kycContinueUrl!,
-          },
-          403,
-        );
-        response.headers.set("X-RateLimit-Limit", String(rl.limit));
-        response.headers.set("X-RateLimit-Remaining", String(rl.remaining));
-        return response;
-      }
-      throw new ApiError(result.status === 401 ? 401 : 400, result.error);
+      throw new ApiError(401, result.error);
     }
 
     const response = c.json(
       {
         success: true as const,
-        agentId: result.agentId,
-        status: result.status,
-        notes: result.notes,
-        successPath: result.successPath,
+        email: result.email,
+        registrationToken: result.registrationToken,
       },
       200,
     );

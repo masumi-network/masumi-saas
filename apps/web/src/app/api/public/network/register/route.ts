@@ -2,8 +2,8 @@ import { createRoute } from "@hono/zod-openapi";
 
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
 import {
-  createNetworkRegistrationDraft,
-  networkRegisterBodySchema,
+  networkRegisterAccountBodySchema,
+  startNetworkRegistrationAccount,
 } from "@/lib/network-registration";
 import { errBody, noSecurity } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
@@ -20,10 +20,8 @@ app.use("*", honoCors(CORS_METHODS));
 
 const successSchema = z.object({
   success: z.literal(true),
-  draftId: z.string(),
   email: z.string().email(),
   resultKey: z.literal("VerificationCodeSent"),
-  notes: z.array(z.string()),
   devCode: z.string().optional(),
 });
 
@@ -32,22 +30,21 @@ app.openapi(
     method: "post",
     path: "/",
     tags: ["Network"],
-    summary: "Start network-site agent registration",
+    summary: "Start network registration (send email code)",
     description:
-      "Stores a registration draft and emails a 6-digit verification code. The client verifies the code on the marketing site, then mint completes server-side.",
+      "Creates or finds the user and emails a 6-digit verification code. Agent details are submitted only after the code is verified.",
     security: noSecurity,
     request: {
       body: {
         required: true,
         content: {
-          "application/json": { schema: networkRegisterBodySchema },
+          "application/json": { schema: networkRegisterAccountBodySchema },
         },
       },
     },
     responses: {
       202: {
-        description:
-          "Draft stored; verification code sent (or logged in development)",
+        description: "Verification code sent",
         content: { "application/json": { schema: successSchema } },
       },
       400: {
@@ -71,11 +68,7 @@ app.openapi(
     );
 
     const body = c.req.valid("json");
-    const result = await createNetworkRegistrationDraft({
-      body,
-      headers: c.req.raw.headers,
-    });
-
+    const result = await startNetworkRegistrationAccount({ body });
     if (!result.ok) {
       throw new ApiError(result.status, result.error);
     }
@@ -83,10 +76,8 @@ app.openapi(
     const response = c.json(
       {
         success: true as const,
-        draftId: result.draftId,
         email: result.email,
         resultKey: "VerificationCodeSent" as const,
-        notes: result.notes,
         ...(result.devCode ? { devCode: result.devCode } : {}),
       },
       202,
