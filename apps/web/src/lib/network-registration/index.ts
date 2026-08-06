@@ -32,12 +32,6 @@ type DraftStatus =
   | "FAILED"
   | "EXPIRED";
 
-const USDC_BY_NETWORK: Record<string, string> = {
-  "eip155:1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-  "eip155:8453": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  "eip155:84532": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-};
-
 export const networkRegisterBodySchema = z.object({
   name: z.string().min(1).max(120),
   email: z.string().email(),
@@ -48,19 +42,28 @@ export const networkRegisterBodySchema = z.object({
     apiUrl: z.string().url(),
     tags: z.string().min(1),
   }),
-  payment: z.object({
-    network: z
-      .string()
-      .regex(/^eip155:\d+$/)
-      .default("eip155:8453"),
-    asset: z.string().min(1),
-    amount: z.string().min(1),
-    decimals: z.coerce.number().int().min(0).max(255).default(6),
-    payTo: z
-      .string()
-      .regex(/^0x[a-fA-F0-9]{40}$/, "payTo must be an EVM address"),
-    resource: z.string().url().max(500).optional().or(z.literal("")),
-  }),
+  payment: z
+    .object({
+      network: z
+        .string()
+        .regex(/^eip155:\d+$/, "EVM network must be a CAIP-2 eip155 id"),
+      asset: z
+        .string()
+        .regex(
+          /^0x[a-fA-F0-9]{40}$/,
+          "asset must be an ERC-20 contract address",
+        ),
+      amount: z
+        .string()
+        .regex(/^\d+$/, "amount must be token base units (integer)")
+        .refine((value) => value !== "0", "amount must be greater than zero"),
+      decimals: z.coerce.number().int().min(0).max(255).default(6),
+      payTo: z
+        .string()
+        .regex(/^0x[a-fA-F0-9]{40}$/, "payTo must be an EVM address"),
+      resource: z.string().url().max(500).optional().or(z.literal("")),
+    })
+    .optional(),
   mint: z.object({
     kyc: z.enum(["skip", "kyc"]),
     destination: z.enum(["managed", "browser", "paper", "existing"]),
@@ -93,37 +96,41 @@ export type NetworkRegisterCompleteBody = z.infer<
 
 export type NetworkRegistrationPayload = {
   agent: NetworkRegisterBody["agent"];
-  payment: NetworkRegisterBody["payment"];
+  payment?: NetworkRegisterBody["payment"];
   mint: NetworkRegisterBody["mint"];
   cardanoNetwork: PaymentNodeNetwork;
   effectiveDestination: "managed" | "browser" | "paper" | "existing";
   notes: string[];
 };
 
-function resolveAssetAddress(network: string, asset: string): string {
-  const trimmed = asset.trim();
-  if (/^0x[a-fA-F0-9]{40}$/.test(trimmed)) return trimmed;
-  if (trimmed.toUpperCase() === "USDC") {
-    const known = USDC_BY_NETWORK[network];
-    if (known) return known;
+function resolveNetworkRegistrationCommerce(
+  payload: NetworkRegistrationPayload,
+): {
+  agentPricing: ReturnType<typeof buildAgentPricing>;
+  supportedPaymentSources: SupportedPaymentSource[] | undefined;
+} {
+  const payment = payload.payment;
+  if (!payment) {
+    return {
+      agentPricing: { pricingType: "Free" },
+      supportedPaymentSources: undefined,
+    };
   }
-  throw new Error(
-    `Unknown asset "${asset}" for ${network}. Pass a 0x token address or USDC.`,
-  );
-}
 
-function toSmallestUnits(amount: string, decimals: number): string {
-  const normalized = amount.trim();
-  if (!/^\d+(\.\d+)?$/.test(normalized)) {
-    throw new Error("Payment amount must be a positive decimal number");
-  }
-  const [whole, fraction = ""] = normalized.split(".");
-  if (fraction.length > decimals) {
-    throw new Error(`Amount has more than ${decimals} decimal places`);
-  }
-  const padded = fraction.padEnd(decimals, "0");
-  const combined = `${whole}${padded}`.replace(/^0+(?=\d)/, "");
-  return combined === "" ? "0" : combined;
+  return {
+    agentPricing: { pricingType: "Free" },
+    supportedPaymentSources: [
+      buildEvmExactFixedPaymentSource({
+        network: payment.network,
+        asset: payment.asset,
+        amount: payment.amount,
+        decimals: payment.decimals,
+        payTo: payment.payTo,
+        ...(payment.resource ? { resource: payment.resource } : {}),
+        extra: { ...DEFAULT_EVM_REGISTRY_EXTRA },
+      }),
+    ],
+  };
 }
 
 export function buildNetworkRegistrationPayload(
@@ -148,7 +155,7 @@ export function buildNetworkRegistrationPayload(
     }
     return {
       agent: body.agent,
-      payment: body.payment,
+      ...(body.payment ? { payment: body.payment } : {}),
       mint: body.mint,
       cardanoNetwork: body.cardanoNetwork,
       effectiveDestination: "managed",
@@ -168,11 +175,11 @@ export function buildNetworkRegistrationPayload(
       );
     }
     notes.push(
-      "Your connected Cardano address was recorded. The registry NFT is minted into a Masumi-managed wallet for now (payment node requires managed recipients); external NFT delivery comes next.",
+      "Your connected Cardano address receives the registry NFT and min-UTXO. Mint fees are sponsored in this PoC.",
     );
     return {
       agent: body.agent,
-      payment: body.payment,
+      ...(body.payment ? { payment: body.payment } : {}),
       mint: body.mint,
       cardanoNetwork: body.cardanoNetwork,
       effectiveDestination: "browser",
@@ -188,11 +195,11 @@ export function buildNetworkRegistrationPayload(
     throw new Error("Cardano address is required for paper / existing mint.");
   }
   notes.push(
-    "After KYC, your Cardano address is recorded. The registry NFT is minted into a Masumi-managed wallet for now (payment node requires managed recipients); external NFT delivery comes next.",
+    "After KYC, your Cardano address receives the registry NFT and min-UTXO.",
   );
   return {
     agent: body.agent,
-    payment: body.payment,
+    ...(body.payment ? { payment: body.payment } : {}),
     mint: body.mint,
     cardanoNetwork: body.cardanoNetwork,
     effectiveDestination: destination,
@@ -587,33 +594,8 @@ export async function fulfillNetworkRegistrationDraft(params: {
 
   try {
     const network = payload.cardanoNetwork;
-    const asset = resolveAssetAddress(
-      payload.payment.network,
-      payload.payment.asset,
-    );
-    const amount = toSmallestUnits(
-      payload.payment.amount,
-      payload.payment.decimals,
-    );
-
-    const supportedPaymentSources: SupportedPaymentSource[] = [
-      buildEvmExactFixedPaymentSource({
-        network: payload.payment.network,
-        asset,
-        amount,
-        decimals: payload.payment.decimals,
-        payTo: payload.payment.payTo,
-        ...(payload.payment.resource
-          ? { resource: payload.payment.resource }
-          : {}),
-        extra: { ...DEFAULT_EVM_REGISTRY_EXTRA },
-      }),
-    ];
-
-    const agentPricing = buildAgentPricing(network, {
-      pricingType: "Fixed",
-      prices: [{ amount: payload.payment.amount, currency: "USD" }],
-    });
+    const { agentPricing, supportedPaymentSources } =
+      resolveNetworkRegistrationCommerce(payload);
 
     const preflight = await validateAgentRegistrationPaymentSourcesPreflight(
       network,

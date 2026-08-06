@@ -908,16 +908,19 @@ export async function completeOnChainRegistration(
     return { status: "pending" };
   }
   const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
-  // Payment-node recipientWalletAddress must be a managed hot wallet on the
-  // payment source. External paper/browser addresses are stored in metadata for
-  // later delivery, but mint + funding always target the managed selling wallet.
-  const address = meta.sellingWalletAddress;
+  const managedMintAddress = meta.sellingWalletAddress;
   const payload = meta.registrationPayload;
-  if (!address || !payload) {
+  if (!managedMintAddress || !payload) {
     return { status: "error", error: "Missing registration data" };
   }
   const network = (ref.networkIdentifier ??
     DEFAULT_NETWORK) as PaymentNodeNetwork;
+  const externalRecipient = meta.registryNftRecipientAddress?.trim();
+  const recipientWalletAddress =
+    externalRecipient &&
+    validatePayoutAddressForNetwork(externalRecipient, network) == null
+      ? externalRecipient
+      : managedMintAddress;
   const userClient = await getPaymentNodeClientForUser(userId);
   if (!userClient) {
     return { status: "error", error: "Payment node unavailable" };
@@ -1126,7 +1129,7 @@ export async function completeOnChainRegistration(
     const registerPromise = adminClient.registerAgent({
       network,
       sellingWalletVkey: fundingWalletVkey,
-      recipientWalletAddress: address,
+      recipientWalletAddress,
       sendFundingLovelace:
         paymentNodeConfig.getRegistryHoldingWalletFundingLovelace(),
       name: agent.name,

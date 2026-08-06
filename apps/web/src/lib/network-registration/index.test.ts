@@ -19,9 +19,9 @@ const base = {
     tags: "research",
   },
   payment: {
-    network: "eip155:8453",
-    asset: "USDC",
-    amount: "2.00",
+    network: "eip155:84532",
+    asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    amount: "2000000",
     decimals: 6,
     payTo: "0x0000000000000000000000000000000000000001",
   },
@@ -65,6 +65,19 @@ describe("buildNetworkRegistrationPayload", () => {
       },
     });
     expect(payload.effectiveDestination).toBe("paper");
+  });
+
+  it("allows registration without x402 payment details", () => {
+    const { payment: _payment, ...withoutPayment } = base;
+    const payload = buildNetworkRegistrationPayload({
+      ...withoutPayment,
+      mint: {
+        kyc: "skip",
+        destination: "managed",
+      },
+    });
+    expect(payload.payment).toBeUndefined();
+    expect(payload.effectiveDestination).toBe("managed");
   });
 });
 
