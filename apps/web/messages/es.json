@@ -2474,6 +2474,10 @@
     "NetworkRegister": {
       "continueFailedTitle": "No se pudo completar el registro",
       "backToRegistration": "Volver al registro",
+      "wrongAccountTitle": "Inicia sesión con tu correo de registro",
+      "wrongAccountDescription": "Has iniciado sesión como {signedInEmail}, pero este registro pertenece a {registrationEmail}. Inicia sesión con el correo de registro para completar la acuñación.",
+      "unknownSignedInEmail": "otra cuenta",
+      "switchAccountButton": "Iniciar sesión como {registrationEmail}",
       "finishTitle": "Completando registro",
       "finishMessage": "Acuñando tu NFT de registro en Cardano. Suele tardar menos de un minuto. Permanece en esta página.",
       "finishTimedOut": "El registro está tardando más de lo esperado. Inténtalo de nuevo en unos minutos o contacta con soporte.",
