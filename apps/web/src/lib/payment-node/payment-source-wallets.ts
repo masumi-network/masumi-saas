@@ -27,7 +27,7 @@ async function listWallets(
   client: PaymentNodeClient,
   params?: {
     paymentSourceId?: string;
-    walletType?: "Selling" | "Purchasing";
+    walletType?: "Selling" | "Purchasing" | "Funding";
     walletVkey?: string;
     walletAddress?: string;
   },
@@ -101,6 +101,7 @@ export async function hydratePaymentSources(
   const purchasingBySource = new Map<string, PaymentSourceWallet[]>();
 
   for (const wallet of wallets) {
+    if (wallet.type === "Funding") continue;
     const mapped = toPaymentSourceWallet(wallet);
     const target =
       wallet.type === "Selling" ? sellingBySource : purchasingBySource;

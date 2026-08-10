@@ -791,7 +791,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       take?: number;
       cursorId?: string;
       paymentSourceId?: string;
-      walletType?: "Selling" | "Purchasing";
+      walletType?: "Selling" | "Purchasing" | "Funding";
       walletVkey?: string;
       walletAddress?: string;
     }): Promise<GetWalletListOutput> {

@@ -670,7 +670,7 @@ export const walletListItemSchema = z
   .object({
     id: z.string(),
     paymentSourceId: z.string(),
-    type: z.enum(["Selling", "Purchasing"]),
+    type: z.enum(["Selling", "Purchasing", "Funding"]),
     walletVkey: z.string(),
     walletAddress: z.string(),
     collectionAddress: z.string().nullable(),
