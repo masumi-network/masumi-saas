@@ -18370,7 +18370,15 @@
                     "continueUrl": {
                       "type": "string",
                       "format": "uri",
-                      "description": "When status is pending, poll registration completion on this SaaS URL before successPath"
+                      "description": "When status is pending, open this marketing-site URL while polling completes"
+                    },
+                    "pollToken": {
+                      "type": "string",
+                      "description": "Bearer token for POST /api/public/network/register/status. Store client-side; not included in continueUrl."
+                    },
+                    "draftId": {
+                      "type": "string",
+                      "description": "Registration draft id for status polling"
                     }
                   },
                   "required": [
@@ -18621,6 +18629,208 @@
           },
           "500": {
             "description": "Could not start registration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/network/register/status": {
+      "post": {
+        "tags": [
+          "Network"
+        ],
+        "summary": "Poll network registration mint status",
+        "description": "Polls on-chain registration completion for a pending draft using a poll token issued at /complete time. No SaaS session required.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "draftId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "pollToken": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "draftId",
+                  "pollToken"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registration still pending or completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending"
+                          ]
+                        },
+                        "agentId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "success",
+                        "status",
+                        "agentId"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "registered"
+                          ]
+                        },
+                        "agentId": {
+                          "type": "string"
+                        },
+                        "successPath": {
+                          "type": "string",
+                          "description": "Absolute URL on the masumi.network marketing site"
+                        }
+                      },
+                      "required": [
+                        "success",
+                        "status",
+                        "agentId",
+                        "successPath"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or registration failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired poll token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Registration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
             "content": {
               "application/json": {
                 "schema": {

@@ -460,6 +460,13 @@ export async function createVerificationValue(
   });
 }
 
+export async function updateVerificationValue(id: string, value: string) {
+  return prisma.verification.update({
+    where: { id },
+    data: { value },
+  });
+}
+
 export async function deleteVerificationByIdentifier(identifier: string) {
   return prisma.verification.deleteMany({
     where: {

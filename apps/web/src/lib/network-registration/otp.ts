@@ -10,6 +10,7 @@ import {
   createVerificationValue,
   deleteVerificationByIdentifier,
   findVerificationByIdentifier,
+  updateVerificationValue,
 } from "@/lib/auth/auth-storage";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import {
@@ -272,7 +273,7 @@ export async function resolveNetworkRegistrationTicket(params: {
   token: string;
   email: string;
 }): Promise<
-  | { ok: true; userId: string; email: string; token: string }
+  | { ok: true; userId: string; email: string; token: string; draftId?: string }
   | { ok: false; error: string }
 > {
   const token = params.token.trim();
@@ -302,9 +303,13 @@ export async function resolveNetworkRegistrationTicket(params: {
     };
   }
 
-  let parsed: { userId?: string; email?: string };
+  let parsed: { userId?: string; email?: string; draftId?: string };
   try {
-    parsed = JSON.parse(row.value) as { userId?: string; email?: string };
+    parsed = JSON.parse(row.value) as {
+      userId?: string;
+      email?: string;
+      draftId?: string;
+    };
   } catch {
     await deleteVerificationByIdentifier(identifier);
     return { ok: false, error: "Invalid registration session" };
@@ -317,7 +322,89 @@ export async function resolveNetworkRegistrationTicket(params: {
     };
   }
 
-  return { ok: true, userId: parsed.userId, email: parsed.email, token };
+  return {
+    ok: true,
+    userId: parsed.userId,
+    email: parsed.email,
+    token,
+    ...(parsed.draftId ? { draftId: parsed.draftId } : {}),
+  };
+}
+
+export async function bindNetworkRegistrationDraftToTicket(params: {
+  token: string;
+  draftId: string;
+}): Promise<void> {
+  const token = params.token.trim();
+  const draftId = params.draftId.trim();
+  if (!token || !draftId) return;
+
+  const identifier = networkRegTicketIdentifier(token);
+  const row = await findVerificationByIdentifier(identifier, {
+    id: true,
+    value: true,
+    expiresAt: true,
+  });
+  if (!row || row.expiresAt.getTime() < Date.now()) return;
+
+  let parsed: { userId?: string; email?: string; draftId?: string };
+  try {
+    parsed = JSON.parse(row.value) as {
+      userId?: string;
+      email?: string;
+      draftId?: string;
+    };
+  } catch {
+    return;
+  }
+
+  if (parsed.draftId && parsed.draftId !== draftId) return;
+
+  await updateVerificationValue(
+    row.id,
+    JSON.stringify({
+      ...parsed,
+      draftId,
+    }),
+  );
+}
+
+export async function rebindNetworkRegistrationDraftToTicket(params: {
+  token: string;
+  draftId: string;
+}): Promise<void> {
+  const token = params.token.trim();
+  const draftId = params.draftId.trim();
+  if (!token || !draftId) return;
+
+  const identifier = networkRegTicketIdentifier(token);
+  const row = await findVerificationByIdentifier(identifier, {
+    id: true,
+    value: true,
+    expiresAt: true,
+  });
+  if (!row || row.expiresAt.getTime() < Date.now()) return;
+
+  let parsed: { userId?: string; email?: string; draftId?: string };
+  try {
+    parsed = JSON.parse(row.value) as {
+      userId?: string;
+      email?: string;
+      draftId?: string;
+    };
+  } catch {
+    return;
+  }
+
+  if (parsed.draftId === draftId) return;
+
+  await updateVerificationValue(
+    row.id,
+    JSON.stringify({
+      ...parsed,
+      draftId,
+    }),
+  );
 }
 
 export async function revokeNetworkRegistrationTicket(
@@ -326,4 +413,69 @@ export async function revokeNetworkRegistrationTicket(
   await deleteVerificationByIdentifier(
     networkRegTicketIdentifier(token.trim()),
   );
+}
+
+const NETWORK_REG_POLL_TTL_MS = 1000 * 60 * 60 * 24; // 24h — matches draft TTL
+
+function networkRegPollIdentifier(token: string) {
+  return `network-reg-poll-${token}`;
+}
+
+export async function issueNetworkRegistrationPollToken(params: {
+  draftId: string;
+  userId: string;
+}): Promise<string> {
+  const token = randomUUID();
+  await createVerificationValue({
+    id: randomUUID(),
+    identifier: networkRegPollIdentifier(token),
+    value: JSON.stringify({
+      draftId: params.draftId,
+      userId: params.userId,
+    }),
+    expiresAt: new Date(Date.now() + NETWORK_REG_POLL_TTL_MS),
+  });
+  return token;
+}
+
+export async function resolveNetworkRegistrationPollToken(params: {
+  token: string;
+  draftId: string;
+}): Promise<
+  { ok: true; draftId: string; userId: string } | { ok: false; error: string }
+> {
+  const token = params.token.trim();
+  const draftId = params.draftId.trim();
+  if (!token || !draftId) {
+    return { ok: false, error: "Invalid registration poll session" };
+  }
+
+  const identifier = networkRegPollIdentifier(token);
+  const row = await findVerificationByIdentifier(identifier, {
+    id: true,
+    value: true,
+    expiresAt: true,
+  });
+
+  if (!row) {
+    return { ok: false, error: "Registration poll session expired" };
+  }
+  if (row.expiresAt.getTime() < Date.now()) {
+    await deleteVerificationByIdentifier(identifier);
+    return { ok: false, error: "Registration poll session expired" };
+  }
+
+  let parsed: { draftId?: string; userId?: string };
+  try {
+    parsed = JSON.parse(row.value) as { draftId?: string; userId?: string };
+  } catch {
+    await deleteVerificationByIdentifier(identifier);
+    return { ok: false, error: "Invalid registration poll session" };
+  }
+
+  if (!parsed.draftId || !parsed.userId || parsed.draftId !== draftId) {
+    return { ok: false, error: "Registration poll session does not match" };
+  }
+
+  return { ok: true, draftId: parsed.draftId, userId: parsed.userId };
 }
