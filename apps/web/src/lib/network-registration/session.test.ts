@@ -17,7 +17,9 @@ vi.mock("@/lib/auth/session-types", () => ({
 }));
 
 import prisma from "@masumi/database/client";
+
 import { getAuthContext } from "@/lib/auth/utils";
+
 import { resolveNetworkRegisterSession } from "./session";
 
 const findUnique = vi.mocked(prisma.networkRegistrationDraft.findUnique);

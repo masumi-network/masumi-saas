@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi";
 
-import { getNetworkRegisterCapabilities } from "@/lib/payment-node/registry-capabilities";
 import { NETWORK_REGISTER_CORS_OPTIONS } from "@/lib/network-registration/cors";
+import { getNetworkRegisterCapabilities } from "@/lib/payment-node/registry-capabilities";
 import { noSecurity } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";

@@ -17,8 +17,8 @@ import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import { consumeCreditIfRequired } from "@/lib/credits/service";
 import { getKycStatusForUser } from "@/lib/network-registration/kyc-status";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
-import { getNetworkRegisterCapabilities } from "@/lib/payment-node/registry-capabilities";
 import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
+import { getNetworkRegisterCapabilities } from "@/lib/payment-node/registry-capabilities";
 import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
 import { z } from "@/lib/zod-openapi";
 
