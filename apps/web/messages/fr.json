@@ -2474,6 +2474,10 @@
     "NetworkRegister": {
       "continueFailedTitle": "L'inscription n'a pas pu aboutir",
       "backToRegistration": "Retour à l'inscription",
+      "wrongAccountTitle": "Connectez-vous avec votre e-mail d'inscription",
+      "wrongAccountDescription": "Vous êtes connecté en tant que {signedInEmail}, mais cette inscription appartient à {registrationEmail}. Connectez-vous avec l'e-mail d'inscription pour terminer le mint.",
+      "unknownSignedInEmail": "un autre compte",
+      "switchAccountButton": "Se connecter en tant que {registrationEmail}",
       "finishTitle": "Finalisation de l'inscription",
       "finishMessage": "Mint de votre NFT de registre sur Cardano. Comptez généralement moins d'une minute. Restez sur cette page.",
       "finishTimedOut": "L'inscription prend plus de temps que prévu. Réessayez dans quelques minutes ou contactez le support.",

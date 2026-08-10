@@ -29,7 +29,13 @@ const base = {
 };
 
 describe("buildNetworkRegistrationPayload", () => {
-  it("keeps browser destination with connected address", () => {
+  afterEach(() => {
+    delete process.env.PAYMENT_NODE_SUPPORTS_EXTERNAL_REGISTRY_RECIPIENT;
+    delete process.env.PAYMENT_NODE_BASE_URL;
+  });
+
+  it("keeps browser destination with connected address when supported", () => {
+    process.env.PAYMENT_NODE_SUPPORTS_EXTERNAL_REGISTRY_RECIPIENT = "true";
     const payload = buildNetworkRegistrationPayload({
       ...base,
       mint: {
@@ -40,6 +46,20 @@ describe("buildNetworkRegistrationPayload", () => {
     });
     expect(payload.effectiveDestination).toBe("browser");
     expect(payload.mint.cardanoAddress).toContain("addr_test1");
+  });
+
+  it("rejects browser destination when payment node does not support it", () => {
+    process.env.PAYMENT_NODE_BASE_URL = "https://payment.masumi.network/api/v1";
+    expect(() =>
+      buildNetworkRegistrationPayload({
+        ...base,
+        mint: {
+          kyc: "skip",
+          destination: "browser",
+          cardanoAddress: "addr_test1qxyz",
+        },
+      }),
+    ).toThrow(/not available yet/i);
   });
 
   it("requires KYC for external address", () => {

@@ -1500,6 +1500,10 @@
     "NetworkRegister": {
       "continueFailedTitle": "Registration could not finish",
       "backToRegistration": "Back to registration",
+      "wrongAccountTitle": "Sign in with your registration email",
+      "wrongAccountDescription": "You're signed in as {signedInEmail}, but this registration belongs to {registrationEmail}. Sign in with the registration email to finish minting.",
+      "unknownSignedInEmail": "another account",
+      "switchAccountButton": "Sign in as {registrationEmail}",
       "finishTitle": "Finishing registration",
       "finishMessage": "Minting your registry NFT on Cardano. This usually takes under a minute. Stay on this page.",
       "finishTimedOut": "Registration is taking longer than expected. Please try again in a few minutes or contact support.",

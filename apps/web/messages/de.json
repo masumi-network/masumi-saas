@@ -2474,6 +2474,10 @@
     "NetworkRegister": {
       "continueFailedTitle": "Registrierung konnte nicht abgeschlossen werden",
       "backToRegistration": "Zurück zur Registrierung",
+      "wrongAccountTitle": "Mit Ihrer Registrierungs-E-Mail anmelden",
+      "wrongAccountDescription": "Sie sind als {signedInEmail} angemeldet, diese Registrierung gehört jedoch zu {registrationEmail}. Melden Sie sich mit der Registrierungs-E-Mail an, um das Minting abzuschließen.",
+      "unknownSignedInEmail": "einem anderen Konto",
+      "switchAccountButton": "Als {registrationEmail} anmelden",
       "finishTitle": "Registrierung wird abgeschlossen",
       "finishMessage": "Ihr Registry-NFT wird auf Cardano gemintet. Das dauert normalerweise unter einer Minute. Bitte diese Seite geöffnet lassen.",
       "finishTimedOut": "Die Registrierung dauert länger als erwartet. Bitte versuchen Sie es in einigen Minuten erneut oder kontaktieren Sie den Support.",

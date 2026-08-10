@@ -18,6 +18,7 @@ import { consumeCreditIfRequired } from "@/lib/credits/service";
 import { getKycStatusForUser } from "@/lib/network-registration/kyc-status";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
+import { getNetworkRegisterCapabilities } from "@/lib/payment-node/registry-capabilities";
 import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
 import { z } from "@/lib/zod-openapi";
 
@@ -164,6 +165,11 @@ export function buildNetworkRegistrationPayload(
   }
 
   if (destination === "browser") {
+    if (!getNetworkRegisterCapabilities().browserWalletMintSupported) {
+      throw new Error(
+        "Browser wallet mint is not available yet. Use managed wallet until the payment node update is deployed.",
+      );
+    }
     if (body.mint.kyc === "kyc") {
       throw new Error(
         "Browser wallet mint is only available without KYC. Use managed or your Cardano address after KYC.",
@@ -379,6 +385,9 @@ export async function completeNetworkRegistrationWithTicket(params: {
       email: user.email,
     },
     activeOrganizationId: null,
+    // Return quickly; the marketing site redirects to /network-register/continue
+    // where the client poller waits for on-chain mint confirmation.
+    deferOnChainPolling: true,
   });
 
   if (!fulfilled.ok) {
@@ -421,6 +430,8 @@ export async function fulfillNetworkRegistrationDraft(params: {
   draftId: string;
   user: { id: string; name: string | null; email: string | null };
   activeOrganizationId: string | null;
+  /** Skip server-side mint polling; caller shows a client poller instead. */
+  deferOnChainPolling?: boolean;
 }): Promise<
   | {
       ok: true;
@@ -711,6 +722,25 @@ export async function fulfillNetworkRegistrationDraft(params: {
 
     if (!started.success) {
       throw new Error(started.error);
+    }
+
+    if (params.deferOnChainPolling) {
+      await prisma.networkRegistrationDraft.update({
+        where: { id: draft.id },
+        data: {
+          agentId: started.agentId,
+          status: "PROCESSING",
+          error: null,
+          userId: params.user.id,
+        },
+      });
+      return {
+        ok: true,
+        agentId: started.agentId,
+        status: "pending",
+        notes: payload.notes,
+        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(started.agentId),
+      };
     }
 
     const complete = await pollComplete(started.agentId, params.user.id);

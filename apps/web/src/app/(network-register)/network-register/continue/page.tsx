@@ -2,15 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
-import { getAuthContext } from "@/lib/auth/utils";
 import {
   buildNetworkKycVerifyUrl,
+  buildNetworkSiteSuccessUrl,
   fulfillNetworkRegistrationDraft,
 } from "@/lib/network-registration";
+import { resolveNetworkRegisterSession } from "@/lib/network-registration/session";
 
 import { NetworkRegisterFinishPoller } from "../components/network-register-finish-poller";
 import { NetworkRegisterShell } from "../components/network-register-shell";
+import { NetworkRegisterSwitchAccount } from "../components/network-register-switch-account";
 
 export const dynamic = "force-dynamic";
 
@@ -37,22 +38,48 @@ export default async function NetworkRegisterContinuePage({
   const trimmedDraftId = draftId.trim();
   const continuePath = `/network-register/continue?draftId=${encodeURIComponent(trimmedDraftId)}`;
 
-  const authContext = await getAuthContext();
-  if (!authContext.isAuthenticated || !authContext.session) {
+  const session = await resolveNetworkRegisterSession({
+    draftId: trimmedDraftId,
+    returnPath: continuePath,
+  });
+
+  if (session.kind === "not_found") {
+    redirect(networkSiteRegisterUrl());
+  }
+
+  if (session.kind === "sign_in_required") {
     redirect(`/signin?callbackUrl=${encodeURIComponent(continuePath)}`);
   }
 
-  const activeOrganizationId =
-    getBetterAuthInnerSession(authContext.session)?.activeOrganizationId ??
-    null;
+  if (session.kind === "wrong_account") {
+    return (
+      <NetworkRegisterShell>
+        <NetworkRegisterSwitchAccount
+          registrationEmail={session.registrationEmail}
+          signedInEmail={session.signedInEmail}
+          returnPath={session.returnPath}
+          backToRegistrationUrl={networkSiteRegisterUrl()}
+        />
+      </NetworkRegisterShell>
+    );
+  }
+
+  const { draft, user, activeOrganizationId } = session;
+
+  if (draft.agentId && draft.status === "PROCESSING") {
+    return (
+      <NetworkRegisterShell>
+        <NetworkRegisterFinishPoller
+          agentId={draft.agentId}
+          successUrl={buildNetworkSiteSuccessUrl(draft.agentId)}
+        />
+      </NetworkRegisterShell>
+    );
+  }
 
   const result = await fulfillNetworkRegistrationDraft({
     draftId: trimmedDraftId,
-    user: {
-      id: authContext.session.user.id,
-      name: authContext.session.user.name ?? null,
-      email: authContext.session.user.email ?? null,
-    },
+    user,
     activeOrganizationId,
   });
 
