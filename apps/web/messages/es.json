@@ -1009,6 +1009,7 @@
         "processingTitle": "Verificación de procesamiento",
         "processingMessage": "Su verificación está siendo procesada. Esto puede tardar unos momentos.",
         "continueButton": "Continuar al panel",
+        "continueRegistrationButton": "Continuar registro del agente",
         "rejectedTitle": "Verificación rechazada",
         "rejectedMessage": "Su verificación fue rechazada. Revise el motivo anterior e inténtelo de nuevo.",
         "retryButton": "Intentar otra vez"
@@ -2468,6 +2469,30 @@
         "payTo": "Pagar a",
         "resource": "Recurso",
         "amountLine": "{amount} · {asset}"
+      }
+    },
+    "NetworkRegister": {
+      "continueFailedTitle": "No se pudo completar el registro",
+      "backToRegistration": "Volver al registro",
+      "finishTitle": "Completando registro",
+      "finishMessage": "Acuñando tu NFT de registro en Cardano. Suele tardar menos de un minuto. Permanece en esta página.",
+      "finishTimedOut": "El registro está tardando más de lo esperado. Inténtalo de nuevo en unos minutos o contacta con soporte.",
+      "verify": {
+        "title": "Verificación de identidad",
+        "description": "Verifica tu identidad para completar el registro de tu agente en Masumi Network.",
+        "gdprTitle": "Protección de datos",
+        "gdpr": "Solo recopilamos los datos mínimos necesarios para la verificación de identidad. Tus datos se procesan de forma segura según nuestra política de privacidad.",
+        "biometricTitle": "Comprobaciones biométricas",
+        "biometric": "Subirás un documento de identidad y completarás un selfie con detección de vida.",
+        "consentLabel": "Entiendo y doy mi consentimiento para la verificación de identidad de este registro de agente.",
+        "startButton": "Iniciar verificación",
+        "consentRequired": "Acepta el consentimiento para continuar.",
+        "tokenGenerationFailed": "No se pudo iniciar la verificación. Inténtalo de nuevo.",
+        "verificationFailed": "La verificación falló. Inténtalo de nuevo.",
+        "processingMessage": "Revisando tu verificación. Suele tardar unos minutos.",
+        "finishingRegistration": "Verificación aprobada. Continuando con el registro…",
+        "rejectedTitle": "Verificación rechazada",
+        "brandLabel": "Masumi Network"
       }
     }
   },

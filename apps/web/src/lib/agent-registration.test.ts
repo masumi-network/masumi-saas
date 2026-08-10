@@ -664,10 +664,17 @@ describe("startAgentRegistration", () => {
 });
 
 describe("completeOnChainRegistration", () => {
+  const defaultRegistrationMetadata = {
+    paymentSourceType: "Web3CardanoV1",
+    smartContractAddress:
+      "addr_test1wz7j4kmg2cs7yf92uat3ed4a3u97kr7axxr4avaz0lhwdsqukgwfm",
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     getBaseUrlMock.mockReturnValue("https://payment.example.com/api/v1");
     getAdminApiKeyMock.mockReturnValue("admin-key");
+    getPaymentSourceIdMock.mockReturnValue("payment-source-preprod");
     getPaymentSourceIdEnvNameMock.mockImplementation((network: string) =>
       network === "Mainnet"
         ? "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET"
@@ -704,6 +711,7 @@ describe("completeOnChainRegistration", () => {
         metadata: {
           sellingWalletAddress: "addr_test1selling",
           fundingWalletVkey: "funding-vkey",
+          ...defaultRegistrationMetadata,
           registrationPayload: {
             exampleOutputs: [],
             capabilityName: "demo",
@@ -811,6 +819,7 @@ describe("completeOnChainRegistration", () => {
         sellingWalletVkey: "selling-vkey",
         metadata: {
           sellingWalletAddress: "addr_test1selling",
+          ...defaultRegistrationMetadata,
           registrationPayload: {
             exampleOutputs: [],
             capabilityName: "demo",
@@ -897,6 +906,7 @@ describe("completeOnChainRegistration", () => {
         metadata: {
           sellingWalletAddress: "addr_test1selling",
           fundingWalletVkey: "funding-vkey",
+          ...defaultRegistrationMetadata,
           registrationPayload: {
             exampleOutputs: [],
             capabilityName: "demo",
@@ -939,6 +949,75 @@ describe("completeOnChainRegistration", () => {
       }),
     );
     expect(transactionMock).toHaveBeenCalled();
+  });
+
+  it("forwards external registry recipient addresses to registerAgent", async () => {
+    const externalAddress =
+      "addr_test1qzpzat7l9gnr93e6wdut6dlegy692wtl6qjgtcqlx0gzu8e75hpk9m2rkhl0grfh7ffau00slzung053y7vxj7hntcsq2fy7qc";
+    const adminRegisterAgentMock = vi.fn().mockResolvedValue({
+      id: "registry-entry-1",
+      state: "RegistrationInitiated",
+      agentIdentifier: null,
+    });
+    const agent = {
+      id: "agent-1",
+      userId: "user-1",
+      name: "Demo agent",
+      description: "Demo description",
+      apiUrl: "https://agent.example.com",
+      tags: ["demo"],
+      registrationState: "RegistrationRequested",
+      agentReference: {
+        externalId: null,
+        networkIdentifier: "Preprod",
+        sellingWalletVkey: "selling-vkey",
+        metadata: {
+          sellingWalletAddress: "addr_test1selling",
+          registryNftRecipientAddress: externalAddress,
+          fundingWalletVkey: "funding-vkey",
+          ...defaultRegistrationMetadata,
+          registrationPayload: {
+            exampleOutputs: [],
+            capabilityName: "demo",
+            capabilityVersion: "1.0.0",
+            authorName: "Taylor",
+            authorEmail: "taylor@example.com",
+            agentPricing: { pricingType: "Free" },
+          },
+        },
+      },
+    };
+
+    agentFindFirstMock.mockResolvedValue(agent);
+    getPaymentNodeClientForUserMock.mockResolvedValue({
+      getRegisteredAgentsByWallet: vi.fn().mockResolvedValue({ Assets: [] }),
+    });
+    createPaymentNodeClientMock.mockReturnValue({
+      registerAgent: adminRegisterAgentMock,
+    });
+    transactionMock.mockImplementation(async (callback) =>
+      callback({
+        $queryRaw: vi.fn().mockResolvedValue([{ externalId: null }]),
+        agent: {
+          findUniqueOrThrow: vi.fn().mockResolvedValue({
+            id: "agent-1",
+            registrationState: "RegistrationInitiated",
+          }),
+          update: agentUpdateMock,
+        },
+        agentReference: {
+          update: agentReferenceUpdateMock,
+        },
+      }),
+    );
+
+    await completeOnChainRegistration("agent-1", "user-1");
+
+    expect(adminRegisterAgentMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientWalletAddress: externalAddress,
+      }),
+    );
   });
 
   it("syncs confirmed registration via admin registry lookup when user key cannot see the row", async () => {

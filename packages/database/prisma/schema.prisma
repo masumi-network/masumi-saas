@@ -55,6 +55,7 @@ model User {
   x402Networks            X402Network[]
   x402BudgetsCreated      X402WalletBudget[]  @relation("X402WalletBudgetCreatedBy")
   x402PaymentAttempts     X402PaymentAttempt[]
+  networkRegistrationDrafts NetworkRegistrationDraft[]
 
   // Payment node: API key for this user (encrypted, server-side only; created on signup)
   paymentNodeApiKeyEncrypted String?
@@ -1017,4 +1018,33 @@ enum LowBalanceStatus {
   Unknown
   Healthy
   Low
+}
+
+/// Pending agent registration started from masumi.network (or local dummy) before magic-link auth completes.
+model NetworkRegistrationDraft {
+  id        String   @id @default(cuid())
+  email     String
+  name      String
+  /// Validated registration payload (agent + x402 + mint preferences).
+  payload   Json
+  status    NetworkRegistrationDraftStatus @default(PENDING)
+  agentId   String?
+  error     String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([status, expiresAt])
+  @@map("network_registration_draft")
+}
+
+enum NetworkRegistrationDraftStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
 }

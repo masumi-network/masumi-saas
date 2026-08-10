@@ -449,6 +449,7 @@ export const ModelName = {
   X402WalletBudget: "X402WalletBudget",
   X402PaymentAttempt: "X402PaymentAttempt",
   X402Settlement: "X402Settlement",
+  NetworkRegistrationDraft: "NetworkRegistrationDraft",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -507,7 +508,8 @@ export type TypeMap<
       | "x402EvmWalletLowBalanceRule"
       | "x402WalletBudget"
       | "x402PaymentAttempt"
-      | "x402Settlement";
+      | "x402Settlement"
+      | "networkRegistrationDraft";
     txIsolationLevel: TransactionIsolationLevel;
   };
   model: {
@@ -3323,6 +3325,82 @@ export type TypeMap<
         };
       };
     };
+    NetworkRegistrationDraft: {
+      payload: Prisma.$NetworkRegistrationDraftPayload<ExtArgs>;
+      fields: Prisma.NetworkRegistrationDraftFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.NetworkRegistrationDraftFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.NetworkRegistrationDraftFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>;
+        };
+        findFirst: {
+          args: Prisma.NetworkRegistrationDraftFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.NetworkRegistrationDraftFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>;
+        };
+        findMany: {
+          args: Prisma.NetworkRegistrationDraftFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>[];
+        };
+        create: {
+          args: Prisma.NetworkRegistrationDraftCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>;
+        };
+        createMany: {
+          args: Prisma.NetworkRegistrationDraftCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        createManyAndReturn: {
+          args: Prisma.NetworkRegistrationDraftCreateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>[];
+        };
+        delete: {
+          args: Prisma.NetworkRegistrationDraftDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>;
+        };
+        update: {
+          args: Prisma.NetworkRegistrationDraftUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>;
+        };
+        deleteMany: {
+          args: Prisma.NetworkRegistrationDraftDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.NetworkRegistrationDraftUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateManyAndReturn: {
+          args: Prisma.NetworkRegistrationDraftUpdateManyAndReturnArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>[];
+        };
+        upsert: {
+          args: Prisma.NetworkRegistrationDraftUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NetworkRegistrationDraftPayload>;
+        };
+        aggregate: {
+          args: Prisma.NetworkRegistrationDraftAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNetworkRegistrationDraft>;
+        };
+        groupBy: {
+          args: Prisma.NetworkRegistrationDraftGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.NetworkRegistrationDraftGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.NetworkRegistrationDraftCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.NetworkRegistrationDraftCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
   };
 } & {
   other: {
@@ -4004,6 +4082,23 @@ export const X402SettlementScalarFieldEnum = {
 export type X402SettlementScalarFieldEnum =
   (typeof X402SettlementScalarFieldEnum)[keyof typeof X402SettlementScalarFieldEnum];
 
+export const NetworkRegistrationDraftScalarFieldEnum = {
+  id: "id",
+  email: "email",
+  name: "name",
+  payload: "payload",
+  status: "status",
+  agentId: "agentId",
+  error: "error",
+  expiresAt: "expiresAt",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  userId: "userId",
+} as const;
+
+export type NetworkRegistrationDraftScalarFieldEnum =
+  (typeof NetworkRegistrationDraftScalarFieldEnum)[keyof typeof NetworkRegistrationDraftScalarFieldEnum];
+
 export const SortOrder = {
   asc: "asc",
   desc: "desc",
@@ -4334,6 +4429,18 @@ export type ListEnumX402PaymentStatusFieldRefInput<$PrismaModel> =
   FieldRefInputType<$PrismaModel, "X402PaymentStatus[]">;
 
 /**
+ * Reference to a field of type 'NetworkRegistrationDraftStatus'
+ */
+export type EnumNetworkRegistrationDraftStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "NetworkRegistrationDraftStatus">;
+
+/**
+ * Reference to a field of type 'NetworkRegistrationDraftStatus[]'
+ */
+export type ListEnumNetworkRegistrationDraftStatusFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "NetworkRegistrationDraftStatus[]">;
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<
@@ -4473,6 +4580,7 @@ export type GlobalOmitConfig = {
   x402WalletBudget?: Prisma.X402WalletBudgetOmit;
   x402PaymentAttempt?: Prisma.X402PaymentAttemptOmit;
   x402Settlement?: Prisma.X402SettlementOmit;
+  networkRegistrationDraft?: Prisma.NetworkRegistrationDraftOmit;
 };
 
 /* Types for Logging */

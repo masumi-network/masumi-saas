@@ -155,3 +155,14 @@ export const LowBalanceStatus = {
 
 export type LowBalanceStatus =
   (typeof LowBalanceStatus)[keyof typeof LowBalanceStatus];
+
+export const NetworkRegistrationDraftStatus = {
+  PENDING: "PENDING",
+  PROCESSING: "PROCESSING",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+  EXPIRED: "EXPIRED",
+} as const;
+
+export type NetworkRegistrationDraftStatus =
+  (typeof NetworkRegistrationDraftStatus)[keyof typeof NetworkRegistrationDraftStatus];

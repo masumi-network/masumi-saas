@@ -1009,6 +1009,7 @@
         "processingTitle": "処理の検証",
         "processingMessage": "あなたの認証は処理中です。これには少し時間がかかる場合があります。",
         "continueButton": "ダッシュボードに進む",
+        "continueRegistrationButton": "エージェント登録を続ける",
         "rejectedTitle": "検証が拒否されました",
         "rejectedMessage": "認証が拒否されました。上記の理由を確認して、もう一度お試しください。",
         "retryButton": "もう一度やり直してください"
@@ -2468,6 +2469,30 @@
         "payTo": "支払先",
         "resource": "リソース",
         "amountLine": "{amount} · {asset}"
+      }
+    },
+    "NetworkRegister": {
+      "continueFailedTitle": "登録を完了できませんでした",
+      "backToRegistration": "登録に戻る",
+      "finishTitle": "登録を完了しています",
+      "finishMessage": "Cardano 上でレジストリ NFT をミント中です。通常 1 分以内に完了します。このページを開いたままお待ちください。",
+      "finishTimedOut": "登録に予想より時間がかかっています。数分後に再度お試しいただくか、サポートにお問い合わせください。",
+      "verify": {
+        "title": "本人確認",
+        "description": "Masumi Network でエージェント登録を完了するには、本人確認が必要です。",
+        "gdprTitle": "データ保護",
+        "gdpr": "本人確認に必要な最小限のデータのみを収集します。データは安全に処理され、プライバシーポリシーに従って取り扱われます。",
+        "biometricTitle": "生体認証",
+        "biometric": "身分証明書をアップロードし、ライブネス検出付きのセルフィーを完了します。",
+        "consentLabel": "このエージェント登録のための本人確認に同意します。",
+        "startButton": "本人確認を開始",
+        "consentRequired": "続行するには同意が必要です。",
+        "tokenGenerationFailed": "本人確認を開始できませんでした。もう一度お試しください。",
+        "verificationFailed": "本人確認に失敗しました。もう一度お試しください。",
+        "processingMessage": "本人確認を審査中です。通常、数分かかります。",
+        "finishingRegistration": "本人確認が承認されました。登録に進んでいます…",
+        "rejectedTitle": "本人確認が拒否されました",
+        "brandLabel": "Masumi Network"
       }
     }
   },

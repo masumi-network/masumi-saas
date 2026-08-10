@@ -74,3 +74,17 @@ export function addCorsHeaders<TResponse extends Response>(
   }
   return response;
 }
+
+/** Copy Set-Cookie values from an upstream Headers onto a Response (e.g. Better Auth session). */
+export function appendSetCookiesFromHeaders(
+  target: Headers,
+  source: Headers,
+): void {
+  const cookies =
+    source.getSetCookie?.() ??
+    source.get("set-cookie")?.split(/,(?=[^ ])/) ??
+    [];
+  for (const cookie of cookies) {
+    target.append("Set-Cookie", cookie);
+  }
+}

@@ -445,6 +445,7 @@ app.openapi(
         await validateAgentRegistrationPaymentSourcesPreflight(
           network,
           supportedPaymentSources,
+          agentPricing,
         );
       if (!paymentSourcesPreflight.ok) {
         throw new ApiError(400, paymentSourcesPreflight.error);

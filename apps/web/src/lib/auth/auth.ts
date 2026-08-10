@@ -258,7 +258,15 @@ export const auth = betterAuth({
     ...getTrustedOidcOrigins(),
     ...(process.env.NODE_ENV === "production"
       ? []
-      : ["http://localhost:2999", "http://127.0.0.1:2999"]),
+      : [
+          "http://localhost:2999",
+          "http://127.0.0.1:2999",
+          "http://localhost:3010",
+          "http://127.0.0.1:3010",
+        ]),
+    ...(process.env.NETWORK_SITE_URL?.trim()
+      ? [process.env.NETWORK_SITE_URL.trim()]
+      : []),
   ],
   advanced: {
     // In production we force secure cookies on regardless of BETTER_AUTH_URL.
@@ -664,6 +672,8 @@ export const auth = betterAuth({
           console.error("[Postmark] Magic link email failed:", err);
           if (process.env.NODE_ENV === "development") {
             console.log("[DEV] Magic link (Postmark failed):", url);
+            // Do not fail local auth when Postmark credentials are bad.
+            return;
           }
           throw new APIError("INTERNAL_SERVER_ERROR", {
             message: "Failed to send magic link. Please try again.",

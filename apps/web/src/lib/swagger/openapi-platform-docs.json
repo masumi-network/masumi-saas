@@ -7263,7 +7263,7 @@
                           "type": "array",
                           "nullable": true,
                           "items": {
-                            "oneOf": [
+                            "anyOf": [
                               {
                                 "type": "object",
                                 "properties": {
@@ -7290,13 +7290,111 @@
                                   "address": {
                                     "type": "string",
                                     "maxLength": 250
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "paymentSourceType",
-                                  "address"
+                                  "address",
+                                  "pricing"
                                 ]
                               },
                               {
@@ -7331,19 +7429,6 @@
                                       "Exact"
                                     ]
                                   },
-                                  "asset": {
-                                    "type": "string",
-                                    "pattern": "^0x[a-fA-F0-9]{40}$"
-                                  },
-                                  "amount": {
-                                    "type": "string",
-                                    "pattern": "^\\d+$"
-                                  },
-                                  "decimals": {
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "maximum": 255
-                                  },
                                   "payTo": {
                                     "type": "string",
                                     "pattern": "^0x[a-fA-F0-9]{40}$"
@@ -7358,16 +7443,111 @@
                                     "additionalProperties": {
                                       "nullable": true
                                     }
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "scheme",
-                                  "asset",
-                                  "amount",
-                                  "decimals",
-                                  "payTo"
+                                  "payTo",
+                                  "pricing"
                                 ]
                               }
                             ]
@@ -8695,7 +8875,7 @@
                           "type": "array",
                           "nullable": true,
                           "items": {
-                            "oneOf": [
+                            "anyOf": [
                               {
                                 "type": "object",
                                 "properties": {
@@ -8722,13 +8902,111 @@
                                   "address": {
                                     "type": "string",
                                     "maxLength": 250
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "paymentSourceType",
-                                  "address"
+                                  "address",
+                                  "pricing"
                                 ]
                               },
                               {
@@ -8763,19 +9041,6 @@
                                       "Exact"
                                     ]
                                   },
-                                  "asset": {
-                                    "type": "string",
-                                    "pattern": "^0x[a-fA-F0-9]{40}$"
-                                  },
-                                  "amount": {
-                                    "type": "string",
-                                    "pattern": "^\\d+$"
-                                  },
-                                  "decimals": {
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "maximum": 255
-                                  },
                                   "payTo": {
                                     "type": "string",
                                     "pattern": "^0x[a-fA-F0-9]{40}$"
@@ -8790,16 +9055,111 @@
                                     "additionalProperties": {
                                       "nullable": true
                                     }
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "scheme",
-                                  "asset",
-                                  "amount",
-                                  "decimals",
-                                  "payTo"
+                                  "payTo",
+                                  "pricing"
                                 ]
                               }
                             ]
@@ -9119,7 +9479,7 @@
                           "type": "array",
                           "nullable": true,
                           "items": {
-                            "oneOf": [
+                            "anyOf": [
                               {
                                 "type": "object",
                                 "properties": {
@@ -9146,13 +9506,111 @@
                                   "address": {
                                     "type": "string",
                                     "maxLength": 250
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "paymentSourceType",
-                                  "address"
+                                  "address",
+                                  "pricing"
                                 ]
                               },
                               {
@@ -9187,19 +9645,6 @@
                                       "Exact"
                                     ]
                                   },
-                                  "asset": {
-                                    "type": "string",
-                                    "pattern": "^0x[a-fA-F0-9]{40}$"
-                                  },
-                                  "amount": {
-                                    "type": "string",
-                                    "pattern": "^\\d+$"
-                                  },
-                                  "decimals": {
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "maximum": 255
-                                  },
                                   "payTo": {
                                     "type": "string",
                                     "pattern": "^0x[a-fA-F0-9]{40}$"
@@ -9214,16 +9659,111 @@
                                     "additionalProperties": {
                                       "nullable": true
                                     }
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "scheme",
-                                  "asset",
-                                  "amount",
-                                  "decimals",
-                                  "payTo"
+                                  "payTo",
+                                  "pricing"
                                 ]
                               }
                             ]
@@ -10995,7 +11535,7 @@
                           "type": "array",
                           "nullable": true,
                           "items": {
-                            "oneOf": [
+                            "anyOf": [
                               {
                                 "type": "object",
                                 "properties": {
@@ -11022,13 +11562,111 @@
                                   "address": {
                                     "type": "string",
                                     "maxLength": 250
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "paymentSourceType",
-                                  "address"
+                                  "address",
+                                  "pricing"
                                 ]
                               },
                               {
@@ -11063,19 +11701,6 @@
                                       "Exact"
                                     ]
                                   },
-                                  "asset": {
-                                    "type": "string",
-                                    "pattern": "^0x[a-fA-F0-9]{40}$"
-                                  },
-                                  "amount": {
-                                    "type": "string",
-                                    "pattern": "^\\d+$"
-                                  },
-                                  "decimals": {
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "maximum": 255
-                                  },
                                   "payTo": {
                                     "type": "string",
                                     "pattern": "^0x[a-fA-F0-9]{40}$"
@@ -11090,16 +11715,111 @@
                                     "additionalProperties": {
                                       "nullable": true
                                     }
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "scheme",
-                                  "asset",
-                                  "amount",
-                                  "decimals",
-                                  "payTo"
+                                  "payTo",
+                                  "pricing"
                                 ]
                               }
                             ]
@@ -11730,7 +12450,7 @@
                             "type": "array",
                             "nullable": true,
                             "items": {
-                              "oneOf": [
+                              "anyOf": [
                                 {
                                   "type": "object",
                                   "properties": {
@@ -11757,13 +12477,111 @@
                                     "address": {
                                       "type": "string",
                                       "maxLength": 250
+                                    },
+                                    "pricing": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "pricingType": {
+                                              "type": "string",
+                                              "enum": [
+                                                "Fixed"
+                                              ]
+                                            },
+                                            "fixed": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "asset": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                  },
+                                                  "amount": {
+                                                    "type": "string",
+                                                    "maxLength": 19,
+                                                    "pattern": "^\\d+$"
+                                                  },
+                                                  "decimals": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 255
+                                                  }
+                                                },
+                                                "required": [
+                                                  "asset",
+                                                  "amount"
+                                                ]
+                                              },
+                                              "minItems": 1,
+                                              "maxItems": 5
+                                            }
+                                          },
+                                          "required": [
+                                            "pricingType",
+                                            "fixed"
+                                          ]
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "pricingType": {
+                                              "type": "string",
+                                              "enum": [
+                                                "Dynamic"
+                                              ]
+                                            },
+                                            "dynamic": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "asset": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                  },
+                                                  "decimals": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 255
+                                                  }
+                                                },
+                                                "required": [
+                                                  "asset"
+                                                ]
+                                              },
+                                              "minItems": 1,
+                                              "maxItems": 1
+                                            }
+                                          },
+                                          "required": [
+                                            "pricingType"
+                                          ]
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "pricingType": {
+                                              "type": "string",
+                                              "enum": [
+                                                "Free"
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "pricingType"
+                                          ]
+                                        }
+                                      ]
                                     }
                                   },
                                   "required": [
                                     "chain",
                                     "network",
                                     "paymentSourceType",
-                                    "address"
+                                    "address",
+                                    "pricing"
                                   ]
                                 },
                                 {
@@ -11798,19 +12616,6 @@
                                         "Exact"
                                       ]
                                     },
-                                    "asset": {
-                                      "type": "string",
-                                      "pattern": "^0x[a-fA-F0-9]{40}$"
-                                    },
-                                    "amount": {
-                                      "type": "string",
-                                      "pattern": "^\\d+$"
-                                    },
-                                    "decimals": {
-                                      "type": "integer",
-                                      "minimum": 0,
-                                      "maximum": 255
-                                    },
                                     "payTo": {
                                       "type": "string",
                                       "pattern": "^0x[a-fA-F0-9]{40}$"
@@ -11825,16 +12630,111 @@
                                       "additionalProperties": {
                                         "nullable": true
                                       }
+                                    },
+                                    "pricing": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "pricingType": {
+                                              "type": "string",
+                                              "enum": [
+                                                "Fixed"
+                                              ]
+                                            },
+                                            "fixed": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "asset": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                  },
+                                                  "amount": {
+                                                    "type": "string",
+                                                    "maxLength": 19,
+                                                    "pattern": "^\\d+$"
+                                                  },
+                                                  "decimals": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 255
+                                                  }
+                                                },
+                                                "required": [
+                                                  "asset",
+                                                  "amount"
+                                                ]
+                                              },
+                                              "minItems": 1,
+                                              "maxItems": 5
+                                            }
+                                          },
+                                          "required": [
+                                            "pricingType",
+                                            "fixed"
+                                          ]
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "pricingType": {
+                                              "type": "string",
+                                              "enum": [
+                                                "Dynamic"
+                                              ]
+                                            },
+                                            "dynamic": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "asset": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                  },
+                                                  "decimals": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 255
+                                                  }
+                                                },
+                                                "required": [
+                                                  "asset"
+                                                ]
+                                              },
+                                              "minItems": 1,
+                                              "maxItems": 1
+                                            }
+                                          },
+                                          "required": [
+                                            "pricingType"
+                                          ]
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "pricingType": {
+                                              "type": "string",
+                                              "enum": [
+                                                "Free"
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "pricingType"
+                                          ]
+                                        }
+                                      ]
                                     }
                                   },
                                   "required": [
                                     "chain",
                                     "network",
                                     "scheme",
-                                    "asset",
-                                    "amount",
-                                    "decimals",
-                                    "payTo"
+                                    "payTo",
+                                    "pricing"
                                   ]
                                 }
                               ]
@@ -12321,7 +13221,7 @@
                   "supportedPaymentSources": {
                     "type": "array",
                     "items": {
-                      "oneOf": [
+                      "anyOf": [
                         {
                           "type": "object",
                           "properties": {
@@ -12348,13 +13248,111 @@
                             "address": {
                               "type": "string",
                               "maxLength": 250
+                            },
+                            "pricing": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "pricingType": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Fixed"
+                                      ]
+                                    },
+                                    "fixed": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "asset": {
+                                            "type": "string",
+                                            "maxLength": 250
+                                          },
+                                          "amount": {
+                                            "type": "string",
+                                            "maxLength": 19,
+                                            "pattern": "^\\d+$"
+                                          },
+                                          "decimals": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 255
+                                          }
+                                        },
+                                        "required": [
+                                          "asset",
+                                          "amount"
+                                        ]
+                                      },
+                                      "minItems": 1,
+                                      "maxItems": 5
+                                    }
+                                  },
+                                  "required": [
+                                    "pricingType",
+                                    "fixed"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "pricingType": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Dynamic"
+                                      ]
+                                    },
+                                    "dynamic": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "asset": {
+                                            "type": "string",
+                                            "maxLength": 250
+                                          },
+                                          "decimals": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 255
+                                          }
+                                        },
+                                        "required": [
+                                          "asset"
+                                        ]
+                                      },
+                                      "minItems": 1,
+                                      "maxItems": 1
+                                    }
+                                  },
+                                  "required": [
+                                    "pricingType"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "pricingType": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Free"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "pricingType"
+                                  ]
+                                }
+                              ]
                             }
                           },
                           "required": [
                             "chain",
                             "network",
                             "paymentSourceType",
-                            "address"
+                            "address",
+                            "pricing"
                           ]
                         },
                         {
@@ -12389,19 +13387,6 @@
                                 "Exact"
                               ]
                             },
-                            "asset": {
-                              "type": "string",
-                              "pattern": "^0x[a-fA-F0-9]{40}$"
-                            },
-                            "amount": {
-                              "type": "string",
-                              "pattern": "^\\d+$"
-                            },
-                            "decimals": {
-                              "type": "integer",
-                              "minimum": 0,
-                              "maximum": 255
-                            },
                             "payTo": {
                               "type": "string",
                               "pattern": "^0x[a-fA-F0-9]{40}$"
@@ -12416,16 +13401,111 @@
                               "additionalProperties": {
                                 "nullable": true
                               }
+                            },
+                            "pricing": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "pricingType": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Fixed"
+                                      ]
+                                    },
+                                    "fixed": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "asset": {
+                                            "type": "string",
+                                            "maxLength": 250
+                                          },
+                                          "amount": {
+                                            "type": "string",
+                                            "maxLength": 19,
+                                            "pattern": "^\\d+$"
+                                          },
+                                          "decimals": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 255
+                                          }
+                                        },
+                                        "required": [
+                                          "asset",
+                                          "amount"
+                                        ]
+                                      },
+                                      "minItems": 1,
+                                      "maxItems": 5
+                                    }
+                                  },
+                                  "required": [
+                                    "pricingType",
+                                    "fixed"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "pricingType": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Dynamic"
+                                      ]
+                                    },
+                                    "dynamic": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "asset": {
+                                            "type": "string",
+                                            "maxLength": 250
+                                          },
+                                          "decimals": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 255
+                                          }
+                                        },
+                                        "required": [
+                                          "asset"
+                                        ]
+                                      },
+                                      "minItems": 1,
+                                      "maxItems": 1
+                                    }
+                                  },
+                                  "required": [
+                                    "pricingType"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "pricingType": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Free"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "pricingType"
+                                  ]
+                                }
+                              ]
                             }
                           },
                           "required": [
                             "chain",
                             "network",
                             "scheme",
-                            "asset",
-                            "amount",
-                            "decimals",
-                            "payTo"
+                            "payTo",
+                            "pricing"
                           ]
                         }
                       ]
@@ -12575,7 +13655,7 @@
                           "type": "array",
                           "nullable": true,
                           "items": {
-                            "oneOf": [
+                            "anyOf": [
                               {
                                 "type": "object",
                                 "properties": {
@@ -12602,13 +13682,111 @@
                                   "address": {
                                     "type": "string",
                                     "maxLength": 250
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "paymentSourceType",
-                                  "address"
+                                  "address",
+                                  "pricing"
                                 ]
                               },
                               {
@@ -12643,19 +13821,6 @@
                                       "Exact"
                                     ]
                                   },
-                                  "asset": {
-                                    "type": "string",
-                                    "pattern": "^0x[a-fA-F0-9]{40}$"
-                                  },
-                                  "amount": {
-                                    "type": "string",
-                                    "pattern": "^\\d+$"
-                                  },
-                                  "decimals": {
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "maximum": 255
-                                  },
                                   "payTo": {
                                     "type": "string",
                                     "pattern": "^0x[a-fA-F0-9]{40}$"
@@ -12670,16 +13835,111 @@
                                     "additionalProperties": {
                                       "nullable": true
                                     }
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "chain",
                                   "network",
                                   "scheme",
-                                  "asset",
-                                  "amount",
-                                  "decimals",
-                                  "payTo"
+                                  "payTo",
+                                  "pricing"
                                 ]
                               }
                             ]
@@ -16887,6 +18147,641 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/network/register/complete": {
+      "post": {
+        "tags": [
+          "Network"
+        ],
+        "summary": "Complete network registration and mint",
+        "description": "Accepts a registration token from email verification plus agent/payment/mint details, then starts on-chain registration.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "termsAccepted": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "agent": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 250
+                      },
+                      "description": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 250
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          }
+                        ]
+                      },
+                      "apiUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "tags": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "apiUrl",
+                      "tags"
+                    ]
+                  },
+                  "payment": {
+                    "type": "object",
+                    "properties": {
+                      "network": {
+                        "type": "string",
+                        "pattern": "^eip155:\\d+$"
+                      },
+                      "asset": {
+                        "type": "string",
+                        "pattern": "^0x[a-fA-F0-9]{40}$"
+                      },
+                      "amount": {
+                        "type": "string",
+                        "pattern": "^\\d+$"
+                      },
+                      "decimals": {
+                        "type": "integer",
+                        "nullable": true,
+                        "minimum": 0,
+                        "maximum": 255,
+                        "default": 6
+                      },
+                      "payTo": {
+                        "type": "string",
+                        "pattern": "^0x[a-fA-F0-9]{40}$"
+                      },
+                      "resource": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 500,
+                            "format": "uri"
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "network",
+                      "asset",
+                      "amount",
+                      "payTo"
+                    ]
+                  },
+                  "mint": {
+                    "type": "object",
+                    "properties": {
+                      "kyc": {
+                        "type": "string",
+                        "enum": [
+                          "skip",
+                          "kyc"
+                        ]
+                      },
+                      "destination": {
+                        "type": "string",
+                        "enum": [
+                          "managed",
+                          "browser",
+                          "external"
+                        ]
+                      },
+                      "cardanoAddress": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 250
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kyc",
+                      "destination"
+                    ]
+                  },
+                  "cardanoNetwork": {
+                    "type": "string",
+                    "enum": [
+                      "Preprod",
+                      "Mainnet"
+                    ],
+                    "default": "Preprod"
+                  },
+                  "registrationToken": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "termsAccepted",
+                  "agent",
+                  "mint",
+                  "registrationToken"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registration completed or pending on-chain",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "agentId": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "registered",
+                        "pending"
+                      ]
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "successPath": {
+                      "type": "string",
+                      "description": "Absolute URL on the masumi.network marketing site"
+                    },
+                    "continueUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "When status is pending, poll registration completion on this SaaS URL before successPath"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "agentId",
+                    "status",
+                    "notes",
+                    "successPath"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or registration failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired registration token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "KYC required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "needsKyc": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "kycContinueUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "needsKyc",
+                    "kycContinueUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/network/register": {
+      "post": {
+        "tags": [
+          "Network"
+        ],
+        "summary": "Start network registration (send email code)",
+        "description": "Creates or finds the user and emails a 6-digit verification code. Agent details are submitted only after the code is verified.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "termsAccepted": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "termsAccepted"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Verification code sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email"
+                    },
+                    "resultKey": {
+                      "type": "string",
+                      "enum": [
+                        "VerificationCodeSent"
+                      ]
+                    },
+                    "devCode": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "email",
+                    "resultKey"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Could not start registration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/network/register/verify": {
+      "post": {
+        "tags": [
+          "Network"
+        ],
+        "summary": "Verify network registration email code",
+        "description": "Verifies the email OTP and returns a short-lived registration token used to submit agent details and mint.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "minLength": 4,
+                    "maxLength": 12
+                  }
+                },
+                "required": [
+                  "email",
+                  "otp"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verified; registration token issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email"
+                    },
+                    "registrationToken": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "email",
+                    "registrationToken"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid OTP",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
                 }
               }
             }
