@@ -327,6 +327,156 @@ export async function createNetworkRegistrationDraft(params: {
   };
 }
 
+async function tryReuseNetworkRegistrationDraft(params: {
+  draftId: string;
+  body: NetworkRegisterBody;
+  userId: string;
+  email: string;
+}): Promise<
+  | {
+      ok: true;
+      draftId: string;
+      email: string;
+      notes: string[];
+    }
+  | { ok: false; error: string; status: 400 }
+  | null
+> {
+  const draft = await prisma.networkRegistrationDraft.findUnique({
+    where: { id: params.draftId },
+  });
+  if (!draft) return null;
+  if (draft.email !== params.email) return null;
+  if (draft.userId && draft.userId !== params.userId) return null;
+  if (draft.status === "EXPIRED" || draft.expiresAt.getTime() < Date.now()) {
+    return null;
+  }
+
+  let payload: NetworkRegistrationPayload;
+  try {
+    payload = buildNetworkRegistrationPayload(params.body);
+    await assertAllowedAgentApiUrl(params.body.agent.apiUrl);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 400,
+      error: error instanceof Error ? error.message : "Invalid registration",
+    };
+  }
+
+  await prisma.networkRegistrationDraft.update({
+    where: { id: draft.id },
+    data: {
+      name: params.body.name.trim(),
+      payload,
+      expiresAt: new Date(Date.now() + DRAFT_TTL_MS),
+      userId: params.userId,
+      ...(draft.status === "FAILED"
+        ? { status: "PENDING" as const, error: null }
+        : {}),
+    },
+  });
+
+  return {
+    ok: true,
+    draftId: draft.id,
+    email: params.email,
+    notes: payload.notes,
+  };
+}
+
+function isPermanentNetworkRegistrationError(error: string): boolean {
+  const lower = error.toLowerCase();
+  return (
+    lower.includes("rejected") ||
+    lower.includes("failed on the network") ||
+    lower.includes("not found") ||
+    lower.includes("missing registration") ||
+    lower.includes("invalid")
+  );
+}
+
+async function getOrCreateNetworkRegistrationDraftForTicket(params: {
+  body: NetworkRegisterCompleteBody;
+  userId: string;
+  ticketToken: string;
+  ticketDraftId?: string;
+}): Promise<
+  | {
+      ok: true;
+      draftId: string;
+      email: string;
+      notes: string[];
+    }
+  | { ok: false; error: string; status: 400 }
+> {
+  const email = params.body.email.trim().toLowerCase();
+  let staleTicketDraft = false;
+
+  if (params.ticketDraftId) {
+    const reused = await tryReuseNetworkRegistrationDraft({
+      draftId: params.ticketDraftId,
+      body: params.body,
+      userId: params.userId,
+      email,
+    });
+    if (reused) return reused;
+    staleTicketDraft = true;
+  }
+
+  const created = await createNetworkRegistrationDraft({
+    body: params.body,
+    userId: params.userId,
+  });
+  if (!created.ok) {
+    return created;
+  }
+
+  const {
+    bindNetworkRegistrationDraftToTicket,
+    rebindNetworkRegistrationDraftToTicket,
+    resolveNetworkRegistrationTicket,
+  } = await import("@/lib/network-registration/otp");
+
+  if (staleTicketDraft) {
+    await rebindNetworkRegistrationDraftToTicket({
+      token: params.ticketToken,
+      draftId: created.draftId,
+    });
+    return created;
+  }
+
+  await bindNetworkRegistrationDraftToTicket({
+    token: params.ticketToken,
+    draftId: created.draftId,
+  });
+
+  const refreshed = await resolveNetworkRegistrationTicket({
+    token: params.ticketToken,
+    email,
+  });
+  if (
+    refreshed.ok &&
+    refreshed.draftId &&
+    refreshed.draftId !== created.draftId
+  ) {
+    const reused = await tryReuseNetworkRegistrationDraft({
+      draftId: refreshed.draftId,
+      body: params.body,
+      userId: params.userId,
+      email,
+    });
+    if (reused) return reused;
+    return {
+      ok: false,
+      status: 400,
+      error: "Registration session conflict. Please try again.",
+    };
+  }
+
+  return created;
+}
+
 export async function completeNetworkRegistrationWithTicket(params: {
   body: NetworkRegisterCompleteBody;
 }): Promise<
@@ -337,6 +487,8 @@ export async function completeNetworkRegistrationWithTicket(params: {
       notes: string[];
       successPath: string;
       continueUrl?: string;
+      pollToken?: string;
+      draftId?: string;
     }
   | {
       ok: false;
@@ -369,9 +521,11 @@ export async function completeNetworkRegistrationWithTicket(params: {
     };
   }
 
-  const draft = await createNetworkRegistrationDraft({
+  const draft = await getOrCreateNetworkRegistrationDraftForTicket({
     body: params.body,
     userId: user.id,
+    ticketToken: ticket.token,
+    ticketDraftId: ticket.draftId,
   });
   if (!draft.ok) {
     return { ok: false, error: draft.error, status: 400 };
@@ -385,8 +539,8 @@ export async function completeNetworkRegistrationWithTicket(params: {
       email: user.email,
     },
     activeOrganizationId: null,
-    // Return quickly; the marketing site redirects to /network-register/continue
-    // where the client poller waits for on-chain mint confirmation.
+    // Return quickly; the marketing site lands on /register/success and polls
+    // in place until on-chain mint confirms.
     deferOnChainPolling: true,
   });
 
@@ -405,12 +559,23 @@ export async function completeNetworkRegistrationWithTicket(params: {
     return { ok: false, error: fulfilled.error, status: 400 };
   }
 
-  await revokeNetworkRegistrationTicket(ticket.token);
+  let continueUrl: string | undefined;
+  let pollToken: string | undefined;
+  if (fulfilled.status === "pending") {
+    const { issueNetworkRegistrationPollToken } =
+      await import("@/lib/network-registration/otp");
+    pollToken = await issueNetworkRegistrationPollToken({
+      draftId: draft.draftId,
+      userId: user.id,
+    });
+    continueUrl = buildNetworkSiteContinueUrl(
+      draft.draftId,
+      fulfilled.agentId,
+      params.body.agent.name,
+    );
+  }
 
-  const continueUrl =
-    fulfilled.status === "pending"
-      ? buildNetworkKycReturnUrl(draft.draftId)
-      : undefined;
+  await revokeNetworkRegistrationTicket(ticket.token);
 
   return {
     ok: true,
@@ -418,8 +583,110 @@ export async function completeNetworkRegistrationWithTicket(params: {
     status: fulfilled.status,
     notes: fulfilled.notes,
     successPath: fulfilled.networkSiteSuccessUrl,
+    draftId: draft.draftId,
     ...(continueUrl ? { continueUrl } : {}),
+    ...(pollToken ? { pollToken } : {}),
   };
+}
+
+export async function pollNetworkRegistrationStatus(params: {
+  draftId: string;
+  pollToken: string;
+}): Promise<
+  | {
+      ok: true;
+      status: "registered";
+      agentId: string;
+      successPath: string;
+    }
+  | { ok: true; status: "pending"; agentId: string }
+  | { ok: false; error: string; status: 401 | 404 | 400 }
+> {
+  const { resolveNetworkRegistrationPollToken } =
+    await import("@/lib/network-registration/otp");
+  const session = await resolveNetworkRegistrationPollToken({
+    token: params.pollToken,
+    draftId: params.draftId,
+  });
+  if (!session.ok) {
+    return { ok: false, error: session.error, status: 401 };
+  }
+
+  const draft = await prisma.networkRegistrationDraft.findUnique({
+    where: { id: session.draftId },
+    select: {
+      id: true,
+      agentId: true,
+      status: true,
+      userId: true,
+      payload: true,
+    },
+  });
+
+  if (!draft) {
+    return { ok: false, error: "Registration not found", status: 404 };
+  }
+  const agentName = (draft.payload as NetworkRegistrationPayload).agent.name;
+  if (!draft.agentId) {
+    return {
+      ok: false,
+      error: "Registration has not started minting",
+      status: 400,
+    };
+  }
+  if (draft.userId && draft.userId !== session.userId) {
+    return {
+      ok: false,
+      error: "Registration poll session does not match",
+      status: 401,
+    };
+  }
+
+  if (draft.status === "COMPLETED") {
+    return {
+      ok: true,
+      status: "registered",
+      agentId: draft.agentId,
+      successPath: buildNetworkSiteSuccessUrl(draft.agentId, agentName),
+    };
+  }
+  if (draft.status === "FAILED") {
+    return {
+      ok: false,
+      error: "Registration failed",
+      status: 400,
+    };
+  }
+
+  const result = await completeOnChainRegistration(
+    draft.agentId,
+    session.userId,
+  );
+
+  if (result.status === "registered") {
+    await prisma.networkRegistrationDraft.update({
+      where: { id: draft.id },
+      data: { status: "COMPLETED", error: null },
+    });
+    return {
+      ok: true,
+      status: "registered",
+      agentId: draft.agentId,
+      successPath: buildNetworkSiteSuccessUrl(draft.agentId, agentName),
+    };
+  }
+
+  if (result.status === "error") {
+    if (isPermanentNetworkRegistrationError(result.error)) {
+      await prisma.networkRegistrationDraft.update({
+        where: { id: draft.id },
+        data: { status: "FAILED", error: result.error },
+      });
+    }
+    return { ok: false, error: result.error, status: 400 };
+  }
+
+  return { ok: true, status: "pending", agentId: draft.agentId };
 }
 
 function sleep(ms: number) {
@@ -477,11 +744,66 @@ export async function fulfillNetworkRegistrationDraft(params: {
       agentId: draft.agentId,
       status: "registered",
       notes: payload.notes ?? [],
-      networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(draft.agentId),
+      networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+        draft.agentId,
+        payload.agent.name,
+      ),
     };
   }
 
   if (draft.agentId) {
+    if (params.deferOnChainPolling) {
+      const once = await completeOnChainRegistration(
+        draft.agentId,
+        params.user.id,
+      );
+      if (once.status === "registered") {
+        await prisma.networkRegistrationDraft.update({
+          where: { id: draft.id },
+          data: {
+            status: "COMPLETED",
+            agentId: draft.agentId,
+            userId: params.user.id,
+            error: null,
+          },
+        });
+        return {
+          ok: true,
+          agentId: draft.agentId,
+          status: "registered",
+          notes: payload.notes,
+          networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+            draft.agentId,
+            payload.agent.name,
+          ),
+        };
+      }
+      if (
+        once.status === "error" &&
+        isPermanentNetworkRegistrationError(once.error)
+      ) {
+        await prisma.networkRegistrationDraft.update({
+          where: { id: draft.id },
+          data: {
+            status: "FAILED",
+            error: once.error,
+            userId: params.user.id,
+          },
+        });
+        return { ok: false, error: once.error, status: "FAILED" };
+      }
+      return {
+        ok: true,
+        agentId: draft.agentId,
+        status: "pending",
+        notes: payload.notes,
+        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+          draft.agentId,
+          payload.agent.name,
+        ),
+      };
+    }
+
     const complete = await pollComplete(draft.agentId, params.user.id);
     if (complete.ok) {
       await prisma.networkRegistrationDraft.update({
@@ -498,7 +820,10 @@ export async function fulfillNetworkRegistrationDraft(params: {
         agentId: draft.agentId,
         status: complete.status,
         notes: payload.notes,
-        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(draft.agentId),
+        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+          draft.agentId,
+          payload.agent.name,
+        ),
       };
     }
     await prisma.networkRegistrationDraft.update({
@@ -585,7 +910,10 @@ export async function fulfillNetworkRegistrationDraft(params: {
           agentId: fresh.agentId,
           status: complete.status,
           notes: payload.notes,
-          networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(fresh.agentId),
+          networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+            fresh.agentId,
+            payload.agent.name,
+          ),
         };
       }
       return { ok: false, error: complete.error, status: "FAILED" };
@@ -680,7 +1008,10 @@ export async function fulfillNetworkRegistrationDraft(params: {
         agentId: existingAgent.id,
         status: complete.status,
         notes: payload.notes,
-        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(existingAgent.id),
+        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+          existingAgent.id,
+          payload.agent.name,
+        ),
       };
     }
 
@@ -739,7 +1070,10 @@ export async function fulfillNetworkRegistrationDraft(params: {
         agentId: started.agentId,
         status: "pending",
         notes: payload.notes,
-        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(started.agentId),
+        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+          started.agentId,
+          payload.agent.name,
+        ),
       };
     }
 
@@ -769,7 +1103,10 @@ export async function fulfillNetworkRegistrationDraft(params: {
       agentId: started.agentId,
       status: complete.status,
       notes: payload.notes,
-      networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(started.agentId),
+      networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+        started.agentId,
+        payload.agent.name,
+      ),
     };
   } catch (error) {
     const message =
@@ -842,13 +1179,39 @@ async function pollComplete(
   return { ok: false, error: "Registration timed out" };
 }
 
-export function buildNetworkSiteSuccessUrl(agentId: string): string {
+export function buildNetworkSiteSuccessUrl(
+  agentId: string,
+  agentName?: string,
+): string {
   const base =
     process.env.NETWORK_SITE_URL?.trim() ||
     process.env.NEXT_PUBLIC_NETWORK_SITE_URL?.trim() ||
     "http://localhost:3010";
   const url = new URL("/register/success", base);
   url.searchParams.set("agentId", agentId);
+  const trimmedName = agentName?.trim();
+  if (trimmedName) {
+    url.searchParams.set("agentName", trimmedName);
+  }
+  return url.toString();
+}
+
+export function buildNetworkSiteContinueUrl(
+  draftId: string,
+  agentId: string,
+  agentName: string,
+): string {
+  const base =
+    process.env.NETWORK_SITE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_NETWORK_SITE_URL?.trim() ||
+    "http://localhost:3010";
+  const url = new URL("/register/success", base);
+  url.searchParams.set("agentId", agentId);
+  url.searchParams.set("draftId", draftId);
+  const trimmedName = agentName.trim();
+  if (trimmedName) {
+    url.searchParams.set("agentName", trimmedName);
+  }
   return url.toString();
 }
 

@@ -32,8 +32,18 @@ const successSchema = z.object({
     .url()
     .optional()
     .describe(
-      "When status is pending, poll registration completion on this SaaS URL before successPath",
+      "When status is pending, open this marketing-site URL while polling completes",
     ),
+  pollToken: z
+    .string()
+    .optional()
+    .describe(
+      "Bearer token for POST /api/public/network/register/status. Store client-side; not included in continueUrl.",
+    ),
+  draftId: z
+    .string()
+    .optional()
+    .describe("Registration draft id for status polling"),
 });
 
 app.openapi(
@@ -117,7 +127,9 @@ app.openapi(
         status: result.status,
         notes: result.notes,
         successPath: result.successPath,
+        ...(result.draftId ? { draftId: result.draftId } : {}),
         ...(result.continueUrl ? { continueUrl: result.continueUrl } : {}),
+        ...(result.pollToken ? { pollToken: result.pollToken } : {}),
       },
       200,
     );
