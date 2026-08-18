@@ -96,7 +96,7 @@ export function buildUpdateAgentInput(
       ? { smartContractAddress: params.smartContractAddress }
       : {}),
     name: metadata.name ?? registryEntry.name,
-    apiBaseUrl: metadata.apiBaseUrl ?? registryEntry.apiBaseUrl,
+    apiBaseUrl: metadata.apiBaseUrl ?? registryEntry.apiBaseUrl ?? "",
     description: metadata.description ?? registryEntry.description ?? "",
     ...(image ? { image } : {}),
     Tags:
