@@ -32,11 +32,11 @@ function inferDefaultIsTestnet(): boolean {
   return true;
 }
 
-async function loadPaymentNodeX402Networks(): Promise<
-  PaymentNodeX402Network[]
-> {
+async function loadPaymentNodeX402Networks(options?: {
+  refresh?: boolean;
+}): Promise<PaymentNodeX402Network[]> {
   const now = Date.now();
-  if (cachedNetworks != null && now < cacheExpiresAt) {
+  if (!options?.refresh && cachedNetworks != null && now < cacheExpiresAt) {
     return cachedNetworks;
   }
 
@@ -64,13 +64,37 @@ async function loadPaymentNodeX402Networks(): Promise<
 /** Enabled x402 networks registered on the payment node (admin list, cached). */
 export async function listPaymentNodeX402Networks(options?: {
   isTestnet?: boolean;
+  refresh?: boolean;
 }): Promise<PaymentNodeX402Network[]> {
-  const networks = await loadPaymentNodeX402Networks();
+  const networks = await loadPaymentNodeX402Networks({
+    refresh: options?.refresh,
+  });
   const enabled = networks.filter((network) => network.isEnabled);
   if (options?.isTestnet === undefined) {
     return enabled;
   }
   return enabled.filter((network) => network.isTestnet === options.isTestnet);
+}
+
+/**
+ * CAIP-2 chain ids to grant on new user API keys — mirrors enabled x402
+ * networks registered on the payment node (falls back to Base testnet/mainnet
+ * when the list is empty or unavailable so signup can still proceed).
+ */
+export async function resolveSignupChainIdLimit(): Promise<string[]> {
+  try {
+    const networks = await listPaymentNodeX402Networks({ refresh: true });
+    const chainIds = [...new Set(networks.map((network) => network.caip2Id))];
+    if (chainIds.length > 0) {
+      return chainIds;
+    }
+  } catch (error) {
+    console.error(
+      "[Payment Node] Failed to list x402 networks for signup ChainIdLimit",
+      error,
+    );
+  }
+  return [BASE_SEPOLIA_CAIP2, BASE_MAINNET_CAIP2];
 }
 
 /** Default chain for new custody wallets: Base Sepolia (testnet) or Base Mainnet. */
