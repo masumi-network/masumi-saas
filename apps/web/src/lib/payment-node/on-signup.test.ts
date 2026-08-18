@@ -58,6 +58,7 @@ describe("createPaymentNodeKeyForUser", () => {
     expect(createApiKeyMock).toHaveBeenCalledWith({
       permission: "ReadAndPay",
       NetworkLimit: ["Preprod", "Mainnet"],
+      ChainIdLimit: ["eip155:84532", "eip155:8453"],
       usageLimited: "false",
       UsageCredits: [],
       walletScopeEnabled: "true",

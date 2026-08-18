@@ -583,6 +583,7 @@ export type PaymentIncomeOutput = z.infer<typeof paymentIncomeOutputSchema>;
 export const createApiKeyInputSchema = z.object({
   permission: z.enum(["Read", "ReadAndPay", "Admin"]),
   NetworkLimit: z.array(paymentNodeNetworkSchema),
+  ChainIdLimit: z.array(z.string().min(1).max(120)).optional(),
   usageLimited: z.enum(["true", "false"]),
   UsageCredits: z.array(unitAmountSchema),
   walletScopeEnabled: z.enum(["true", "false"]).default("false"),
