@@ -32,11 +32,11 @@ function inferDefaultIsTestnet(): boolean {
   return true;
 }
 
-async function loadPaymentNodeX402Networks(): Promise<
-  PaymentNodeX402Network[]
-> {
+async function loadPaymentNodeX402Networks(options?: {
+  refresh?: boolean;
+}): Promise<PaymentNodeX402Network[]> {
   const now = Date.now();
-  if (cachedNetworks != null && now < cacheExpiresAt) {
+  if (!options?.refresh && cachedNetworks != null && now < cacheExpiresAt) {
     return cachedNetworks;
   }
 
@@ -64,8 +64,11 @@ async function loadPaymentNodeX402Networks(): Promise<
 /** Enabled x402 networks registered on the payment node (admin list, cached). */
 export async function listPaymentNodeX402Networks(options?: {
   isTestnet?: boolean;
+  refresh?: boolean;
 }): Promise<PaymentNodeX402Network[]> {
-  const networks = await loadPaymentNodeX402Networks();
+  const networks = await loadPaymentNodeX402Networks({
+    refresh: options?.refresh,
+  });
   const enabled = networks.filter((network) => network.isEnabled);
   if (options?.isTestnet === undefined) {
     return enabled;
@@ -80,7 +83,7 @@ export async function listPaymentNodeX402Networks(options?: {
  */
 export async function resolveSignupChainIdLimit(): Promise<string[]> {
   try {
-    const networks = await listPaymentNodeX402Networks();
+    const networks = await listPaymentNodeX402Networks({ refresh: true });
     const chainIds = [...new Set(networks.map((network) => network.caip2Id))];
     if (chainIds.length > 0) {
       return chainIds;
