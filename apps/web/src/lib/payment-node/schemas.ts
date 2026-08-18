@@ -43,6 +43,9 @@ export const registryRequestStateSchema = z.enum([
 ]);
 export type RegistryRequestState = z.infer<typeof registryRequestStateSchema>;
 
+export const registryEntryTypeSchema = z.enum(["Standard", "OpenApi", "X402"]);
+export type RegistryEntryType = z.infer<typeof registryEntryTypeSchema>;
+
 export const registryStatusFilterSchema = z.enum([
   "Registered",
   "Deregistered",
@@ -99,7 +102,10 @@ export const registryEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  apiBaseUrl: z.string(),
+  type: registryEntryTypeSchema.optional(),
+  apiBaseUrl: z.string().nullable(),
+  openApiSpecUrl: z.string().nullable().optional(),
+  x402ResourcesUrl: z.string().nullable().optional(),
   state: registryRequestStateSchema,
   error: z.string().nullable().optional(),
   agentIdentifier: z.string().nullable(),
