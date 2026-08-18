@@ -1,20 +1,11 @@
 import prisma from "@masumi/database/client";
-import {
-  BASE_MAINNET_CAIP2,
-  BASE_SEPOLIA_CAIP2,
-} from "@masumi/payment-source-x402";
 
 import {
   createPaymentNodeClient,
   encryptPaymentNodeSecret,
   paymentNodeConfig,
 } from "@/lib/payment-node";
-
-/** EVM chains permitted for x402 wallet custody on the payment node. */
-const DEFAULT_USER_CHAIN_ID_LIMIT = [
-  BASE_SEPOLIA_CAIP2,
-  BASE_MAINNET_CAIP2,
-] as const;
+import { resolveSignupChainIdLimit } from "@/lib/payment-node/resolve-payment-node-x402-network";
 
 /**
  * Create a payment node API key for the user and store it encrypted.
@@ -42,10 +33,11 @@ export async function createPaymentNodeKeyForUser(
 
   try {
     const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+    const chainIdLimit = await resolveSignupChainIdLimit();
     const result = await adminClient.createApiKey({
       permission: "ReadAndPay",
       NetworkLimit: ["Preprod", "Mainnet"],
-      ChainIdLimit: [...DEFAULT_USER_CHAIN_ID_LIMIT],
+      ChainIdLimit: chainIdLimit,
       usageLimited: "false",
       UsageCredits: [],
       walletScopeEnabled: "true",

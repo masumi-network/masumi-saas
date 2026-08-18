@@ -73,6 +73,27 @@ export async function listPaymentNodeX402Networks(options?: {
   return enabled.filter((network) => network.isTestnet === options.isTestnet);
 }
 
+/**
+ * CAIP-2 chain ids to grant on new user API keys — mirrors enabled x402
+ * networks registered on the payment node (falls back to Base testnet/mainnet
+ * when the list is empty or unavailable so signup can still proceed).
+ */
+export async function resolveSignupChainIdLimit(): Promise<string[]> {
+  try {
+    const networks = await listPaymentNodeX402Networks();
+    const chainIds = [...new Set(networks.map((network) => network.caip2Id))];
+    if (chainIds.length > 0) {
+      return chainIds;
+    }
+  } catch (error) {
+    console.error(
+      "[Payment Node] Failed to list x402 networks for signup ChainIdLimit",
+      error,
+    );
+  }
+  return [BASE_SEPOLIA_CAIP2, BASE_MAINNET_CAIP2];
+}
+
 /** Default chain for new custody wallets: Base Sepolia (testnet) or Base Mainnet. */
 export async function resolveDefaultPaymentNodeCaip2Network(
   isTestnet: boolean = inferDefaultIsTestnet(),

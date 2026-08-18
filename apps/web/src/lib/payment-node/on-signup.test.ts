@@ -14,6 +14,12 @@ vi.mock("@masumi/database/client", () => ({
   },
 }));
 
+vi.mock("@/lib/payment-node/resolve-payment-node-x402-network", () => ({
+  resolveSignupChainIdLimit: vi
+    .fn()
+    .mockResolvedValue(["eip155:84532", "eip155:8453"]),
+}));
+
 vi.mock("@/lib/payment-node", () => ({
   createPaymentNodeClient: createPaymentNodeClientMock,
   encryptPaymentNodeSecret: encryptPaymentNodeSecretMock,
