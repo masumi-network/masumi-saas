@@ -110,7 +110,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
         style={{
           margin: 0,
           fontFamily:
-            "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+            "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
           backgroundColor: palette.bg,
           color: palette.fg,
           minHeight: "100vh",
