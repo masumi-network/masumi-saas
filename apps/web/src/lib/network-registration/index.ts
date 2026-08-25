@@ -572,6 +572,7 @@ export async function completeNetworkRegistrationWithTicket(params: {
       draft.draftId,
       fulfilled.agentId,
       params.body.agent.name,
+      pollToken,
     );
   }
 
@@ -1186,7 +1187,7 @@ export function buildNetworkSiteSuccessUrl(
   const base =
     process.env.NETWORK_SITE_URL?.trim() ||
     process.env.NEXT_PUBLIC_NETWORK_SITE_URL?.trim() ||
-    "http://localhost:3010";
+    "http://localhost:3001";
   const url = new URL("/register/success", base);
   url.searchParams.set("agentId", agentId);
   const trimmedName = agentName?.trim();
@@ -1200,17 +1201,22 @@ export function buildNetworkSiteContinueUrl(
   draftId: string,
   agentId: string,
   agentName: string,
+  pollToken?: string,
 ): string {
   const base =
     process.env.NETWORK_SITE_URL?.trim() ||
     process.env.NEXT_PUBLIC_NETWORK_SITE_URL?.trim() ||
-    "http://localhost:3010";
+    "http://localhost:3001";
   const url = new URL("/register/success", base);
   url.searchParams.set("agentId", agentId);
   url.searchParams.set("draftId", draftId);
   const trimmedName = agentName.trim();
   if (trimmedName) {
     url.searchParams.set("agentName", trimmedName);
+  }
+  const trimmedPollToken = pollToken?.trim();
+  if (trimmedPollToken) {
+    url.searchParams.set("pollToken", trimmedPollToken);
   }
   return url.toString();
 }
