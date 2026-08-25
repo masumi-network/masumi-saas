@@ -8,6 +8,7 @@ import {
   buildNetworkRegistrationPayload,
   buildNetworkSiteContinueUrl,
   buildNetworkSiteSuccessUrl,
+  resolveNetworkRegistrationCommerceForTest,
 } from "./index";
 
 const base = {
@@ -99,6 +100,32 @@ describe("buildNetworkRegistrationPayload", () => {
     });
     expect(payload.payment).toBeUndefined();
     expect(payload.effectiveDestination).toBe("managed");
+  });
+});
+
+describe("resolveNetworkRegistrationCommerce", () => {
+  it("uses dynamic Cardano pricing even without x402", () => {
+    const payload = buildNetworkRegistrationPayload({
+      ...base,
+      payment: undefined,
+      mint: { kyc: "skip", destination: "managed" },
+    });
+    const commerce = resolveNetworkRegistrationCommerceForTest(payload);
+    expect(commerce.agentPricing).toEqual({ pricingType: "Dynamic" });
+    expect(commerce.supportedPaymentSources).toBeUndefined();
+  });
+
+  it("keeps dynamic Cardano pricing when x402 payment is included", () => {
+    const payload = buildNetworkRegistrationPayload({
+      ...base,
+      mint: { kyc: "skip", destination: "managed" },
+    });
+    const commerce = resolveNetworkRegistrationCommerceForTest(payload);
+    expect(commerce.agentPricing).toEqual({ pricingType: "Dynamic" });
+    expect(commerce.supportedPaymentSources).toHaveLength(1);
+    expect(commerce.supportedPaymentSources?.[0]?.pricing.pricingType).toBe(
+      "Fixed",
+    );
   });
 });
 
