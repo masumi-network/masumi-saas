@@ -6,6 +6,7 @@ vi.mock("@/lib/config/verification.config", () => ({
 
 import {
   buildNetworkRegistrationPayload,
+  buildNetworkSiteContinueUrl,
   buildNetworkSiteSuccessUrl,
 } from "./index";
 
@@ -108,9 +109,30 @@ describe("buildNetworkSiteSuccessUrl", () => {
   });
 
   it("returns an absolute marketing-site success URL", () => {
-    process.env.NETWORK_SITE_URL = "http://localhost:3010";
+    process.env.NETWORK_SITE_URL = "http://localhost:3001";
     expect(buildNetworkSiteSuccessUrl("agent-123")).toBe(
-      "http://localhost:3010/register/success?agentId=agent-123",
+      "http://localhost:3001/register/success?agentId=agent-123",
+    );
+  });
+});
+
+describe("buildNetworkSiteContinueUrl", () => {
+  afterEach(() => {
+    delete process.env.NETWORK_SITE_URL;
+    delete process.env.NEXT_PUBLIC_NETWORK_SITE_URL;
+  });
+
+  it("includes draftId and pollToken for pending registration polling", () => {
+    process.env.NETWORK_SITE_URL = "http://localhost:3001";
+    expect(
+      buildNetworkSiteContinueUrl(
+        "draft-1",
+        "agent-123",
+        "Research Bot",
+        "poll-token-abc",
+      ),
+    ).toBe(
+      "http://localhost:3001/register/success?agentId=agent-123&draftId=draft-1&agentName=Research+Bot&pollToken=poll-token-abc",
     );
   });
 });
