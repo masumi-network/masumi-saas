@@ -6,7 +6,10 @@ import {
   type PaymentNodeNetwork,
 } from "@/lib/payment-node";
 import { getPaymentNodeApiKeyTokenForUser } from "@/lib/payment-node/get-user-client";
-import { listSellingWalletIdsByAddresses } from "@/lib/payment-node/payment-source-wallets";
+import {
+  listHotWalletIds,
+  listSellingWalletIdsByAddresses,
+} from "@/lib/payment-node/payment-source-wallets";
 
 const REGISTRATION_FUNDING_NETWORKS: PaymentNodeNetwork[] = [
   "Preprod",
@@ -121,20 +124,27 @@ export async function ensureUserPaymentNodeKeyScopedToWallets(params: {
     ...requestedWalletIds,
   ]).filter((walletId) => !isRegistrationFundingWallet(walletId));
 
+  const updateClient =
+    adminClient ?? createPaymentNodeClient(baseUrl, adminApiKey);
+  const existingHotWalletIds = await listHotWalletIds(updateClient);
+  const scopedWalletIds = nextWalletIds.filter((walletId) =>
+    existingHotWalletIds.has(walletId),
+  );
+  const currentScopedWalletIds = currentAllowedWalletIds.filter((walletId) =>
+    existingHotWalletIds.has(walletId),
+  );
+
   const alreadyScoped =
     keyStatus.walletScopeEnabled &&
-    currentWalletIds.length === currentAllowedWalletIds.length &&
-    currentAllowedWalletIds.length === nextWalletIds.length &&
-    nextWalletIds.every((walletId) =>
-      currentAllowedWalletIds.includes(walletId),
+    currentScopedWalletIds.length === scopedWalletIds.length &&
+    scopedWalletIds.every((walletId) =>
+      currentScopedWalletIds.includes(walletId),
     );
   if (alreadyScoped) return;
 
-  const updateClient =
-    adminClient ?? createPaymentNodeClient(baseUrl, adminApiKey);
   await updateClient.updateApiKey({
     id: keyStatus.id,
     walletScopeEnabled: true,
-    WalletScopeHotWalletIds: nextWalletIds,
+    WalletScopeHotWalletIds: scopedWalletIds,
   });
 }

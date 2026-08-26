@@ -111,15 +111,17 @@ function resolveNetworkRegistrationCommerce(
   supportedPaymentSources: SupportedPaymentSource[] | undefined;
 } {
   const payment = payload.payment;
+  const agentPricing = { pricingType: "Dynamic" as const };
+
   if (!payment) {
     return {
-      agentPricing: { pricingType: "Free" },
+      agentPricing,
       supportedPaymentSources: undefined,
     };
   }
 
   return {
-    agentPricing: { pricingType: "Free" },
+    agentPricing,
     supportedPaymentSources: [
       buildEvmExactFixedPaymentSource({
         network: payment.network,
@@ -132,6 +134,13 @@ function resolveNetworkRegistrationCommerce(
       }),
     ],
   };
+}
+
+/** @internal Exported for unit tests. */
+export function resolveNetworkRegistrationCommerceForTest(
+  payload: NetworkRegistrationPayload,
+) {
+  return resolveNetworkRegistrationCommerce(payload);
 }
 
 export function buildNetworkRegistrationPayload(

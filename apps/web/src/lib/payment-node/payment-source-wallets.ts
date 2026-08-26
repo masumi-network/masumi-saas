@@ -151,3 +151,11 @@ export async function listSellingWalletIdsByAddresses(
     ),
   ];
 }
+
+/** Hot wallet ids currently known to the payment node (for scope validation). */
+export async function listHotWalletIds(
+  client: PaymentNodeClient,
+): Promise<Set<string>> {
+  const wallets = await listWallets(client);
+  return new Set(wallets.map((wallet) => wallet.id));
+}

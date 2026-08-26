@@ -16,7 +16,21 @@ export type PaymentNodeX402Network = {
   isTestnet: boolean;
   isEnabled: boolean;
   defaultAsset: string | null;
+  facilitatorWalletId: string | null;
+  facilitatorUrl: string | null;
 };
+
+export type SettleableX402Network = Pick<
+  PaymentNodeX402Network,
+  "caip2Id" | "displayName" | "isTestnet" | "defaultAsset"
+>;
+
+function networkCanSettle(network: PaymentNodeX402Network): boolean {
+  return (
+    network.isEnabled &&
+    (network.facilitatorWalletId != null || network.facilitatorUrl != null)
+  );
+}
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cachedNetworks: PaymentNodeX402Network[] | null = null;
@@ -56,6 +70,8 @@ async function loadPaymentNodeX402Networks(options?: {
     isTestnet: network.isTestnet,
     isEnabled: network.isEnabled,
     defaultAsset: network.defaultAsset,
+    facilitatorWalletId: network.facilitatorWalletId,
+    facilitatorUrl: network.facilitatorUrl ?? null,
   }));
   cacheExpiresAt = now + CACHE_TTL_MS;
   return cachedNetworks;
@@ -74,6 +90,20 @@ export async function listPaymentNodeX402Networks(options?: {
     return enabled;
   }
   return enabled.filter((network) => network.isTestnet === options.isTestnet);
+}
+
+/** Enabled x402 networks with a facilitator configured for inbound settlement. */
+export async function listSettleablePaymentNodeX402Networks(options?: {
+  isTestnet?: boolean;
+  refresh?: boolean;
+}): Promise<SettleableX402Network[]> {
+  const networks = await listPaymentNodeX402Networks(options);
+  return networks.filter(networkCanSettle).map((network) => ({
+    caip2Id: network.caip2Id,
+    displayName: network.displayName,
+    isTestnet: network.isTestnet,
+    defaultAsset: network.defaultAsset,
+  }));
 }
 
 /**
