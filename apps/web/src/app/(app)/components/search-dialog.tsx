@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/command";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { canAccessX402Workspace } from "@/lib/auth/org-roles";
+import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 
 interface SearchDialogProps {
@@ -238,7 +239,7 @@ const externalLinks: NavigationItem[] = [
   },
   {
     key: "privacyPolicy",
-    href: "https://www.house-of-communication.com/de/en/footer/privacy-policy.html",
+    href: PRIVACY_POLICY_URL,
     icon: Shield,
   },
   {
