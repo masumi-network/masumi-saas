@@ -932,6 +932,7 @@
         "discord": "Zwietracht",
         "about": "Um",
         "privacyPolicy": "Datenschutzrichtlinie",
+        "imprint": "Impressum",
         "changelog": "Änderungsprotokoll",
         "inboxAgents": "Posteingänge",
         "earnings": "Einnahmen",
@@ -2653,7 +2654,7 @@
     },
     "about": "Um",
     "privacyPolicy": "Datenschutzrichtlinie",
-    "legal": "Rechtliches",
+    "imprint": "Impressum",
     "changelog": "Änderungsprotokoll",
     "discord": "Discord"
   },

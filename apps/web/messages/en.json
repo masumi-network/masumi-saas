@@ -1479,6 +1479,7 @@
         "discord": "Discord",
         "about": "About",
         "privacyPolicy": "Privacy Policy",
+        "imprint": "Imprint",
         "changelog": "Changelog"
       }
     },
@@ -2653,7 +2654,7 @@
     },
     "about": "About",
     "privacyPolicy": "Privacy Policy",
-    "legal": "Legal",
+    "imprint": "Imprint",
     "discord": "Discord",
     "changelog": "Changelog"
   },

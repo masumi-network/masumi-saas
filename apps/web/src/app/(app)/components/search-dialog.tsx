@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   Link2,
   MessageSquare,
+  Scale,
   Shield,
   TrendingUp,
   User,
@@ -45,6 +46,11 @@ import {
 } from "@/components/ui/command";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { canAccessX402Workspace } from "@/lib/auth/org-roles";
+import {
+  DISCORD_INVITE_URL,
+  IMPRINT_PAGE_URL,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 
@@ -220,7 +226,7 @@ const quickActions: NavigationItem[] = [
   },
   {
     key: "support",
-    href: "https://www.masumi.network/contact",
+    href: SUPPORT_PAGE_URL,
     icon: MessageSquare,
   },
 ];
@@ -229,13 +235,18 @@ const externalLinks: NavigationItem[] = [
   { key: "twitter", href: "https://x.com/MasumiNetwork", icon: FaXTwitter },
   {
     key: "discord",
-    href: "https://discord.com/invite/aj4QfnTS92",
+    href: DISCORD_INVITE_URL,
     icon: FaDiscord,
   },
   {
     key: "about",
     href: "https://www.masumi.network/about",
     icon: ExternalLink,
+  },
+  {
+    key: "imprint",
+    href: IMPRINT_PAGE_URL,
+    icon: Scale,
   },
   {
     key: "privacyPolicy",

@@ -932,6 +932,7 @@
         "discord": "Discorde",
         "about": "À propos",
         "privacyPolicy": "politique de confidentialité",
+        "imprint": "Mentions légales",
         "changelog": "Journal des modifications",
         "inboxAgents": "Boîtes de réception",
         "earnings": "Revenus",
@@ -2653,7 +2654,7 @@
     },
     "about": "À propos",
     "privacyPolicy": "politique de confidentialité",
-    "legal": "Légal",
+    "imprint": "Mentions légales",
     "changelog": "Journal des modifications",
     "discord": "Discord"
   },
