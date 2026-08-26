@@ -20,12 +20,24 @@ import {
 import { authConfig } from "@/lib/config/auth.config";
 import { getPostmarkFromHeader } from "@/lib/config/email.config";
 import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
+import { formatOtpExpiryMessage } from "@/lib/email/format-otp-expiry-message";
 import { getEmailMessages } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactVerificationCodeEmail } from "@/lib/email/verification-code";
 
 function generateEmailVerificationCode(length = 6): string {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
+}
+
+function isTruthyEnv(value: string | undefined): boolean {
+  const normalized = value?.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
+/** @internal Exported for unit tests. */
+export function shouldExposeNetworkRegisterDevOtp(): boolean {
+  if (process.env.NODE_ENV !== "development") return false;
+  return !isTruthyEnv(process.env.NETWORK_REGISTER_SUPPRESS_DEV_OTP);
 }
 
 function logDevCode(email: string, otp: string) {
@@ -96,7 +108,7 @@ async function deliverRegistrationOtp(params: {
   name: string;
   otp: string;
 }): Promise<void> {
-  if (process.env.NODE_ENV === "development") {
+  if (shouldExposeNetworkRegisterDevOtp()) {
     logDevCode(params.email, params.otp);
   }
 
@@ -123,7 +135,7 @@ async function deliverRegistrationOtp(params: {
           greeting: msg.greeting,
           message: msg.message,
           codeLabel: msg.codeLabel,
-          expiry: msg.expiry,
+          expiry: formatOtpExpiryMessage(msg.expiry),
           footer: msg.footer,
         },
       }),
@@ -173,7 +185,7 @@ export async function sendNetworkRegistrationOtp(params: {
     return {
       ok: true,
       email,
-      ...(process.env.NODE_ENV === "development" ? { devCode: otp } : {}),
+      ...(shouldExposeNetworkRegisterDevOtp() ? { devCode: otp } : {}),
     };
   } catch (error) {
     console.error("[sendNetworkRegistrationOtp] error:", error);

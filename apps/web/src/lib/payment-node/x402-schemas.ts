@@ -9,6 +9,7 @@ export const paymentNodeX402NetworkSchema = z.object({
   isEnabled: z.boolean(),
   defaultAsset: z.string().nullable(),
   facilitatorWalletId: z.string().nullable(),
+  facilitatorUrl: z.string().nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });

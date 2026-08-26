@@ -48,6 +48,7 @@ import {
   resolvePricingAssetOption,
 } from "@/lib/payment-node/pricing-assets";
 import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
+import { listSettleablePaymentNodeX402Networks } from "@/lib/payment-node/resolve-payment-node-x402-network";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 import type { RegistryEntry } from "@/lib/payment-node/schemas";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
@@ -483,12 +484,38 @@ export async function validateAgentRegistrationPaymentSourcesPreflight(
   }
 
   try {
-    prepareSupportedPaymentSourcesForRegistration(
+    const preparedSources = prepareSupportedPaymentSourcesForRegistration(
       network,
       configuredPaymentSource.smartContractAddress,
       supportedPaymentSources,
       toCardanoSourcePricing(agentPricing),
     );
+
+    const requestedX402Networks = [
+      ...new Set(
+        preparedSources
+          .filter((source) => source.chain === "EVM")
+          .map((source) => source.network),
+      ),
+    ];
+    if (requestedX402Networks.length > 0) {
+      const settleableNetworks = await listSettleablePaymentNodeX402Networks({
+        refresh: true,
+      });
+      const settleableIds = new Set(
+        settleableNetworks.map((entry) => entry.caip2Id),
+      );
+      const unavailable = requestedX402Networks.filter(
+        (caip2Id) => !settleableIds.has(caip2Id),
+      );
+      if (unavailable.length > 0) {
+        return {
+          ok: false,
+          error: `x402 network is not available for settlement: ${unavailable.join(", ")}`,
+        };
+      }
+    }
+
     return { ok: true };
   } catch (error) {
     return { ok: false, error: formatSupportedPaymentSourceError(error) };
