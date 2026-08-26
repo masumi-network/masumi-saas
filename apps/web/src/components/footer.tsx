@@ -6,6 +6,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Locale } from "@/i18n/config";
+import {
+  PRIVACY_POLICY_LINK_PROPS,
+  PRIVACY_POLICY_URL,
+} from "@/lib/config/privacy-policy-url";
 import { cn } from "@/lib/utils";
 
 interface FooterProps {
@@ -49,7 +53,8 @@ export function FooterSections({ className }: FooterSectionsProps) {
           {t("discord")}
         </Link>
         <Link
-          href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
+          href={PRIVACY_POLICY_URL}
+          {...PRIVACY_POLICY_LINK_PROPS}
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
           {t("privacyPolicy")}
