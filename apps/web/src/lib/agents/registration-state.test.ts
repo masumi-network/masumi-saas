@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   canDeregisterAgent,
+  canEditAgentDetails,
   canRequestAgentVerification,
   isAgentLiveOnRegistry,
   isRegistrationSyncPending,
@@ -105,6 +106,28 @@ describe("canDeregisterAgent", () => {
     expect(canDeregisterAgent("UpdateRequested")).toBe(false);
     expect(canDeregisterAgent("UpdateInitiated")).toBe(false);
     expect(canDeregisterAgent("DeregistrationRequested")).toBe(false);
+  });
+});
+
+describe("canEditAgentDetails", () => {
+  const agentIdentifier = "a".repeat(56) + "b".repeat(64);
+
+  it("allows registered agents with an identifier", () => {
+    expect(
+      canEditAgentDetails({
+        registrationState: "RegistrationConfirmed",
+        agentIdentifier,
+      }),
+    ).toBe(true);
+  });
+
+  it("blocks pending updates", () => {
+    expect(
+      canEditAgentDetails({
+        registrationState: "UpdateInitiated",
+        agentIdentifier,
+      }),
+    ).toBe(false);
   });
 });
 

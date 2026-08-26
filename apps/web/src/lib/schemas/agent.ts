@@ -200,6 +200,30 @@ export const agentsListQuerySchema = z.object({
   network: z.enum(["Mainnet", "Preprod"]).optional(),
 });
 
+/** PATCH /api/agents/{agentId} JSON body — editable registry metadata (no pricing/payout). */
+export const updateAgentDetailsBodySchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(250, "Name must be less than 250 characters"),
+  description: z
+    .string()
+    .max(250, "Description must be 250 characters or less")
+    .optional()
+    .or(z.literal("")),
+  tags: z.string().min(1, "At least one tag is required"),
+  apiUrl: agentApiUrlSchema,
+  capabilityName: z.string().max(250).optional().or(z.literal("")),
+  capabilityVersion: z.string().max(250).optional().or(z.literal("")),
+  exampleOutputs: z.array(exampleOutputSchema).optional(),
+  termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+  privacyPolicyUrl: z
+    .union([z.literal(""), z.string().url().max(250)])
+    .optional(),
+  otherUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+  icon: z.string().max(2000).optional(),
+});
+
 /** PATCH /api/agents/{agentId}/payout-address JSON body */
 export const updateAgentPayoutAddressBodySchema = z.object({
   payoutAddress: z

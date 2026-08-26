@@ -143,3 +143,42 @@ export function canDeregisterAgent(state: string): boolean {
     state,
   );
 }
+
+/** States where the owner may edit registered agent details on-chain. */
+export const AGENT_EDIT_DETAILS_ELIGIBLE_STATES = [
+  "RegistrationConfirmed",
+  "UpdateFailed",
+] as const satisfies readonly RegistrationState[];
+
+export function canEditAgentDetails(params: {
+  registrationState: string;
+  agentIdentifier: string | null;
+  updatedAt?: Date;
+  now?: number;
+}): boolean {
+  if (!params.agentIdentifier) {
+    return false;
+  }
+
+  if (
+    (AGENT_EDIT_DETAILS_ELIGIBLE_STATES as readonly string[]).includes(
+      params.registrationState,
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    params.registrationState === "UpdateRequested" &&
+    params.updatedAt &&
+    isUpdateRequestedStale({
+      registrationState: params.registrationState,
+      updatedAt: params.updatedAt,
+      now: params.now,
+    })
+  ) {
+    return true;
+  }
+
+  return false;
+}

@@ -275,6 +275,28 @@ class AgentApiClient {
     });
   }
 
+  async updateAgent(
+    agentId: string,
+    body: {
+      name: string;
+      description?: string;
+      tags: string;
+      apiUrl: string;
+      capabilityName?: string;
+      capabilityVersion?: string;
+      exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
+      termsOfUseUrl?: string;
+      privacyPolicyUrl?: string;
+      otherUrl?: string;
+      icon?: string;
+    },
+  ): Promise<ApiResponse<Agent>> {
+    return this.request<Agent>(`/${agentId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  }
+
   async getVerificationChallenge(
     agentId: string,
     regenerate = false,

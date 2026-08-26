@@ -14,6 +14,7 @@ import type {
 } from "@/lib/payment-node/schemas";
 import { buildUpdateAgentInput } from "@/lib/registry/build-update-agent-input";
 import { hasOnChainVerification } from "@/lib/registry/on-chain-verifications";
+import { pollRegistryUpdate } from "@/lib/registry/poll-registry-update";
 import {
   parseStoredCredentialAttributes,
   withStoredHolderOobi,
@@ -33,16 +34,6 @@ import { resolveHolderOobi } from "@/lib/veridian/resolve-holder-oobi";
 import { buildVerificationOobis } from "@/lib/veridian/verification-oobis";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
-const REGISTRY_UPDATE_POLL_INTERVAL_MS = 3_000;
-const REGISTRY_UPDATE_POLL_TIMEOUT_MS = 120_000;
-/** Bail out of polling after this many consecutive fetch failures. */
-const REGISTRY_UPDATE_POLL_MAX_CONSECUTIVE_ERRORS = 5;
-
-const UPDATE_SUCCESS_STATES = new Set([
-  "UpdateConfirmed",
-  "RegistrationConfirmed",
-]);
-const UPDATE_FAILURE_STATES = new Set(["UpdateFailed"]);
 
 type StoredRegistrationPayload = {
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
@@ -68,10 +59,6 @@ export type WriteOnChainVerificationsResult =
   | { success: true; agentIdentifier: string; skipped?: boolean }
   | { success: false; error: string };
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function resolveSmartContractAddress(params: {
   adminClient: ReturnType<typeof createAdminPaymentNodeClient>;
   userId: string;
@@ -92,88 +79,6 @@ async function resolveSmartContractAddress(params: {
       params.network,
     )) ?? undefined
   );
-}
-
-async function pollRegistryUpdate(
-  adminClient: ReturnType<typeof createAdminPaymentNodeClient>,
-  registryId: string,
-  network: PaymentNodeNetwork,
-  previousAgentIdentifier: string,
-  smartContractAddress: string | undefined,
-): Promise<{ agentIdentifier: string } | { error: string }> {
-  const deadline = Date.now() + REGISTRY_UPDATE_POLL_TIMEOUT_MS;
-  let consecutiveErrors = 0;
-
-  while (Date.now() < deadline) {
-    let entry;
-    try {
-      entry = await adminClient.getRegistryById({
-        id: registryId,
-        network,
-        filterSmartContractAddress: smartContractAddress,
-      });
-      consecutiveErrors = 0;
-    } catch (error) {
-      consecutiveErrors += 1;
-      console.error("[Veridian] Registry poll fetch failed (will retry):", {
-        registryId,
-        network,
-        consecutiveErrors,
-        error,
-      });
-      // Bail early on a persistent admin-client failure instead of burning the
-      // whole timeout window; the caller reconciles/retries on error.
-      if (consecutiveErrors >= REGISTRY_UPDATE_POLL_MAX_CONSECUTIVE_ERRORS) {
-        return {
-          error: "Registry update polling failed repeatedly; aborting early",
-        };
-      }
-      await sleep(REGISTRY_UPDATE_POLL_INTERVAL_MS);
-      continue;
-    }
-
-    if (!entry) {
-      return { error: "Registry entry not found while polling update" };
-    }
-
-    if (UPDATE_FAILURE_STATES.has(entry.state)) {
-      return { error: "Registry update failed on the payment node" };
-    }
-
-    if (
-      UPDATE_SUCCESS_STATES.has(entry.state) &&
-      entry.agentIdentifier &&
-      entry.agentIdentifier !== previousAgentIdentifier
-    ) {
-      return { agentIdentifier: entry.agentIdentifier };
-    }
-
-    if (
-      entry.state === "UpdateConfirmed" &&
-      entry.agentIdentifier &&
-      entry.agentIdentifier === previousAgentIdentifier
-    ) {
-      try {
-        const onChain = await adminClient.getRegistryByAgentIdentifier({
-          agentIdentifier: entry.agentIdentifier,
-          network,
-        });
-        const verifications = onChain?.Metadata?.verifications;
-        if (verifications && verifications.length > 0) {
-          return { agentIdentifier: entry.agentIdentifier };
-        }
-      } catch (error) {
-        console.error(
-          "[Veridian] Registry poll on-chain metadata fetch failed (will retry):",
-          { agentIdentifier: entry.agentIdentifier, network, error },
-        );
-      }
-    }
-
-    await sleep(REGISTRY_UPDATE_POLL_INTERVAL_MS);
-  }
-
-  return { error: "Timed out waiting for registry update confirmation" };
 }
 
 /**
