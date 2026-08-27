@@ -41,6 +41,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { SessionUser } from "@/lib/auth/auth";
+import {
+  MASUMI_EXTERNAL_LINK_PROPS,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
 import { useOrganizationContextOptional } from "@/lib/context/organization-context";
 
 import UserAvatarContent from "./user-avatar-content";
@@ -84,7 +88,11 @@ export default function UserAvatarClient({
   const router = useRouter();
 
   const handleSupport = () => {
-    window.open("https://www.masumi.network/contact", "_blank");
+    window.open(
+      SUPPORT_PAGE_URL,
+      MASUMI_EXTERNAL_LINK_PROPS.target,
+      "noopener,noreferrer",
+    );
   };
 
   const handleDocumentation = () => {

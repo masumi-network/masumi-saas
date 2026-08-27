@@ -932,6 +932,7 @@
         "discord": "Discordia",
         "about": "Acerca de",
         "privacyPolicy": "política de privacidad",
+        "imprint": "Aviso legal",
         "changelog": "Registro de cambios",
         "inboxAgents": "Bandejas de entrada",
         "earnings": "Ingresos",
@@ -2653,7 +2654,7 @@
     },
     "about": "Acerca de",
     "privacyPolicy": "política de privacidad",
-    "legal": "Legal",
+    "imprint": "Aviso legal",
     "changelog": "Registro de cambios",
     "discord": "Discord"
   },

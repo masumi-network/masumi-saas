@@ -932,6 +932,7 @@
         "discord": "不和",
         "about": "について",
         "privacyPolicy": "プライバシーポリシー",
+        "imprint": "インプリント",
         "changelog": "変更履歴",
         "inboxAgents": "受信箱",
         "earnings": "収益",
@@ -2653,7 +2654,7 @@
     },
     "about": "について",
     "privacyPolicy": "プライバシーポリシー",
-    "legal": "法律上の",
+    "imprint": "インプリント",
     "changelog": "変更履歴",
     "discord": "Discord"
   },

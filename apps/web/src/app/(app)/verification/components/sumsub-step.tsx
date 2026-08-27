@@ -6,6 +6,10 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef } from "react";
 
+import {
+  MASUMI_EXTERNAL_LINK_PROPS,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
 import { cn } from "@/lib/utils";
 import { extractErrorMessage } from "@/lib/utils/extract-error";
 
@@ -133,8 +137,8 @@ export function SumsubStep({
       {showSupportLink ? (
         <div className="flex justify-end">
           <Link
-            href="https://www.masumi.network/contact"
-            target="_blank"
+            href={SUPPORT_PAGE_URL}
+            {...MASUMI_EXTERNAL_LINK_PROPS}
             className="text-sm text-primary hover:underline"
           >
             {t("havingIssues")}
