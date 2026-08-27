@@ -8,7 +8,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { AgentIconPicker } from "@/app/(app)/ai-agents/components/agent-icon-picker";
+import { AgentIconPicker } from "@/app/ai-agents/components/agent-icon-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
