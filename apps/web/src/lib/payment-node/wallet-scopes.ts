@@ -134,12 +134,28 @@ export async function ensureUserPaymentNodeKeyScopedToWallets(params: {
     existingHotWalletIds.has(walletId),
   );
 
-  const alreadyScoped =
-    keyStatus.walletScopeEnabled &&
+  const missingRequestedWalletIds = requestedWalletIds.filter(
+    (walletId) => !existingHotWalletIds.has(walletId),
+  );
+  if (missingRequestedWalletIds.length > 0) {
+    throw new Error(
+      `Payment node hot wallets missing requested scope targets: ${missingRequestedWalletIds.join(", ")}`,
+    );
+  }
+
+  const hasUnscopedRequestedHotWallets = requestedWalletIds.some(
+    (walletId) => !currentScopedWalletIds.includes(walletId),
+  );
+  const scopesMatch =
     currentScopedWalletIds.length === scopedWalletIds.length &&
     scopedWalletIds.every((walletId) =>
       currentScopedWalletIds.includes(walletId),
     );
+
+  const alreadyScoped =
+    keyStatus.walletScopeEnabled &&
+    !hasUnscopedRequestedHotWallets &&
+    scopesMatch;
   if (alreadyScoped) return;
 
   await updateClient.updateApiKey({
