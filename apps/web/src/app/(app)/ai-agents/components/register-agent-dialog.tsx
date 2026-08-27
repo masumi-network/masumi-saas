@@ -43,6 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { syncPricesValidationAfterPricingModeChange } from "@/lib/agents/register-agent-pricing-effects";
 import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
@@ -401,10 +402,11 @@ export function RegisterAgentDialog({
   }) as PricingMode;
 
   useEffect(() => {
+    syncPricesValidationAfterPricingModeChange(pricingType, form);
     if (pricingType === "Fixed") return;
     setX402Options([]);
     setX402Error(null);
-  }, [pricingType]);
+  }, [pricingType, form]);
 
   useEffect(() => {
     if (!open) return;
