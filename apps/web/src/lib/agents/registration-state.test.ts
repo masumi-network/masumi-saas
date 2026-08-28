@@ -9,6 +9,7 @@ import {
   isRegistrationUiPending,
   isUpdateRequestedStale,
   registrationStateFromRegistryEntry,
+  REGISTRY_UPDATE_ABANDONED_MS,
   resolveRegistrationStateAfterSync,
   STALE_UPDATE_REQUESTED_MS,
 } from "./registration-state";
@@ -60,6 +61,30 @@ describe("resolveRegistrationStateAfterSync", () => {
       resolveRegistrationStateAfterSync({
         previousState: "RegistrationConfirmed",
         registryState: "UpdateRequested",
+      }),
+    ).toBe("UpdateRequested");
+  });
+
+  it("releases abandoned UpdateRequested when the node is still queued", () => {
+    const now = 1_000_000_000_000;
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "UpdateRequested",
+        updatedAt: new Date(now - REGISTRY_UPDATE_ABANDONED_MS),
+        now,
+      }),
+    ).toBe("RegistrationConfirmed");
+  });
+
+  it("keeps in-flight UpdateRequested within the abandoned window", () => {
+    const now = 1_000_000_000_000;
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "UpdateRequested",
+        updatedAt: new Date(now - (REGISTRY_UPDATE_ABANDONED_MS - 1)),
+        now,
       }),
     ).toBe("UpdateRequested");
   });

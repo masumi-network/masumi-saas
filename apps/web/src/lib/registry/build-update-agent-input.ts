@@ -50,11 +50,18 @@ function resolveLegal(
   };
 }
 
+function isV2RegistryMetadata(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+): boolean {
+  return (metadata.metadataVersion ?? 1) >= 2;
+}
+
 export function buildUpdateAgentInput(
   params: BuildUpdateAgentInputParams,
 ): UpdateAgentInput {
   const { registryEntry, onChainMetadata, storedRegistration } = params;
   const metadata = onChainMetadata.Metadata;
+  const isV2 = isV2RegistryMetadata(metadata);
   const image =
     metadata.image ?? resolveAgentRegistryImage(params.agentIcon) ?? undefined;
 
@@ -89,7 +96,7 @@ export function buildUpdateAgentInput(
       undefined,
   };
 
-  return {
+  const base: UpdateAgentInput = {
     network: params.network,
     agentIdentifier: params.agentIdentifier,
     ...(params.smartContractAddress
@@ -105,8 +112,8 @@ export function buildUpdateAgentInput(
         : registryEntry.Tags,
     ExampleOutputs: exampleOutputs,
     Capability: {
-      name: capability.name,
-      version: capability.version,
+      name: capability.name ?? "unknown",
+      version: capability.version ?? "1.0.0",
     },
     Author: {
       name: author.name,
@@ -117,9 +124,24 @@ export function buildUpdateAgentInput(
     ...(resolveLegal(storedRegistration, metadata)
       ? { Legal: resolveLegal(storedRegistration, metadata) }
       : {}),
+    verifications: params.verifications,
+  };
+
+  if (isV2) {
+    const supportedPaymentSources =
+      metadata.supportedPaymentSources ??
+      registryEntry.supportedPaymentSources ??
+      undefined;
+    if (supportedPaymentSources != null) {
+      return { ...base, supportedPaymentSources };
+    }
+    return base;
+  }
+
+  return {
+    ...base,
     AgentPricing: (metadata.AgentPricing ??
       storedRegistration?.agentPricing ??
       registryEntry.AgentPricing) as UpdateAgentInput["AgentPricing"],
-    verifications: params.verifications,
   };
 }

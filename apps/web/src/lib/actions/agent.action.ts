@@ -193,6 +193,7 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     const registrationState = resolveRegistrationStateAfterSync({
       previousState,
       registryState: entry.state,
+      updatedAt: agent.updatedAt,
     });
     const status =
       entry.state === "RegistrationConfirmed"

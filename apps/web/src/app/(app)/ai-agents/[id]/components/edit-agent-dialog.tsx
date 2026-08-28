@@ -317,12 +317,12 @@ export function EditAgentDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-0 overflow-hidden p-0"
+        className="flex max-h-[80vh] w-full max-w-2xl flex-col gap-0 overflow-hidden p-0"
         closeButtonClassName="top-8 right-4 -translate-y-1/2"
       >
         <div
           className={cn(
-            "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+            "shrink-0 border-b bg-masumi-gradient px-6 py-4 pr-12",
             dialogHeaderEnterClass,
           )}
         >
@@ -338,7 +338,7 @@ export function EditAgentDialog({
             onSubmit={(event) => void handleSubmit(event)}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <DialogBody className="space-y-6 overflow-y-auto">
+            <DialogBody className="space-y-4 overflow-y-auto py-5">
               <FormField
                 control={form.control}
                 name="icon"
@@ -390,7 +390,7 @@ export function EditAgentDialog({
                       <Textarea
                         placeholder={tRegister("descriptionPlaceholder")}
                         {...field}
-                        className="min-h-[88px] resize-none"
+                        className="min-h-[72px] resize-none"
                         disabled={isSaving}
                       />
                     </FormControl>
@@ -482,7 +482,7 @@ export function EditAgentDialog({
                 <Separator className="flex-1" />
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="termsOfUseUrl"
@@ -583,7 +583,7 @@ export function EditAgentDialog({
               <ExampleOutputsFields form={form} t={tRegister} />
             </DialogBody>
 
-            <DialogFooter className="shrink-0 flex justify-end gap-2 border-t bg-background px-6 py-4">
+            <DialogFooter className="shrink-0 flex justify-end gap-2 border-t bg-background px-6 py-3">
               <Button
                 type="button"
                 variant="outline"

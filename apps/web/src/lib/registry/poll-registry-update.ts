@@ -6,6 +6,10 @@ export const REGISTRY_UPDATE_POLL_TIMEOUT_MS = 120_000;
 /** Bail out of polling after this many consecutive fetch failures. */
 export const REGISTRY_UPDATE_POLL_MAX_CONSECUTIVE_ERRORS = 5;
 
+/** Shown in the edit dialog when an on-chain update does not complete. */
+export const REGISTRY_UPDATE_USER_FACING_ERROR =
+  "We couldn't apply your changes. Please try again.";
+
 const UPDATE_SUCCESS_STATES = new Set([
   "UpdateConfirmed",
   "RegistrationConfirmed",
@@ -31,6 +35,11 @@ export async function pollRegistryUpdate(
 ): Promise<{ agentIdentifier: string } | { error: string }> {
   const deadline = Date.now() + REGISTRY_UPDATE_POLL_TIMEOUT_MS;
   let consecutiveErrors = 0;
+  let lastEntry: Awaited<
+    ReturnType<
+      ReturnType<typeof createAdminPaymentNodeClient>["getRegistryById"]
+    >
+  > | null = null;
 
   while (Date.now() < deadline) {
     let entry;
@@ -50,20 +59,19 @@ export async function pollRegistryUpdate(
         error,
       });
       if (consecutiveErrors >= REGISTRY_UPDATE_POLL_MAX_CONSECUTIVE_ERRORS) {
-        return {
-          error: "Registry update polling failed repeatedly; aborting early",
-        };
+        return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
       }
       await sleep(REGISTRY_UPDATE_POLL_INTERVAL_MS);
       continue;
     }
 
     if (!entry) {
-      return { error: "Registry entry not found while polling update" };
+      return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
     }
+    lastEntry = entry;
 
     if (UPDATE_FAILURE_STATES.has(entry.state)) {
-      return { error: "Registry update failed on the payment node" };
+      return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
     }
 
     if (
@@ -103,5 +111,13 @@ export async function pollRegistryUpdate(
     await sleep(REGISTRY_UPDATE_POLL_INTERVAL_MS);
   }
 
-  return { error: "Timed out waiting for registry update confirmation" };
+  if (
+    lastEntry &&
+    (lastEntry.state === "UpdateRequested" ||
+      lastEntry.state === "UpdateInitiated")
+  ) {
+    return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
+  }
+
+  return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
 }

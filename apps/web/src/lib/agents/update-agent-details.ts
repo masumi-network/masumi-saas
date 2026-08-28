@@ -367,6 +367,8 @@ export async function updateAgentDetails(params: {
       error: pollResult.error,
     });
 
+    let registrationState: "RegistrationConfirmed" | "UpdateFailed" =
+      "RegistrationConfirmed";
     try {
       const failedEntry = await adminClient.getRegistryById({
         id: registryId,
@@ -374,11 +376,7 @@ export async function updateAgentDetails(params: {
         filterSmartContractAddress: smartContractAddress,
       });
       if (failedEntry?.state === "UpdateFailed") {
-        await prisma.agent.update({
-          where: { id: agent.id },
-          data: { registrationState: "UpdateFailed" },
-        });
-        return { success: false, error: pollResult.error };
+        registrationState = "UpdateFailed";
       }
     } catch (error) {
       console.error("[Registry] Failed to reconcile registry row after poll:", {
@@ -391,7 +389,7 @@ export async function updateAgentDetails(params: {
     try {
       await prisma.agent.update({
         where: { id: agent.id },
-        data: { registrationState: "RegistrationConfirmed" },
+        data: { registrationState },
       });
     } catch (error) {
       console.error(
