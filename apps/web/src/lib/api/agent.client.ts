@@ -4,6 +4,7 @@ import type { AgentPricing } from "@/lib/utils";
 
 import type {
   Agent,
+  AgentOnChainVerificationStatus,
   AgentVerificationCredentialSummary,
   ApiResponse,
   GetAgentsResult,
@@ -11,6 +12,7 @@ import type {
 
 export type {
   Agent,
+  AgentOnChainVerificationStatus,
   AgentVerificationCredentialSummary,
   ApiResponse,
   GetAgentsResult,
@@ -153,10 +155,17 @@ class AgentApiClient {
     );
   }
 
+  async getOnChainVerificationStatus(
+    agentId: string,
+  ): Promise<ApiResponse<AgentOnChainVerificationStatus>> {
+    return this.request<AgentOnChainVerificationStatus>(
+      `/${agentId}/on-chain-verification`,
+    );
+  }
+
   async registerAgent(data: {
     name: string;
     description?: string;
-    extendedDescription?: string;
     apiUrl: string;
     tags?: string;
     icon?: string;
@@ -253,6 +262,16 @@ class AgentApiClient {
     return this.request<Agent>(`/${agentId}/verify`, {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  }
+
+  async updatePayoutAddress(
+    agentId: string,
+    payoutAddress: string,
+  ): Promise<ApiResponse<Agent>> {
+    return this.request<Agent>(`/${agentId}/payout-address`, {
+      method: "PATCH",
+      body: JSON.stringify({ payoutAddress }),
     });
   }
 

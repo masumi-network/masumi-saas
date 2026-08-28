@@ -4,6 +4,14 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Locale } from "@/i18n/config";
+import {
+  IMPRINT_PAGE_URL,
+  MASUMI_EXTERNAL_LINK_PROPS,
+} from "@/lib/config/masumi-external-links";
+import {
+  PRIVACY_POLICY_LINK_PROPS,
+  PRIVACY_POLICY_URL,
+} from "@/lib/config/privacy-policy-url";
 
 export async function AuthFooter() {
   const t = await getTranslations("Footer");
@@ -25,18 +33,18 @@ export async function AuthFooter() {
             {t("about")}
           </Link>
           <Link
-            href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
-            target="_blank"
+            href={PRIVACY_POLICY_URL}
+            {...PRIVACY_POLICY_LINK_PROPS}
             className="shrink-0 text-[11px] text-muted-foreground tracking-tight hover:text-foreground sm:text-sm"
           >
             {t("privacyPolicy")}
           </Link>
           <Link
-            href="https://www.masumi.network/legal"
-            target="_blank"
+            href={IMPRINT_PAGE_URL}
+            {...MASUMI_EXTERNAL_LINK_PROPS}
             className="shrink-0 text-[11px] text-muted-foreground tracking-tight hover:text-foreground sm:text-sm"
           >
-            {t("legal")}
+            {t("imprint")}
           </Link>
         </div>
       </div>

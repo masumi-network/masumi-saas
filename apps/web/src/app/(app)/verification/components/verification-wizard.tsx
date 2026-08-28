@@ -31,12 +31,14 @@ interface VerificationWizardProps {
   kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW";
   rejectionReason?: string | null;
   kycCompletedAt?: Date | null;
+  returnTo?: string | null;
 }
 
 export function VerificationWizard({
   kycStatus,
   rejectionReason,
   kycCompletedAt,
+  returnTo = null,
 }: VerificationWizardProps) {
   const t = useTranslations("App.Verification");
   const router = useRouter();
@@ -67,6 +69,12 @@ export function VerificationWizard({
       setCurrentStep(3);
     }
   }, [liveKycStatus]);
+
+  useEffect(() => {
+    if (liveKycStatus === "APPROVED" && returnTo) {
+      router.push(returnTo);
+    }
+  }, [liveKycStatus, returnTo, router]);
 
   const steps = [
     {
@@ -208,6 +216,7 @@ export function VerificationWizard({
                   kycStatus={liveKycStatus}
                   rejectionReason={liveRejectionReason}
                   kycCompletedAt={liveKycCompletedAt}
+                  returnTo={returnTo}
                 />
               </CardContent>
             </>
@@ -243,6 +252,7 @@ export function VerificationWizard({
                     kycStatus={liveKycStatus}
                     rejectionReason={liveRejectionReason}
                     kycCompletedAt={liveKycCompletedAt}
+                    returnTo={returnTo}
                   />
                 )}
               </CardContent>

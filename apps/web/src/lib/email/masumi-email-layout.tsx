@@ -16,6 +16,7 @@ import {
 import type { ReactNode } from "react";
 
 import { emailConfig } from "../config/email.config";
+import { SUPPORT_PAGE_URL } from "../config/masumi-external-links";
 
 type MasumiEmailLayoutProps = {
   preview: string;
@@ -69,7 +70,7 @@ const BRAND_NAME = "Masumi";
 
 const DEFAULT_FOOTER_LINKS = [
   { label: "Website", href: "https://masumi.network" },
-  { label: "Support", href: "https://masumi.network/support" },
+  { label: "Support", href: SUPPORT_PAGE_URL },
 ];
 
 export function MasumiEmailLayout({

@@ -2,7 +2,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const getWalletOwnedAgentForUserMock = vi.fn();
-const shapeAgentWithMergedMetadataMock = vi.fn();
+const shapeAgentForApiMock = vi.fn();
+const loadSupportedPaymentSourcesForAgentMock = vi.fn();
 
 vi.mock("server-only", () => ({}));
 
@@ -15,7 +16,11 @@ vi.mock("@/lib/agents/wallet-ownership", () => ({
 }));
 
 vi.mock("@/lib/api/agent-metadata", () => ({
-  shapeAgentWithMergedMetadata: shapeAgentWithMergedMetadataMock,
+  shapeAgentForApi: shapeAgentForApiMock,
+}));
+
+vi.mock("@masumi/payment-source-x402/supported-payment-sources", () => ({
+  loadSupportedPaymentSourcesForAgent: loadSupportedPaymentSourcesForAgentMock,
 }));
 
 describe("getAgent", () => {
@@ -30,10 +35,12 @@ describe("getAgent", () => {
     getAuthenticatedOrThrowMock.mockResolvedValue({
       user: { id: "user-1" },
     });
-    shapeAgentWithMergedMetadataMock.mockReturnValue({
+    loadSupportedPaymentSourcesForAgentMock.mockResolvedValue(null);
+    shapeAgentForApiMock.mockReturnValue({
       id: "agent-1",
       name: "Wallet agent",
       pricing: null,
+      supportedPaymentSources: null,
       verificationStatus: "VERIFIED",
     });
   });
@@ -68,6 +75,7 @@ describe("getAgent", () => {
         id: "agent-1",
         name: "Wallet agent",
         pricing: null,
+        supportedPaymentSources: null,
         verificationStatus: "VERIFIED",
       },
     });

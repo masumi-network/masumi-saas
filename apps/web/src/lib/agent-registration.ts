@@ -4,9 +4,24 @@
  * No "use server" — receives user and params from callers.
  */
 
-import prisma, { type RegistrationState } from "@masumi/database/client";
+import prisma from "@masumi/database/client";
+import {
+  normalizeSupportedPaymentSourceInput,
+  PaymentSourceType,
+  PricingType,
+  type SupportedPaymentSource,
+  type SupportedPaymentSourcePricing,
+  validateSupportedPaymentSourcesOrThrow,
+} from "@masumi/payment-source-x402/payment-source";
+import {
+  loadSupportedPaymentSourcesForAgent,
+  mergeWithDefaultCardanoSource,
+  replaceSupportedPaymentSourcesForAgent,
+} from "@masumi/payment-source-x402/supported-payment-sources";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
+import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
 import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
 import { sendAgentRegistrationFailedEmail } from "@/lib/email/send-registration-failed";
 import {
@@ -19,14 +34,29 @@ import type {
   PaymentSourceWallet,
 } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
+import {
+  createAdminPaymentNodeClient,
+  tryCreateAdminPaymentNodeClient,
+} from "@/lib/payment-node/get-admin-client";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import {
   findSellingWalletIdByVkey,
   hydratePaymentSource,
 } from "@/lib/payment-node/payment-source-wallets";
-import { USDM } from "@/lib/payment-node/tokens";
+import {
+  humanAmountToSmallestUnit,
+  resolvePricingAssetOption,
+} from "@/lib/payment-node/pricing-assets";
+import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
+import { listSettleablePaymentNodeX402Networks } from "@/lib/payment-node/resolve-payment-node-x402-network";
+import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
+import type { RegistryEntry } from "@/lib/payment-node/schemas";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
 
+import {
+  normalizePayoutAddress,
+  validatePayoutAddressForNetwork,
+} from "./payment-node/payout-address";
 import {
   isWalletAddressCompatibleWithNetwork,
   resolveRegistrationFundingWallet,
@@ -52,7 +82,6 @@ export type RegisterAgentParams = {
   id?: string;
   name: string;
   description: string | null;
-  extendedDescription: string | null;
   apiUrl: string;
   runtimeProvider?: "DIRECT_MIP" | "LANGDOCK";
   integrationConnectionId?: string | null;
@@ -60,6 +89,15 @@ export type RegisterAgentParams = {
   tags: string[];
   icon: string | null;
   agentPricing: AgentPricing;
+  payoutAddress?: string;
+  /**
+   * Requested Cardano address for NFT delivery (browser / paper / existing).
+   * Stored for ops and future external mint support. Payment-node currently
+   * only mints to managed hot wallets, so registerAgent still targets the
+   * managed selling wallet.
+   */
+  registryNftRecipientAddress?: string;
+  supportedPaymentSources?: SupportedPaymentSource[];
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
   capabilityName: string;
   capabilityVersion: string;
@@ -86,11 +124,13 @@ export type CompleteRegistrationResult =
 
 type RegistrationPayloadStored = {
   sellingWalletAddress?: string;
+  registryNftRecipientAddress?: string;
   fundingWalletId?: string;
   fundingWalletVkey?: string;
   fundingWalletAddress?: string;
   /** Payment source contract used for registry ops (deregister must match). */
   smartContractAddress?: string;
+  paymentSourceType?: string;
   lastRegisterAttemptAt?: string;
   registrationPayload?: {
     exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
@@ -107,11 +147,35 @@ type RegistrationPayloadStored = {
   };
 };
 
+function toCardanoSourcePricing(
+  agentPricing: AgentPricing,
+): SupportedPaymentSourcePricing {
+  if (agentPricing.pricingType === "Free") {
+    return { pricingType: PricingType.Free };
+  }
+  if (agentPricing.pricingType === "Dynamic") {
+    return { pricingType: PricingType.Dynamic };
+  }
+  return {
+    pricingType: PricingType.Fixed,
+    fixed: agentPricing.Pricing.map((price) => ({
+      asset: price.unit,
+      amount: price.amount,
+    })),
+  };
+}
+
 function shouldDeferRegisterRetry(lastRegisterAttemptAt?: string): boolean {
   if (!lastRegisterAttemptAt) return false;
   const ms = Date.parse(lastRegisterAttemptAt);
   if (Number.isNaN(ms)) return false;
   return Date.now() - ms < REGISTER_AGENT_RETRY_COOLDOWN_MS;
+}
+
+function formatRegistryFailureMessage(registryError?: string | null): string {
+  const trimmed = registryError?.trim();
+  if (trimmed) return trimmed;
+  return "Registration was rejected or failed on the network.";
 }
 
 export function shouldCheckRecipientWalletForRegisteredAssets(
@@ -128,6 +192,125 @@ function shouldTreatWalletRegistryLookupAsPending(message: string): boolean {
     normalized.startsWith("404: stake address not found") ||
     normalized.includes("requested component has not been found")
   );
+}
+
+async function completeRegistrationFromRegistryEntry(params: {
+  agentId: string;
+  userId: string;
+  agentName: string;
+  entry: RegistryEntry;
+}): Promise<CompleteRegistrationResult> {
+  const state = registrationStateFromRegistryEntry(params.entry.state);
+  await prisma.agent.update({
+    where: { id: params.agentId },
+    data: {
+      registrationState: state,
+      ...(params.entry.agentIdentifier && {
+        agentIdentifier: params.entry.agentIdentifier,
+      }),
+    },
+  });
+  if (state === "RegistrationConfirmed") {
+    await recordAgentActivityEvent(params.agentId, "RegistrationConfirmed");
+    const fresh = await prisma.agent.findUniqueOrThrow({
+      where: { id: params.agentId },
+    });
+    await sendAgentRegistrationCompleteEmail(
+      params.userId,
+      params.agentId,
+      fresh.name,
+    );
+    return { status: "registered", data: fresh };
+  }
+  if (state === "RegistrationFailed") {
+    await recordAgentActivityEvent(params.agentId, "RegistrationFailed");
+    const errorMsg = "Registration was rejected or failed on the network.";
+    await sendAgentRegistrationFailedEmail(
+      params.userId,
+      params.agentId,
+      params.agentName,
+      errorMsg,
+    );
+    return { status: "error", error: errorMsg };
+  }
+  if (state === "UpdateFailed") {
+    return {
+      status: "error",
+      error: "Registry update failed on the payment node.",
+    };
+  }
+  return { status: "pending" };
+}
+
+async function trySyncFromRecipientWalletAssets(params: {
+  userId: string;
+  agentId: string;
+  agentName: string;
+  agentApiUrl: string;
+  recipientWalletVkey: string;
+  network: PaymentNodeNetwork;
+  existingMetadata: Record<string, unknown> | null;
+}): Promise<CompleteRegistrationResult | null> {
+  const clients = [
+    await getPaymentNodeClientForUser(params.userId),
+    tryCreateAdminPaymentNodeClient(),
+  ].filter((client): client is ReturnType<typeof createPaymentNodeClient> =>
+    Boolean(client),
+  );
+
+  for (const client of clients) {
+    try {
+      const response = await client.getRegisteredAgentsByWallet({
+        walletVkey: params.recipientWalletVkey,
+        network: params.network,
+      });
+      const walletMatch =
+        response.Assets.find(
+          (asset) => asset.Metadata.apiBaseUrl === params.agentApiUrl,
+        ) ??
+        response.Assets.find(
+          (asset) => asset.Metadata.name === params.agentName,
+        ) ??
+        null;
+      if (!walletMatch?.agentIdentifier) continue;
+
+      await prisma.agentReference.update({
+        where: { agentId: params.agentId },
+        data: {
+          status: "ACTIVE",
+          registeredAt: new Date(),
+          metadata: {
+            ...(params.existingMetadata ?? {}),
+            agentIdentifier: walletMatch.agentIdentifier,
+          },
+        },
+      });
+      await prisma.agent.update({
+        where: { id: params.agentId },
+        data: {
+          registrationState: "RegistrationConfirmed",
+          agentIdentifier: walletMatch.agentIdentifier,
+        },
+      });
+      await recordAgentActivityEvent(params.agentId, "RegistrationConfirmed");
+      const fresh = await prisma.agent.findUniqueOrThrow({
+        where: { id: params.agentId },
+      });
+      await sendAgentRegistrationCompleteEmail(
+        params.userId,
+        params.agentId,
+        fresh.name,
+      );
+      return { status: "registered", data: fresh };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!shouldTreatWalletRegistryLookupAsPending(message)) {
+        continue;
+      }
+    }
+  }
+
+  return null;
 }
 
 async function getConfiguredPaymentSource(
@@ -192,6 +375,157 @@ function validateRegistrationFundingWalletNetwork(params: {
 }
 
 /**
+ * Merge and validate advertised payment sources before wallet provisioning or credit debit.
+ * V2 always returns at least the Cardano escrow source (with source-local pricing).
+ */
+export function prepareSupportedPaymentSourcesForRegistration(
+  network: PaymentNodeNetwork,
+  smartContractAddress: string | null | undefined,
+  supportedPaymentSources: SupportedPaymentSource[] | undefined,
+  cardanoPricing: SupportedPaymentSourcePricing = {
+    pricingType: PricingType.Free,
+  },
+): SupportedPaymentSource[] {
+  const userSources = (supportedPaymentSources ?? []).map(
+    normalizeSupportedPaymentSourceInput,
+  );
+
+  const contractAddress = smartContractAddress?.trim();
+  if (!contractAddress) {
+    throw new Error(
+      "Supported payment sources require a configured V2 payment source smart contract address.",
+    );
+  }
+
+  const hasEvm = userSources.some((source) => source.chain === "EVM");
+  // x402-first ads: keep Cardano escrow Free so we do not require Cardano fixed units.
+  const resolvedCardanoPricing = hasEvm
+    ? { pricingType: PricingType.Free }
+    : cardanoPricing;
+
+  const mergedSources = mergeWithDefaultCardanoSource(
+    network,
+    contractAddress,
+    userSources,
+    resolvedCardanoPricing,
+  );
+  validateSupportedPaymentSourcesOrThrow(
+    mergedSources,
+    network,
+    PaymentSourceType.Web3CardanoV2,
+  );
+  return mergedSources;
+}
+
+function formatSupportedPaymentSourceError(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : "Invalid supported payment sources";
+}
+
+/**
+ * Read-only preflight: load the configured payment source contract and validate
+ * supported payment sources before registration credits are consumed.
+ */
+export async function validateAgentRegistrationPaymentSourcesPreflight(
+  network: PaymentNodeNetwork,
+  supportedPaymentSources: SupportedPaymentSource[] | undefined,
+  agentPricing: AgentPricing = { pricingType: "Free" },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  let baseUrl: string;
+  let adminKey: string;
+  let paymentSourceId: string;
+  try {
+    baseUrl = paymentNodeConfig.getBaseUrl();
+    adminKey = paymentNodeConfig.getAdminApiKey();
+    paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
+  } catch (error) {
+    console.error("Payment node config missing for x402 preflight:", error);
+    return {
+      ok: false,
+      error: "Something went wrong. Please try again later.",
+    };
+  }
+
+  const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+  const configuredPaymentSource = await getConfiguredPaymentSource(
+    adminClient,
+    paymentSourceId,
+  );
+  if (!configuredPaymentSource) {
+    return {
+      ok: false,
+      error: `Configured payment source ${paymentSourceId} could not be found for agent registration.`,
+    };
+  }
+
+  if (
+    configuredPaymentSource.network &&
+    configuredPaymentSource.network !== network
+  ) {
+    return {
+      ok: false,
+      error: getPaymentSourceMismatchError({
+        paymentSourceId,
+        expectedNetwork: network,
+        actualNetwork: configuredPaymentSource.network,
+      }),
+    };
+  }
+
+  if (configuredPaymentSource.paymentSourceType !== "Web3CardanoV2") {
+    if (supportedPaymentSources?.length) {
+      return {
+        ok: false,
+        error: "x402 payment sources require a V2 payment source.",
+      };
+    }
+    return {
+      ok: false,
+      error: "Agent registration requires a V2 payment source.",
+    };
+  }
+
+  try {
+    const preparedSources = prepareSupportedPaymentSourcesForRegistration(
+      network,
+      configuredPaymentSource.smartContractAddress,
+      supportedPaymentSources,
+      toCardanoSourcePricing(agentPricing),
+    );
+
+    const requestedX402Networks = [
+      ...new Set(
+        preparedSources
+          .filter((source) => source.chain === "EVM")
+          .map((source) => source.network),
+      ),
+    ];
+    if (requestedX402Networks.length > 0) {
+      const settleableNetworks = await listSettleablePaymentNodeX402Networks({
+        refresh: true,
+      });
+      const settleableIds = new Set(
+        settleableNetworks.map((entry) => entry.caip2Id),
+      );
+      const unavailable = requestedX402Networks.filter(
+        (caip2Id) => !settleableIds.has(caip2Id),
+      );
+      if (unavailable.length > 0) {
+        return {
+          ok: false,
+          error: `x402 network is not available for settlement: ${unavailable.join(", ")}`,
+        };
+      }
+    }
+
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: formatSupportedPaymentSourceError(error) };
+  }
+}
+
+/**
  * Fast path: create agent wallet, ref, and persist funding-wallet context; return agentId immediately.
  * Completion (registerAgent + confirmation polling) is done by POST /api/agents/:id/complete-registration.
  */
@@ -217,6 +551,22 @@ async function registerAgentOnChainUntilSetup(
 
   if (params.tags.length === 0) {
     return { success: false, error: "At least one tag is required." };
+  }
+
+  const isFreePricing = params.agentPricing.pricingType === "Free";
+
+  let payoutAddress = "";
+  if (!isFreePricing) {
+    payoutAddress = normalizePayoutAddress(params.payoutAddress ?? "");
+    if (payoutAddress) {
+      const payoutAddressError = validatePayoutAddressForNetwork(
+        payoutAddress,
+        network,
+      );
+      if (payoutAddressError) {
+        return { success: false, error: payoutAddressError };
+      }
+    }
   }
 
   const userClient = await getPaymentNodeClientForUser(user.id);
@@ -306,14 +656,56 @@ async function registerAgentOnChainUntilSetup(
     return { success: false, error: fundingWalletNetworkError };
   }
 
+  let mergedSupportedPaymentSources: SupportedPaymentSource[] | null = null;
+  if (configuredPaymentSource.paymentSourceType !== "Web3CardanoV2") {
+    return {
+      success: false,
+      error: "Agent registration requires a V2 payment source.",
+    };
+  }
+
+  try {
+    mergedSupportedPaymentSources =
+      prepareSupportedPaymentSourcesForRegistration(
+        network,
+        configuredPaymentSource.smartContractAddress,
+        params.supportedPaymentSources,
+        toCardanoSourcePricing(params.agentPricing),
+      );
+  } catch (error) {
+    return {
+      success: false,
+      error: formatSupportedPaymentSourceError(error),
+    };
+  }
+
   const sellingWallet = await adminClient.generateWallet(network);
+  let registryNftRecipientAddress = "";
+  if (params.registryNftRecipientAddress?.trim()) {
+    registryNftRecipientAddress = normalizePayoutAddress(
+      params.registryNftRecipientAddress,
+    );
+    const recipientError = validatePayoutAddressForNetwork(
+      registryNftRecipientAddress,
+      network,
+    );
+    if (recipientError) {
+      return { success: false, error: recipientError };
+    }
+  }
+
+  // Managed path: when Fixed/Dynamic pricing has no payout yet, collect to the
+  // new selling wallet (same as Free). External NFT recipients also become the
+  // collection address when payout was omitted.
+  const collectionAddress =
+    payoutAddress || registryNftRecipientAddress || sellingWallet.walletAddress;
   const paymentSource = await adminClient.addWalletsToPaymentSource({
     paymentSourceId,
     AddSellingWallets: [
       {
         walletMnemonic: sellingWallet.walletMnemonic,
         note: `Agent: ${params.name} (selling)`,
-        collectionAddress: null,
+        collectionAddress,
       },
     ],
   });
@@ -411,7 +803,6 @@ async function registerAgentOnChainUntilSetup(
       ...(params.id ? { id: params.id } : {}),
       name: params.name,
       description: params.description,
-      extendedDescription: params.extendedDescription,
       apiUrl: params.apiUrl,
       runtimeProvider: params.runtimeProvider ?? "DIRECT_MIP",
       integrationConnectionId: params.integrationConnectionId ?? null,
@@ -451,9 +842,15 @@ async function registerAgentOnChainUntilSetup(
       status: "PENDING",
       metadata: {
         sellingWalletAddress: sellingWallet.walletAddress,
+        ...(registryNftRecipientAddress ? { registryNftRecipientAddress } : {}),
+        collectionAddress,
         fundingWalletId: fundingWalletResult.wallet.id,
         fundingWalletVkey: fundingWalletResult.wallet.walletVkey,
         fundingWalletAddress: fundingWalletResult.wallet.walletAddress,
+        paymentSourceId,
+        ...(configuredPaymentSource.paymentSourceType
+          ? { paymentSourceType: configuredPaymentSource.paymentSourceType }
+          : {}),
         ...((paymentSource.smartContractAddress ||
           configuredPaymentSource.smartContractAddress) && {
           smartContractAddress:
@@ -464,6 +861,13 @@ async function registerAgentOnChainUntilSetup(
       },
     },
   });
+
+  if (mergedSupportedPaymentSources) {
+    await replaceSupportedPaymentSourcesForAgent(
+      agent.id,
+      mergedSupportedPaymentSources,
+    );
+  }
 
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
@@ -502,63 +906,51 @@ export async function completeOnChainRegistration(
     }
     const network = (ref.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const userClient = await getPaymentNodeClientForUser(userId);
-    if (userClient) {
-      try {
-        const entry = await userClient.getRegistryById({
-          id: ref.externalId,
-          network,
-        });
-        if (entry) {
-          const state = entry.state as RegistrationState;
-          await prisma.agent.update({
-            where: { id: agentId },
-            data: {
-              registrationState: state,
-              ...(entry.agentIdentifier && {
-                agentIdentifier: entry.agentIdentifier,
-              }),
-            },
-          });
-          if (state === "RegistrationConfirmed") {
-            await recordAgentActivityEvent(agentId, "RegistrationConfirmed");
-            const fresh = await prisma.agent.findUniqueOrThrow({
-              where: { id: agentId },
-            });
-            await sendAgentRegistrationCompleteEmail(
-              userId,
-              agentId,
-              fresh.name,
-            );
-            return { status: "registered", data: fresh };
-          }
-          if (state === "RegistrationFailed") {
-            await recordAgentActivityEvent(agentId, "RegistrationFailed");
-            const errorMsg =
-              "Registration was rejected or failed on the network.";
-            await sendAgentRegistrationFailedEmail(
-              userId,
-              agentId,
-              agent.name,
-              errorMsg,
-            );
-            return { status: "error", error: errorMsg };
-          }
-        }
-      } catch {
-        // Non-fatal: fall through to return pending
-      }
+    const entry = await getRegistryEntryForSync({
+      userId,
+      externalId: ref.externalId,
+      network,
+      ...resolveRegistryLookupFilter(ref.metadata, network),
+    });
+    if (entry) {
+      return completeRegistrationFromRegistryEntry({
+        agentId,
+        userId,
+        agentName: agent.name,
+        entry,
+      });
     }
+
+    if (ref.sellingWalletVkey) {
+      const walletSync = await trySyncFromRecipientWalletAssets({
+        userId,
+        agentId,
+        agentName: agent.name,
+        agentApiUrl: agent.apiUrl,
+        recipientWalletVkey: ref.sellingWalletVkey,
+        network,
+        existingMetadata:
+          (ref.metadata as Record<string, unknown> | null) ?? null,
+      });
+      if (walletSync) return walletSync;
+    }
+
     return { status: "pending" };
   }
   const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
-  const address = meta.sellingWalletAddress;
+  const managedMintAddress = meta.sellingWalletAddress;
   const payload = meta.registrationPayload;
-  if (!address || !payload) {
+  if (!managedMintAddress || !payload) {
     return { status: "error", error: "Missing registration data" };
   }
   const network = (ref.networkIdentifier ??
     DEFAULT_NETWORK) as PaymentNodeNetwork;
+  const externalRecipient = meta.registryNftRecipientAddress?.trim();
+  const recipientWalletAddress =
+    externalRecipient &&
+    validatePayoutAddressForNetwork(externalRecipient, network) == null
+      ? externalRecipient
+      : managedMintAddress;
   const userClient = await getPaymentNodeClientForUser(userId);
   if (!userClient) {
     return { status: "error", error: "Payment node unavailable" };
@@ -574,10 +966,7 @@ export async function completeOnChainRegistration(
       : "";
   let paymentSourceId: string | null = null;
   try {
-    adminClient = createPaymentNodeClient(
-      paymentNodeConfig.getBaseUrl(),
-      paymentNodeConfig.getAdminApiKey(),
-    );
+    adminClient = createAdminPaymentNodeClient();
     if (!fundingWalletVkey) {
       paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
     }
@@ -712,13 +1101,75 @@ export async function completeOnChainRegistration(
       return { agent: existing, eventType: null, pending: true };
     }
 
+    const registryImage = resolveAgentRegistryImage(agent.icon);
+
+    const storedSources = await loadSupportedPaymentSourcesForAgent(agent.id);
+    let smartContractAddress =
+      typeof existingMeta.smartContractAddress === "string"
+        ? existingMeta.smartContractAddress.trim()
+        : typeof meta.smartContractAddress === "string"
+          ? meta.smartContractAddress.trim()
+          : "";
+    let paymentSourceType =
+      typeof existingMeta.paymentSourceType === "string"
+        ? existingMeta.paymentSourceType
+        : typeof meta.paymentSourceType === "string"
+          ? meta.paymentSourceType
+          : undefined;
+    try {
+      const paymentSourceId = paymentNodeConfig.getPaymentSourceId(network);
+      const configuredPaymentSource = await getConfiguredPaymentSource(
+        adminClient,
+        paymentSourceId,
+      );
+      if (!paymentSourceType) {
+        paymentSourceType = configuredPaymentSource?.paymentSourceType;
+      }
+      if (!smartContractAddress) {
+        smartContractAddress =
+          configuredPaymentSource?.smartContractAddress?.trim() ?? "";
+      }
+    } catch {
+      // Keep metadata-derived values; retry as pending if still unresolved.
+    }
+
+    if (!paymentSourceType) {
+      const existing = await tx.agent.findUniqueOrThrow({
+        where: { id: agent.id },
+      });
+      return { agent: existing, eventType: null, pending: true };
+    }
+
+    const isV2 = paymentSourceType === PaymentSourceType.Web3CardanoV2;
+    if (!isV2) {
+      throw new Error(
+        "Agent registration requires a V2 payment source on the payment node.",
+      );
+    }
+    if (!smartContractAddress) {
+      throw new Error(
+        "Configured payment source smart contract address is missing for agent registration.",
+      );
+    }
+
+    const supportedPaymentSources =
+      prepareSupportedPaymentSourcesForRegistration(
+        network,
+        smartContractAddress,
+        (storedSources ?? []).filter((source) => source.chain !== "Cardano"),
+        toCardanoSourcePricing(payload.agentPricing),
+      );
+
     const registerPromise = adminClient.registerAgent({
       network,
       sellingWalletVkey: fundingWalletVkey,
-      recipientWalletAddress: address,
+      recipientWalletAddress,
+      sendFundingLovelace:
+        paymentNodeConfig.getRegistryHoldingWalletFundingLovelace(),
       name: agent.name,
       apiBaseUrl: agent.apiUrl,
       description: agent.description?.trim() ?? "",
+      ...(registryImage ? { image: registryImage } : {}),
       Tags: agent.tags,
       ExampleOutputs: payload.exampleOutputs,
       Capability: {
@@ -740,7 +1191,7 @@ export async function completeOnChainRegistration(
             },
           }
         : {}),
-      AgentPricing: payload.agentPricing,
+      supportedPaymentSources,
     });
     let timeoutId: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -772,7 +1223,9 @@ export async function completeOnChainRegistration(
       await tx.agent.update({
         where: { id: agent.id },
         data: {
-          registrationState: registryEntry.state as RegistrationState,
+          registrationState: registrationStateFromRegistryEntry(
+            registryEntry.state,
+          ),
           ...(registryEntry.agentIdentifier && {
             agentIdentifier: registryEntry.agentIdentifier,
           }),
@@ -866,7 +1319,6 @@ export function buildAgentPricing(
   if (pricing?.pricingType === "Dynamic") {
     return { pricingType: "Dynamic" };
   }
-  const token = USDM[network];
   if (
     pricing?.pricingType === "Fixed" &&
     Array.isArray(pricing.prices) &&
@@ -874,10 +1326,13 @@ export function buildAgentPricing(
   ) {
     return {
       pricingType: "Fixed",
-      Pricing: pricing.prices.map((p) => ({
-        unit: token.unit,
-        amount: String(Math.round(Number(p.amount) * 10 ** token.decimals)),
-      })),
+      Pricing: pricing.prices.map((p) => {
+        const asset = resolvePricingAssetOption(p.currency, network);
+        return {
+          unit: asset.unit,
+          amount: humanAmountToSmallestUnit(p.amount, asset),
+        };
+      }),
     };
   }
   return { pricingType: "Free" };

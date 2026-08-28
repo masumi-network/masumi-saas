@@ -14,6 +14,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -253,7 +254,7 @@ export function ActivityFeedTableInner({
   return (
     <>
       <div className="space-y-0 rounded-md border">
-        <div className="overflow-x-auto">
+        <HorizontalScrollArea>
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -433,7 +434,7 @@ export function ActivityFeedTableInner({
                   })}
             </TableBody>
           </Table>
-        </div>
+        </HorizontalScrollArea>
         {!showInitialSkeleton && filteredItems.length > 0 ? (
           <div className="flex flex-col items-center gap-2 border-t px-3 py-4 sm:px-4">
             {activityQuery.hasNextPage ? (

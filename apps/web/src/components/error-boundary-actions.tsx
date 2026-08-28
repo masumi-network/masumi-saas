@@ -3,8 +3,10 @@
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
-
-const MASUMI_DISCORD_URL = "https://discord.com/invite/aj4QfnTS92";
+import {
+  MASUMI_EXTERNAL_LINK_PROPS,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
 
 type ErrorBoundaryActionsProps = {
   onRetry: () => void;
@@ -19,7 +21,7 @@ export function ErrorBoundaryActions({ onRetry }: ErrorBoundaryActionsProps) {
         {t("retry")}
       </Button>
       <Button type="button" variant="outline" asChild>
-        <a href={MASUMI_DISCORD_URL} target="_blank" rel="noopener noreferrer">
+        <a href={SUPPORT_PAGE_URL} {...MASUMI_EXTERNAL_LINK_PROPS}>
           {t("support")}
         </a>
       </Button>

@@ -1,10 +1,19 @@
+import { statSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient, RegistrationState } from "./generated/prisma/client.js";
 
 export { RegistrationState };
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+type PrismaGlobal = {
+  prisma?: PrismaClient;
+  prismaClientToken?: string;
+};
+
+const globalForPrisma = global as unknown as PrismaGlobal;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -12,9 +21,32 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+function getPrismaClientToken(): string {
+  const generatedClientPath = join(
+    dirname(fileURLToPath(import.meta.url)),
+    "generated/prisma/client.js",
+  );
+  try {
+    return String(statSync(generatedClientPath).mtimeMs);
+  } catch {
+    return "unknown";
+  }
+}
+
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prismaClientToken = getPrismaClientToken();
+
+if (
+  process.env.NODE_ENV !== "production" &&
+  globalForPrisma.prisma != null &&
+  globalForPrisma.prismaClientToken !== prismaClientToken
+) {
+  void globalForPrisma.prisma.$disconnect();
+  globalForPrisma.prisma = undefined;
+}
+
 const prisma =
-  globalForPrisma.prisma ||
+  globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : [],
@@ -30,6 +62,9 @@ if (process.env.NODE_ENV === "development") {
   });
 }
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+  globalForPrisma.prismaClientToken = prismaClientToken;
+}
 
 export default prisma;

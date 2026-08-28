@@ -1,39 +1,29 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  Bot,
-  ChevronRight,
-  ExternalLink,
-  Search,
-} from "lucide-react";
-import Link from "next/link";
+import { Activity, Bot, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
-import { SectionPanel } from "@/components/section-panel";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { CopyButton } from "@/components/ui/copy-button";
 import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DiscoveryCopyableValue,
+  DiscoveryDetailCard,
+  DiscoveryDetailCardContent,
+  DiscoveryDetailRow,
+  DiscoveryDetailsAvatar,
+  DiscoveryDetailsBody,
+  DiscoveryDetailsDialogContent,
+  DiscoveryDetailsHeader,
+  DiscoveryDetailStat,
+  DiscoveryDetailStatGrid,
+  DiscoveryLinkValue,
+  DiscoveryMetaBadge,
+  DiscoveryMutedValue,
+} from "@/components/discovery-detail-ui";
+import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
+import { DiscoveryTableSkeleton } from "@/components/discovery-table-skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -51,11 +41,22 @@ import { useFormatDate } from "@/hooks/use-format-date";
 import {
   registryDiscoveryClient,
   type RegistryEntry,
-  type RegistryEntryFilter,
 } from "@/lib/api/registry-discovery.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { isRegistryUnavailableError } from "@/lib/discovery/registry-unavailable";
 import { formatUnitAmount } from "@/lib/payment-node/format";
-import { getInitials } from "@/lib/utils";
+import { formatX402Amount, getInitials } from "@/lib/utils";
+
+import {
+  AgentsDiscoveryFiltersPopover,
+  countDiscoveryListFilters,
+  type DiscoveryListFilters,
+  discoveryListFiltersToApi,
+} from "./agents-discovery-filters-popover";
+import {
+  AgentsDiscoveryTable,
+  getDiscoveryStatusBadgeVariant,
+} from "./agents-discovery-table";
 
 const PAGE_SIZE = 12;
 const MAX_VISIBLE_PAGES = 5;
@@ -119,6 +120,51 @@ function getPageNumbers(
   return pages;
 }
 
+function formatSupportedPaymentSources(
+  entry: RegistryEntry,
+  unavailable: string,
+) {
+  const raw = entry as RegistryEntry & {
+    supportedPaymentSources?: Array<{
+      chain?: string;
+      pricing?: {
+        pricingType?: string;
+        fixed?: Array<{
+          asset?: string;
+          amount?: string;
+          decimals?: number;
+        }>;
+      };
+    }>;
+    SupportedPaymentSources?: Array<{
+      chain?: string;
+      pricing?: {
+        pricingType?: string;
+        fixed?: Array<{
+          asset?: string;
+          amount?: string;
+          decimals?: number;
+        }>;
+      };
+    }>;
+  };
+  const sources =
+    raw.supportedPaymentSources ?? raw.SupportedPaymentSources ?? [];
+  const labels = sources.flatMap((source) => {
+    const pricing = source.pricing;
+    if (pricing?.pricingType !== "Fixed" || !pricing.fixed?.length) {
+      return [];
+    }
+    return pricing.fixed.map((price) => {
+      if (source.chain === "EVM" && price.decimals != null) {
+        return formatX402Amount(price.amount ?? "0", price.decimals);
+      }
+      return formatUnitAmount(price.asset ?? "", price.amount ?? "0");
+    });
+  });
+  return labels.length > 0 ? labels.join(", ") : unavailable;
+}
+
 function formatPricing(
   entry: RegistryEntry,
   free: string,
@@ -126,6 +172,9 @@ function formatPricing(
   unavailable: string,
 ) {
   const pricing = entry.AgentPricing;
+  if (!pricing) {
+    return formatSupportedPaymentSources(entry, unavailable);
+  }
 
   if (pricing.pricingType === "Free") return free;
   if (pricing.pricingType === "Dynamic") return dynamic;
@@ -135,7 +184,8 @@ function formatPricing(
     ).join(", ");
   }
 
-  return unavailable;
+  const fromSources = formatSupportedPaymentSources(entry, "");
+  return fromSources || unavailable;
 }
 
 function formatPublisher(entry: RegistryEntry, fallback: string) {
@@ -161,37 +211,6 @@ function matchesRegistryLookup(entry: RegistryEntry, query: string) {
     .toLowerCase();
 
   return haystack.includes(query);
-}
-
-function DiscoverySkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <Card
-          key={index}
-          className="rounded-xl border-border/80 py-0 shadow-sm"
-        >
-          <CardContent className="px-4 py-4 sm:px-5">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-                  <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
-                </div>
-                <div className="h-3 w-full animate-pulse rounded bg-muted" />
-                <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
-                <div className="flex flex-wrap gap-2">
-                  <div className="h-5 w-28 animate-pulse rounded-full bg-muted" />
-                  <div className="h-5 w-20 animate-pulse rounded-full bg-muted" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
 }
 
 function DiscoveryPaginationBar({
@@ -280,27 +299,6 @@ function DiscoveryPaginationBar({
   );
 }
 
-function DiscoveryDetailItem({
-  label,
-  children,
-  fullWidth = false,
-}: {
-  label: string;
-  children: ReactNode;
-  fullWidth?: boolean;
-}) {
-  return (
-    <div className={fullWidth ? "space-y-2 sm:col-span-2" : "space-y-2"}>
-      <div className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="rounded-lg border border-border/70 bg-muted-surface/60 px-3 py-3 text-sm">
-        {children}
-      </div>
-    </div>
-  );
-}
-
 function RegistryEntryDetailsDialog({
   entry,
   open,
@@ -335,73 +333,67 @@ function RegistryEntryDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(90vh,760px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[760px]">
-        <DialogHeader className="shrink-0 border-b px-6 py-5">
-          <div className="flex items-start gap-4 pr-8">
-            <Avatar className="h-14 w-14 border border-border/70">
-              <AvatarImage src={entry.image ?? undefined} alt={entry.name} />
-              <AvatarFallback>{getInitials(entry.name)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <DialogTitle className="text-xl">{entry.name}</DialogTitle>
-                <Badge variant="success">{entry.status}</Badge>
-              </div>
-              <DialogDescription className="leading-6">
-                {entry.description?.trim() || t("Details.noDescription")}
-              </DialogDescription>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="primary-muted">{capabilityLabel}</Badge>
-                <Badge variant="secondary">{paymentLabel}</Badge>
-              </div>
-            </div>
-          </div>
-        </DialogHeader>
+      <DiscoveryDetailsDialogContent>
+        <DiscoveryDetailsHeader
+          avatar={
+            <DiscoveryDetailsAvatar
+              name={entry.name}
+              image={entry.image}
+              fallback={getInitials(entry.name)}
+            />
+          }
+          title={entry.name}
+          status={
+            <Badge variant={getDiscoveryStatusBadgeVariant(entry.status)}>
+              {entry.status}
+            </Badge>
+          }
+          description={entry.description?.trim() || t("Details.noDescription")}
+          meta={
+            <>
+              <DiscoveryMetaBadge variant="primary-muted">
+                {capabilityLabel}
+              </DiscoveryMetaBadge>
+              <DiscoveryMetaBadge variant="secondary">
+                {paymentLabel}
+              </DiscoveryMetaBadge>
+            </>
+          }
+        />
 
-        <DialogBody className="px-6 py-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <DiscoveryDetailItem label={t("table.apiUrl")} fullWidth>
-              <div className="flex flex-wrap items-center gap-2">
-                <Link
-                  href={entry.apiBaseUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="min-w-0 flex-1 truncate text-foreground hover:underline"
-                >
-                  {entry.apiBaseUrl}
-                </Link>
-                <CopyButton value={entry.apiBaseUrl} />
-                <Button asChild variant="outline" size="sm2">
-                  <Link
-                    href={entry.apiBaseUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t("Discovery.openEndpoint")}
-                    <ExternalLink className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </DiscoveryDetailItem>
+        <DiscoveryDetailsBody>
+          <DiscoveryDetailCard title={t("table.apiUrl")}>
+            <DiscoveryDetailCardContent>
+              <DiscoveryLinkValue
+                href={entry.apiBaseUrl}
+                openLabel={t("Discovery.openEndpoint")}
+              />
+            </DiscoveryDetailCardContent>
+          </DiscoveryDetailCard>
 
-            <DiscoveryDetailItem label={t("table.agentId")}>
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate font-mono">
-                  {entry.agentIdentifier}
-                </span>
-                <CopyButton value={entry.agentIdentifier} />
-              </div>
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.publisher")}>
+          <DiscoveryDetailCard>
+            <DiscoveryDetailRow label={t("table.agentId")}>
+              <DiscoveryCopyableValue value={entry.agentIdentifier} />
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("Discovery.publisher")}>
               {publisher}
-            </DiscoveryDetailItem>
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("Discovery.capability")}>
+              {capabilityLabel}
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("Discovery.paymentType")}>
+              {paymentLabel}
+            </DiscoveryDetailRow>
+            <DiscoveryDetailRow label={t("table.price")}>
+              {pricingLabel}
+            </DiscoveryDetailRow>
+          </DiscoveryDetailCard>
 
-            <DiscoveryDetailItem label={t("Discovery.updated")}>
+          <DiscoveryDetailStatGrid>
+            <DiscoveryDetailStat label={t("Discovery.updated")}>
               {formatRelativeDate(entry.updatedAt)}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.health")}>
+            </DiscoveryDetailStat>
+            <DiscoveryDetailStat label={t("Discovery.health")}>
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-muted-foreground" />
                 {t("Discovery.healthValue", {
@@ -409,128 +401,40 @@ function RegistryEntryDetailsDialog({
                   uptimeCheckCount: entry.uptimeCheckCount,
                 })}
               </div>
-            </DiscoveryDetailItem>
+            </DiscoveryDetailStat>
+          </DiscoveryDetailStatGrid>
 
-            <DiscoveryDetailItem label={t("Discovery.capability")}>
-              {capabilityLabel}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("Discovery.paymentType")}>
-              {paymentLabel}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("table.price")}>
-              {pricingLabel}
-            </DiscoveryDetailItem>
-
-            <DiscoveryDetailItem label={t("table.tags")} fullWidth>
+          <DiscoveryDetailCard title={t("table.tags")}>
+            <DiscoveryDetailCardContent>
               {tags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {tags.map((tag) => (
-                    <Badge key={tag} variant="outline-muted">
-                      {tag}
-                    </Badge>
+                    <DiscoveryMetaBadge key={tag}>{tag}</DiscoveryMetaBadge>
                   ))}
                 </div>
               ) : (
-                <span className="text-muted-foreground">
+                <DiscoveryMutedValue>
                   {t("Discovery.noTags")}
-                </span>
+                </DiscoveryMutedValue>
               )}
-            </DiscoveryDetailItem>
-          </div>
-        </DialogBody>
-      </DialogContent>
+            </DiscoveryDetailCardContent>
+          </DiscoveryDetailCard>
+        </DiscoveryDetailsBody>
+      </DiscoveryDetailsDialogContent>
     </Dialog>
-  );
-}
-
-function RegistryAgentListItem({
-  entry,
-  onViewDetails,
-}: {
-  entry: RegistryEntry;
-  onViewDetails: () => void;
-}) {
-  const t = useTranslations("App.Agents");
-  const { formatRelativeDate } = useFormatDate();
-  const tags = entry.tags ?? [];
-  const capabilityLabel = entry.Capability?.name
-    ? entry.Capability.version
-      ? `${entry.Capability.name} v${entry.Capability.version}`
-      : entry.Capability.name
-    : t("Discovery.noCapability");
-  const pricingLabel = formatPricing(
-    entry,
-    t("Discovery.pricing.free"),
-    t("Discovery.pricing.dynamic"),
-    t("Discovery.pricing.unavailable"),
-  );
-  const publisher = formatPublisher(entry, t("Discovery.authorFallback"));
-  const shortDescription =
-    entry.description?.trim() || t("Details.noDescription");
-
-  return (
-    <button
-      type="button"
-      onClick={onViewDetails}
-      className="w-full rounded-xl border border-border/80 bg-card text-left shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-muted-surface/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
-        <Avatar className="mt-0.5 h-10 w-10 border border-border/70">
-          <AvatarImage src={entry.image ?? undefined} alt={entry.name} />
-          <AvatarFallback>{getInitials(entry.name)}</AvatarFallback>
-        </Avatar>
-
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">
-              {entry.name}
-            </span>
-            <Badge variant="success">{entry.status}</Badge>
-          </div>
-
-          <p className="line-clamp-1 text-sm text-muted-foreground">
-            {shortDescription}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>{publisher}</span>
-            <span className="text-border">{"\u2022"}</span>
-            <span>{formatRelativeDate(entry.updatedAt)}</span>
-            <span className="text-border">{"\u2022"}</span>
-            <span className="flex items-center gap-1">
-              <span className="font-medium text-foreground">
-                {t("table.price")}
-              </span>
-              <span>{pricingLabel}</span>
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="primary-muted">{capabilityLabel}</Badge>
-            {tags.length > 0 && (
-              <Badge variant="outline-muted">
-                {tags.length === 1
-                  ? tags[0]
-                  : `+${tags.length} ${t("Discovery.tagsLabel")}`}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        <div className="hidden items-center gap-2 self-center text-xs text-muted-foreground sm:flex">
-          <span>{t("Discovery.viewDetails")}</span>
-          <ChevronRight className="h-4 w-4" />
-        </div>
-      </div>
-    </button>
   );
 }
 
 export function AgentsDiscovery() {
   const t = useTranslations("App.Agents");
   const { network } = usePaymentNetwork();
+  const [listFilters, setListFilters] = useState<DiscoveryListFilters>({
+    status: "online",
+  });
+  const activeFilterCount = useMemo(
+    () => countDiscoveryListFilters(listFilters),
+    [listFilters],
+  );
   const [registryState, setRegistryState] = useState<
     CursorPageState<RegistryEntry>
   >(() => createCursorPageState<RegistryEntry>());
@@ -579,9 +483,7 @@ export function AgentsDiscovery() {
 
   const fetchRegistryEntries = useCallback(
     async (cursorId?: string, signal?: AbortSignal) => {
-      const filter: RegistryEntryFilter = {
-        status: ["Online"],
-      };
+      const filter = discoveryListFiltersToApi(listFilters);
 
       return registryDiscoveryClient.getRegistryEntries(
         {
@@ -593,11 +495,11 @@ export function AgentsDiscovery() {
         { signal },
       );
     },
-    [network],
+    [listFilters, network],
   );
 
   const searchQueryResult = useInfiniteQuery({
-    queryKey: ["registry-entry-search", network, normalizedSearch],
+    queryKey: ["registry-entry-search", network, normalizedSearch, listFilters],
     initialPageParam: undefined as string | undefined,
     enabled: normalizedSearch.length > 0,
     queryFn: async ({ pageParam, signal }) => {
@@ -607,9 +509,7 @@ export function AgentsDiscovery() {
           limit: PAGE_SIZE,
           cursorId: pageParam,
           query: normalizedSearch,
-          filter: {
-            status: ["Online"],
-          },
+          filter: discoveryListFiltersToApi(listFilters),
         },
         { signal },
       );
@@ -673,7 +573,7 @@ export function AgentsDiscovery() {
 
   useEffect(() => {
     setSearchCurrentPage(1);
-  }, [normalizedSearch, network]);
+  }, [listFilters, normalizedSearch, network]);
 
   const loadRegistryPage = useCallback(
     async (page: number) => {
@@ -824,19 +724,12 @@ export function AgentsDiscovery() {
   const handleRefresh = () => {
     setIsRefreshing(true);
     if (hasActiveSearch) {
-      searchQueryResult.refetch().finally(() => setIsRefreshing(false));
+      void searchQueryResult.refetch().finally(() => setIsRefreshing(false));
       return;
     }
 
-    loadRegistryInitial().finally(() => setIsRefreshing(false));
+    void loadRegistryInitial().finally(() => setIsRefreshing(false));
   };
-
-  const summaryLabel = t("Discovery.resultsSummary", {
-    visibleCount: visibleRegistryEntries.length,
-    loadedCount: shouldUseSearchResults
-      ? searchPageItems.length
-      : pageItems.length,
-  });
 
   const emptyLabel = hasActiveSearch
     ? t("Discovery.emptySearch")
@@ -856,6 +749,7 @@ export function AgentsDiscovery() {
   const activeError = hasActiveSearch
     ? searchErrorMessage
     : registryState.error;
+  const registryUnavailable = isRegistryUnavailableError(activeError);
   const isSearchLoading = hasActiveSearch
     ? isSearchDebouncing ||
       searchQueryResult.isLoading ||
@@ -873,33 +767,11 @@ export function AgentsDiscovery() {
     : getKnownTotalPages(registryState);
 
   return (
-    <SectionPanel>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Badge variant="success">{t("Discovery.onlineOnly")}</Badge>
-          <span className="text-sm text-muted-foreground">
-            {t("Discovery.sortHint")}
-          </span>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
-            {network}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {t("Discovery.page", { page: activeCurrentPage })}
-          </span>
-          <RefreshButton
-            onRefresh={handleRefresh}
-            size="md"
-            isRefreshing={isRefreshing}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         <div
           onClick={() => searchInputRef.current?.focus()}
-          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+          className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 md:max-w-md lg:max-w-sm"
         >
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
@@ -918,36 +790,50 @@ export function AgentsDiscovery() {
             </kbd>
           )}
         </div>
-        <p className="shrink-0 text-sm text-muted-foreground">{summaryLabel}</p>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <AgentsDiscoveryFiltersPopover
+            filters={listFilters}
+            activeFilterCount={activeFilterCount}
+            network={network}
+            onChange={setListFilters}
+            onClear={() => setListFilters({ status: "online" })}
+          />
+          <RefreshButton
+            onRefresh={handleRefresh}
+            size="md"
+            isRefreshing={isRefreshing}
+          />
+        </div>
       </div>
 
-      {activeError && (
+      {activeError && !registryUnavailable ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {activeError}
         </div>
-      )}
+      ) : null}
 
       {!hasActiveSearch && registryState.isLoading ? (
-        <DiscoverySkeleton />
+        <DiscoveryTableSkeleton columns={8} />
       ) : (
         <>
-          {isSearchLoading && (
+          {isSearchLoading ? (
             <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted-surface/50 px-4 py-3 text-sm text-muted-foreground">
               <Spinner size={14} />
               {t("loadingMore")}
             </div>
-          )}
+          ) : null}
 
           {visibleRegistryEntries.length > 0 ? (
-            <div className="space-y-3">
-              {visibleRegistryEntries.map((entry) => (
-                <RegistryAgentListItem
-                  key={entry.id}
-                  entry={entry}
-                  onViewDetails={() => setSelectedRegistryEntry(entry)}
-                />
-              ))}
-            </div>
+            <AgentsDiscoveryTable
+              entries={visibleRegistryEntries}
+              onSelect={setSelectedRegistryEntry}
+            />
+          ) : isSearchLoading ? null : registryUnavailable ? (
+            <DiscoveryEmptyState
+              icon={Bot}
+              message={t("Discovery.registryUnavailableTitle")}
+              description={t("Discovery.registryUnavailableDescription")}
+            />
           ) : (
             <DiscoveryEmptyState icon={Bot} message={emptyLabel} />
           )}
@@ -971,6 +857,6 @@ export function AgentsDiscovery() {
           />
         </>
       )}
-    </SectionPanel>
+    </div>
   );
 }

@@ -16,6 +16,7 @@ import {
   getAuthErrorDetails,
   isInfrastructureError,
 } from "@/lib/auth/error-results";
+import { isAccountSoftDeletedSignal } from "@/lib/auth/soft-delete-account";
 import { getAuthenticatedOrThrow, getRequestHeaders } from "@/lib/auth/utils";
 import {
   changePasswordFormDataSchema,
@@ -537,10 +538,18 @@ export async function deleteAccountAction(formData: FormData) {
       },
     });
 
+    // Not normally reached: the deleteUser.beforeDelete hook soft-deletes the
+    // account and throws the sentinel below to abort the hard delete.
     return {
       success: true,
     };
   } catch (error) {
+    // Soft delete completed inside beforeDelete — report success to the user.
+    if (isAccountSoftDeletedSignal(error)) {
+      return {
+        success: true,
+      };
+    }
     return {
       error:
         error instanceof Error ? error.message : "Failed to delete account",

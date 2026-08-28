@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { completeOnChainRegistration } from "@/lib/agent-registration";
+import { resolveRegistrationStateAfterSync } from "@/lib/agents/registration-state";
 import {
   getWalletOwnedAgentForUser,
   listWalletOwnedAgentsForUser,
@@ -14,12 +15,9 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
-import {
-  createPaymentNodeClient,
-  paymentNodeConfig,
-  type PaymentNodeNetwork,
-} from "@/lib/payment-node";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { type PaymentNodeNetwork } from "@/lib/payment-node";
+import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
+import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -27,6 +25,38 @@ async function getNetworkFromCookie(): Promise<PaymentNodeNetwork> {
   const store = await cookies();
   const value = store.get("payment_network")?.value;
   return value === "Mainnet" || value === "Preprod" ? value : DEFAULT_NETWORK;
+}
+
+/** Returns agent IDs awaiting on-chain verification anchors (registry update in flight). */
+export async function getPendingOnChainVerificationAgentIdsAction(): Promise<
+  string[]
+> {
+  try {
+    const { user } = await getAuthenticatedOrThrow({
+      requireEmailVerified: false,
+    });
+    const [preprodAgents, mainnetAgents] = await Promise.all([
+      listWalletOwnedAgentsForUser({
+        userId: user.id,
+        network: "Preprod",
+      }),
+      listWalletOwnedAgentsForUser({
+        userId: user.id,
+        network: "Mainnet",
+      }),
+    ]);
+    return [...preprodAgents, ...mainnetAgents]
+      .filter(
+        (agent) =>
+          agent.verificationStatus === "VERIFIED" &&
+          ["UpdateRequested", "UpdateInitiated"].includes(
+            agent.registrationState,
+          ),
+      )
+      .map((agent) => agent.id);
+  } catch {
+    return [];
+  }
 }
 
 /** Returns agent IDs for the current user that still need on-chain registration work
@@ -149,19 +179,21 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     if (!agent || !agent.agentReference?.externalId)
       return { success: true as const };
 
-    const userClient = await getPaymentNodeClientForUser(user.id);
-    if (!userClient) return { success: true as const };
-
     const network = (agent.agentReference.networkIdentifier ??
       DEFAULT_NETWORK) as PaymentNodeNetwork;
-    const entry = await userClient.getRegistryById({
-      id: agent.agentReference.externalId,
+    const entry = await getRegistryEntryForSync({
+      userId: user.id,
+      externalId: agent.agentReference.externalId,
       network,
+      ...resolveRegistryLookupFilter(agent.agentReference.metadata, network),
     });
     if (!entry) return { success: true as const };
 
-    const registrationState =
-      entry.state as keyof typeof import("@masumi/database/client").RegistrationState;
+    const previousState = agent.registrationState;
+    const registrationState = resolveRegistrationStateAfterSync({
+      previousState,
+      registryState: entry.state,
+    });
     const status =
       entry.state === "RegistrationConfirmed"
         ? "ACTIVE"
@@ -175,7 +207,6 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
       ? { ...existingMeta, agentIdentifier: entry.agentIdentifier }
       : existingMeta;
 
-    const previousState = agent.registrationState;
     await prisma.$transaction([
       prisma.agent.update({
         where: { id: agentId },
@@ -240,83 +271,6 @@ export async function getAgentAction(agentId: string) {
     return {
       success: false as const,
       error: "Failed to get agent",
-    };
-  }
-}
-
-export async function deleteAgentAction(agentId: string, userId?: string) {
-  try {
-    const resolvedUserId = userId ?? (await getAuthenticatedOrThrow()).user.id;
-
-    const agent = await getWalletOwnedAgentForUser({
-      userId: resolvedUserId,
-      agentId,
-    });
-
-    if (!agent) {
-      return {
-        success: false as const,
-        error: "Agent not found",
-      };
-    }
-
-    const hasExternalRegistration = Boolean(agent.agentReference?.externalId);
-
-    if (!hasExternalRegistration) {
-      // Legacy agent (created via old POST /api/agents): no payment-node entry;
-      // allow direct delete so the user can remove it.
-      await recordAgentActivityEvent(agentId, "AgentDeleted");
-      await prisma.agent.delete({
-        where: { id: agentId },
-      });
-      return {
-        success: true as const,
-      };
-    }
-
-    const liveStates: (typeof agent.registrationState)[] = [
-      "RegistrationConfirmed",
-      "RegistrationRequested",
-      "RegistrationInitiated",
-      "DeregistrationRequested",
-      "DeregistrationInitiated",
-    ];
-    const isLegacyConfirmed =
-      agent.registrationState === "RegistrationConfirmed" &&
-      !agent.agentIdentifier;
-    if (liveStates.includes(agent.registrationState) && !isLegacyConfirmed) {
-      return {
-        success: false as const,
-        error:
-          "This agent is still active. Please deregister it before deleting.",
-      };
-    }
-
-    const externalId = agent.agentReference!.externalId;
-    if (!externalId) {
-      return {
-        success: false as const,
-        error: "No externalId found for this agent.",
-      };
-    }
-    const baseUrl = paymentNodeConfig.getBaseUrl();
-    const adminKey = paymentNodeConfig.getAdminApiKey();
-    const adminClient = createPaymentNodeClient(baseUrl, adminKey);
-    await adminClient.deleteRegistryEntry(externalId);
-
-    await recordAgentActivityEvent(agentId, "AgentDeleted");
-    await prisma.agent.delete({
-      where: { id: agentId },
-    });
-
-    return {
-      success: true as const,
-    };
-  } catch (error) {
-    console.error("Failed to delete agent:", error);
-    return {
-      success: false as const,
-      error: error instanceof Error ? error.message : "Failed to delete agent",
     };
   }
 }

@@ -2,7 +2,8 @@ import { Bot, ChevronRight, Key } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-import { AgentVerifiedShield } from "@/components/agent-verified-shield";
+import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
+import { CompactAgentPricing } from "@/components/compact-agent-pricing";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,11 +14,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isAgentLiveOnRegistry } from "@/lib/agents/registration-state";
 import type { DashboardOverview } from "@/lib/types/dashboard";
-import { formatPricingDisplay, getGreeting } from "@/lib/utils";
+import { cn, getGreeting } from "@/lib/utils";
 import {
+  getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
-  getRegistrationStatusKey,
+  getRegistrationStatusDisplayKey,
 } from "@/lib/utils/agent-utils";
 
 import { DashboardCreateApiKeyButton } from "./create-api-key-dialog";
@@ -37,13 +40,35 @@ export default async function DashboardOverview({
     "App.Agents.registrationStatus",
   );
 
-  const { user, agents, apiKeys, organizationCount, apiKeyCount, agentCount } =
-    data;
+  const {
+    user,
+    agents,
+    apiKeys,
+    agentCount,
+    apiKeysScope,
+    apiKeysCanManage,
+    activeOrganizationName,
+  } = data;
 
   const userName = user.name || user.email || "User";
   const greeting = getGreeting();
-  const isNewUser =
-    organizationCount === 0 && apiKeyCount === 0 && agentCount === 0;
+  const isOrgApiKeys = apiKeysScope === "org";
+  const apiKeysSectionDescription = isOrgApiKeys
+    ? t("orgApiKeysSectionDescription", {
+        organization: activeOrganizationName ?? t("stats.apiKeys"),
+      })
+    : t("apiKeysSectionDescription");
+  const noApiKeysYetDescription =
+    isOrgApiKeys && !apiKeysCanManage
+      ? t("orgApiKeysAdminOnly", {
+          organization: activeOrganizationName ?? t("stats.apiKeys"),
+        })
+      : isOrgApiKeys
+        ? t("noOrgApiKeysYetDescription")
+        : t("noApiKeysYetDescription");
+  const noApiKeysYetTitle = isOrgApiKeys
+    ? t("noOrgApiKeysYet")
+    : t("noApiKeysYet");
 
   return (
     <div className="min-w-0 space-y-8 animate-in fade-in duration-300">
@@ -93,10 +118,10 @@ export default async function DashboardOverview({
         />
       </div>
 
-      {/* Get started checklist - for new users */}
-      {isNewUser && (
-        <GetStartedCard user={{ emailVerified: user.emailVerified }} />
-      )}
+      <GetStartedCard
+        emailVerified={user.emailVerified}
+        agentCount={agentCount}
+      />
 
       {/* Agents and API Keys - same row */}
       <div className="grid min-w-0 gap-6 lg:grid-cols-2">
@@ -129,24 +154,28 @@ export default async function DashboardOverview({
               </div>
             ) : (
               <ul className="min-w-0 space-y-3">
-                {agents.map((agent, index) => (
-                  <li
-                    key={agent.id}
-                    className="min-w-0 animate-table-row-in transition-[opacity] duration-150"
-                    style={{
-                      animationDelay: `${Math.min(index, 9) * 40}ms`,
-                    }}
-                  >
-                    <Link
-                      href={`/ai-agents/${agent.id}?from=dashboard`}
-                      aria-label={t("agentLinkAria", { name: agent.name })}
-                      className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border/80 p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-muted/40 hover:shadow-sm"
+                {agents.map((agent, index) => {
+                  const statusLabel = tRegistrationStatus(
+                    getRegistrationStatusDisplayKey(agent.registrationState),
+                  );
+
+                  return (
+                    <li
+                      key={agent.id}
+                      className="min-w-0 animate-table-row-in transition-[opacity] duration-150"
+                      style={{
+                        animationDelay: `${Math.min(index, 9) * 40}ms`,
+                      }}
                     >
-                      <div className="flex min-w-0 items-center gap-3">
+                      <Link
+                        href={`/ai-agents/${agent.id}?from=dashboard`}
+                        aria-label={t("agentLinkAria", { name: agent.name })}
+                        className="flex min-w-0 items-center gap-3 rounded-lg border border-border/80 p-3.5 transition-all duration-200 hover:-translate-y-px hover:border-primary/20 hover:bg-muted/40 hover:shadow-sm"
+                      >
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                           <Bot className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <div className="flex min-w-0 items-center gap-1.5">
+                        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                           <p
                             className="min-w-0 truncate text-sm font-medium"
                             title={agent.name}
@@ -154,26 +183,38 @@ export default async function DashboardOverview({
                             {agent.name}
                           </p>
                           {agent.verificationStatus === "VERIFIED" ? (
-                            <AgentVerifiedShield className="-mt-px" />
+                            <AgentVerificationShieldIndicator
+                              agentId={agent.id}
+                              dbVerificationStatus={agent.verificationStatus}
+                              registered={isAgentLiveOnRegistry(
+                                agent.registrationState,
+                              )}
+                              className="-mt-px shrink-0"
+                            />
                           ) : null}
                         </div>
-                      </div>
-                      <Badge
-                        variant={getRegistrationStatusBadgeVariant(
-                          agent.registrationState,
-                        )}
-                        className="shrink-0"
-                      >
-                        {tRegistrationStatus(
-                          getRegistrationStatusKey(agent.registrationState),
-                        )}
-                      </Badge>
-                      <span className="min-w-fit shrink-0 text-sm text-muted-foreground">
-                        {formatPricingDisplay(agent.pricing)}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                        <CompactAgentPricing
+                          pricing={agent.pricing}
+                          className="shrink-0 text-sm whitespace-nowrap"
+                        />
+                        <Badge
+                          variant={getRegistrationStatusBadgeVariant(
+                            agent.registrationState,
+                          )}
+                          title={statusLabel}
+                          className={cn(
+                            "max-w-[7.5rem] min-w-0 shrink truncate",
+                            getRegistrationStatusBadgeClassName(
+                              agent.registrationState,
+                            ),
+                          )}
+                        >
+                          {statusLabel}
+                        </Badge>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <DashboardRegisterAgentButton agentCount={agentCount} />
@@ -191,9 +232,7 @@ export default async function DashboardOverview({
                 {t("stats.apiKeys")}
                 <ChevronRight className="h-4 w-4" />
               </Link>
-              <CardDescription>
-                {t("apiKeysSectionDescription")}
-              </CardDescription>
+              <CardDescription>{apiKeysSectionDescription}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -203,10 +242,10 @@ export default async function DashboardOverview({
                   <Key className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <p className="text-center text-sm font-medium text-foreground">
-                  {t("noApiKeysYet")}
+                  {noApiKeysYetTitle}
                 </p>
                 <p className="mt-1 text-center text-xs text-muted-foreground">
-                  {t("noApiKeysYetDescription")}
+                  {noApiKeysYetDescription}
                 </p>
               </div>
             ) : (
@@ -233,7 +272,7 @@ export default async function DashboardOverview({
                 ))}
               </ul>
             )}
-            <DashboardCreateApiKeyButton />
+            {apiKeysCanManage ? <DashboardCreateApiKeyButton /> : null}
           </CardContent>
         </Card>
       </div>

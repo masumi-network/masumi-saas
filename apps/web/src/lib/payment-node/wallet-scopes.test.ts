@@ -59,12 +59,21 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
         { hotWalletId: "wallet-admin-funding" },
       ],
     });
+    const getWalletListMock = vi.fn().mockResolvedValue({
+      Wallets: [
+        { id: "wallet-existing" },
+        { id: "wallet-admin-funding" },
+        { id: "wallet-known" },
+        { id: "wallet-new" },
+      ],
+    });
     const updateApiKeyMock = vi.fn().mockResolvedValue({});
     createPaymentNodeClientMock
       .mockReturnValueOnce({
         getApiKeyStatus: getApiKeyStatusMock,
       })
       .mockReturnValueOnce({
+        getWalletList: getWalletListMock,
         updateApiKey: updateApiKeyMock,
       });
     agentReferenceFindManyMock.mockResolvedValue([
@@ -119,15 +128,14 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
     });
     const getWalletListMock = vi.fn().mockResolvedValue({
       Wallets: [
+        { id: "wallet-existing" },
         {
           id: "wallet-funding",
-          paymentSourceId: "payment-source-preprod",
-          type: "Selling",
-          walletVkey: "funding-vkey",
           walletAddress: "addr_test1funding",
-          collectionAddress: null,
-          note: "Funding",
+          type: "Selling",
         },
+        { id: "wallet-known" },
+        { id: "wallet-new" },
       ],
     });
     const updateApiKeyMock = vi.fn().mockResolvedValue({});
@@ -182,12 +190,16 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
         { hotWalletId: "wallet-new" },
       ],
     });
+    const getWalletListMock = vi.fn().mockResolvedValue({
+      Wallets: [{ id: "wallet-existing" }, { id: "wallet-new" }],
+    });
     const updateApiKeyMock = vi.fn();
     createPaymentNodeClientMock
       .mockReturnValueOnce({
         getApiKeyStatus: getApiKeyStatusMock,
       })
       .mockReturnValueOnce({
+        getWalletList: getWalletListMock,
         updateApiKey: updateApiKeyMock,
       });
     agentReferenceFindManyMock.mockResolvedValue([
@@ -205,5 +217,139 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
 
     expect(updateApiKeyMock).not.toHaveBeenCalled();
     expect(inboxAgentReferenceFindManyMock).not.toHaveBeenCalled();
+  });
+
+  it("scopes requested wallets when wallet scope is enabled but current scopes are empty", async () => {
+    const getApiKeyStatusMock = vi.fn().mockResolvedValue({
+      id: "api-key-1",
+      token: "user-key",
+      permission: "ReadAndPay",
+      canRead: true,
+      canPay: true,
+      canAdmin: false,
+      usageLimited: false,
+      NetworkLimit: ["Preprod"],
+      RemainingUsageCredits: [],
+      status: "Active",
+      walletScopeEnabled: true,
+      WalletScopes: [],
+    });
+    const getWalletListMock = vi.fn().mockResolvedValue({
+      Wallets: [{ id: "wallet-new" }],
+    });
+    const updateApiKeyMock = vi.fn().mockResolvedValue({});
+    createPaymentNodeClientMock
+      .mockReturnValueOnce({
+        getApiKeyStatus: getApiKeyStatusMock,
+      })
+      .mockReturnValueOnce({
+        getWalletList: getWalletListMock,
+        updateApiKey: updateApiKeyMock,
+      });
+    agentReferenceFindManyMock.mockResolvedValue([]);
+
+    const { ensureUserPaymentNodeKeyScopedToWallets } =
+      await import("./wallet-scopes");
+
+    await ensureUserPaymentNodeKeyScopedToWallets({
+      userId: "user-1",
+      walletIds: ["wallet-new"],
+    });
+
+    expect(updateApiKeyMock).toHaveBeenCalledWith({
+      id: "api-key-1",
+      walletScopeEnabled: true,
+      WalletScopeHotWalletIds: ["wallet-new"],
+    });
+  });
+
+  it("throws when requested wallet ids are missing from the payment node hot wallet list", async () => {
+    const getApiKeyStatusMock = vi.fn().mockResolvedValue({
+      id: "api-key-1",
+      token: "user-key",
+      permission: "ReadAndPay",
+      canRead: true,
+      canPay: true,
+      canAdmin: false,
+      usageLimited: false,
+      NetworkLimit: ["Preprod"],
+      RemainingUsageCredits: [],
+      status: "Active",
+      walletScopeEnabled: true,
+      WalletScopes: [],
+    });
+    const getWalletListMock = vi.fn().mockResolvedValue({
+      Wallets: [],
+    });
+    const updateApiKeyMock = vi.fn();
+    createPaymentNodeClientMock
+      .mockReturnValueOnce({
+        getApiKeyStatus: getApiKeyStatusMock,
+      })
+      .mockReturnValueOnce({
+        getWalletList: getWalletListMock,
+        updateApiKey: updateApiKeyMock,
+      });
+    agentReferenceFindManyMock.mockResolvedValue([]);
+
+    const { ensureUserPaymentNodeKeyScopedToWallets } =
+      await import("./wallet-scopes");
+
+    await expect(
+      ensureUserPaymentNodeKeyScopedToWallets({
+        userId: "user-1",
+        walletIds: ["wallet-new"],
+      }),
+    ).rejects.toThrow(
+      "Payment node hot wallets missing requested scope targets: wallet-new",
+    );
+
+    expect(updateApiKeyMock).not.toHaveBeenCalled();
+  });
+
+  it("drops stale agent wallet ids that no longer exist on the payment node", async () => {
+    const getApiKeyStatusMock = vi.fn().mockResolvedValue({
+      id: "api-key-1",
+      token: "user-key",
+      permission: "ReadAndPay",
+      canRead: true,
+      canPay: true,
+      canAdmin: false,
+      usageLimited: false,
+      NetworkLimit: ["Preprod"],
+      RemainingUsageCredits: [],
+      status: "Active",
+      walletScopeEnabled: false,
+      WalletScopes: [],
+    });
+    const getWalletListMock = vi.fn().mockResolvedValue({
+      Wallets: [{ id: "wallet-new" }],
+    });
+    const updateApiKeyMock = vi.fn().mockResolvedValue({});
+    createPaymentNodeClientMock
+      .mockReturnValueOnce({
+        getApiKeyStatus: getApiKeyStatusMock,
+      })
+      .mockReturnValueOnce({
+        getWalletList: getWalletListMock,
+        updateApiKey: updateApiKeyMock,
+      });
+    agentReferenceFindManyMock.mockResolvedValue([
+      { sellingWalletId: "wallet-stale-from-old-db" },
+    ]);
+
+    const { ensureUserPaymentNodeKeyScopedToWallets } =
+      await import("./wallet-scopes");
+
+    await ensureUserPaymentNodeKeyScopedToWallets({
+      userId: "user-1",
+      walletIds: ["wallet-new"],
+    });
+
+    expect(updateApiKeyMock).toHaveBeenCalledWith({
+      id: "api-key-1",
+      walletScopeEnabled: true,
+      WalletScopeHotWalletIds: ["wallet-new"],
+    });
   });
 });

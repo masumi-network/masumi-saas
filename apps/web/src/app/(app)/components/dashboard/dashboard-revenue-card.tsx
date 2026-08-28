@@ -122,10 +122,11 @@ export function DashboardRevenueCard() {
   }, [period, network]);
 
   useEffect(() => {
-    fetchEarnings();
+    void fetchEarnings();
   }, [fetchEarnings]);
 
-  const showChart = !isLoading && !error && earnings.length > 0;
+  const hasChartData = earnings.some((point) => point.amount > 0);
+  const showChart = !isLoading && !error && hasChartData;
 
   const formattedTotal = formatDashboardEarningsTotal(total, amountUnit);
   const hideCardFromAt = !error;

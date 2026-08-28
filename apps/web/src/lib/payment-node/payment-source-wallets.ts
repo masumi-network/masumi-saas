@@ -27,7 +27,7 @@ async function listWallets(
   client: PaymentNodeClient,
   params?: {
     paymentSourceId?: string;
-    walletType?: "Selling" | "Purchasing";
+    walletType?: "Selling" | "Purchasing" | "Funding";
     walletVkey?: string;
     walletAddress?: string;
   },
@@ -101,6 +101,7 @@ export async function hydratePaymentSources(
   const purchasingBySource = new Map<string, PaymentSourceWallet[]>();
 
   for (const wallet of wallets) {
+    if (wallet.type === "Funding") continue;
     const mapped = toPaymentSourceWallet(wallet);
     const target =
       wallet.type === "Selling" ? sellingBySource : purchasingBySource;
@@ -149,4 +150,12 @@ export async function listSellingWalletIdsByAddresses(
         .map((wallet) => wallet.id),
     ),
   ];
+}
+
+/** Hot wallet ids currently known to the payment node (for scope validation). */
+export async function listHotWalletIds(
+  client: PaymentNodeClient,
+): Promise<Set<string>> {
+  const wallets = await listWallets(client);
+  return new Set(wallets.map((wallet) => wallet.id));
 }

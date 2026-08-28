@@ -1,7 +1,7 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, CircleHelp, Link2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, CircleHelp, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,10 +18,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  AGENT_ICON_PRESET_KEYS,
   AGENT_ICON_PRESETS,
-  isIconUrl,
+  formatAgentIconLabel,
   isPresetIconKey,
+  searchAgentIconKeys,
 } from "@/lib/constants/agent-icons";
 import { cn } from "@/lib/utils";
 
@@ -29,17 +29,16 @@ export interface AgentIconPickerTranslations {
   icon: string;
   iconTooltip: string;
   iconDescription: string;
-  iconCustomUrlPlaceholder: string;
+  iconSearchPlaceholder: string;
+  iconSearchEmpty: string;
   scrollLeft: string;
   scrollRight: string;
-  iconClear: string;
 }
 
 export interface AgentIconPickerProps {
   value: string;
   onChange: (value: string | undefined) => void;
   onClearError?: () => void;
-  onClearIcon?: () => void;
   translations: AgentIconPickerTranslations;
   disabled?: boolean;
 }
@@ -48,15 +47,22 @@ export function AgentIconPicker({
   value,
   onChange,
   onClearError,
-  onClearIcon,
   translations: t,
   disabled = false,
 }: AgentIconPickerProps) {
   const iconScrollRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showGradients, setShowGradients] = useState({
     left: false,
     right: true,
   });
+
+  const filteredKeys = useMemo(
+    () => searchAgentIconKeys(searchQuery),
+    [searchQuery],
+  );
+
+  const selectedKey = isPresetIconKey(value) ? value : undefined;
 
   const updateIconScrollGradients = useCallback(() => {
     const el = iconScrollRef.current;
@@ -80,7 +86,7 @@ export function AgentIconPicker({
     const ro = new ResizeObserver(runUpdate);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [updateIconScrollGradients]);
+  }, [updateIconScrollGradients, filteredKeys.length]);
 
   const scrollIcons = useCallback((direction: "left" | "right") => {
     const el = iconScrollRef.current;
@@ -94,20 +100,8 @@ export function AgentIconPicker({
 
   const handlePresetClick = (key: string) => {
     onClearError?.();
-    const isSelected = value === key;
+    const isSelected = selectedKey === key;
     onChange(isSelected ? undefined : key);
-  };
-
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value.trim();
-    onClearError?.();
-    onChange(v || undefined);
-  };
-
-  const handleClearIcon = () => {
-    onClearError?.();
-    onClearIcon?.();
-    onChange("bot");
   };
 
   return (
@@ -127,6 +121,16 @@ export function AgentIconPicker({
         <Card className="min-w-0 overflow-hidden border-border/80 bg-muted-surface">
           <CardContent className="min-w-0 space-y-4">
             <p className="text-muted-foreground text-sm">{t.iconDescription}</p>
+            <div className="relative flex items-center">
+              <Search className="text-muted-foreground absolute left-3 h-4 w-4" />
+              <Input
+                placeholder={t.iconSearchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-background"
+                disabled={disabled}
+              />
+            </div>
             <div className="relative -mx-1">
               <div
                 className={cn(
@@ -182,54 +186,44 @@ export function AgentIconPicker({
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              <div
-                ref={iconScrollRef}
-                onScroll={updateIconScrollGradients}
-                className="flex min-w-0 flex-nowrap gap-2 overflow-x-auto scrollbar-hide px-1 pb-2 [-webkit-overflow-scrolling:touch] relative z-1"
-              >
-                {AGENT_ICON_PRESET_KEYS.map((key) => {
-                  const IconComponent = AGENT_ICON_PRESETS[key];
-                  const isSelected = value === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handlePresetClick(key)}
-                      disabled={disabled}
-                      className={cn(
-                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-[background-color,border-color,box-shadow,color] duration-200",
-                        isSelected
-                          ? "border-primary bg-primary/10 text-primary shadow-md"
-                          : "border bg-background hover:bg-muted hover:border-muted-foreground/20",
-                      )}
-                    >
-                      <IconComponent className="h-5 w-5" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex gap-2 items-center">
-              <div className="relative flex-1 flex items-center">
-                <Link2 className="text-muted-foreground absolute left-3 h-4 w-4" />
-                <Input
-                  placeholder={t.iconCustomUrlPlaceholder}
-                  value={value && !isPresetIconKey(value) ? value : ""}
-                  onChange={handleUrlChange}
-                  className="pl-9 bg-background"
-                  disabled={disabled}
-                />
-              </div>
-              {value && isIconUrl(value) && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearIcon}
-                  disabled={disabled}
+              {filteredKeys.length === 0 ? (
+                <p className="px-1 pb-2 text-sm text-muted-foreground">
+                  {t.iconSearchEmpty}
+                </p>
+              ) : (
+                <div
+                  ref={iconScrollRef}
+                  onScroll={updateIconScrollGradients}
+                  className="flex min-w-0 flex-nowrap gap-2 overflow-x-auto scrollbar-hide px-1 pb-2 [-webkit-overflow-scrolling:touch] relative z-1"
                 >
-                  {t.iconClear}
-                </Button>
+                  {filteredKeys.map((key) => {
+                    const IconComponent = AGENT_ICON_PRESETS[key];
+                    const isSelected = selectedKey === key;
+                    return (
+                      <Tooltip key={key}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => handlePresetClick(key)}
+                            disabled={disabled}
+                            aria-label={formatAgentIconLabel(key)}
+                            className={cn(
+                              "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-[background-color,border-color,box-shadow,color] duration-200",
+                              isSelected
+                                ? "border-primary bg-primary/10 text-primary shadow-md"
+                                : "border bg-background hover:bg-muted hover:border-muted-foreground/20",
+                            )}
+                          >
+                            <IconComponent className="h-5 w-5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          {formatAgentIconLabel(key)}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </CardContent>

@@ -8,8 +8,10 @@ const handleAuthErrorMock = vi.fn();
 const requireNetworkedOidcApiScopeMock = vi.fn();
 const buildAgentPricingMock = vi.fn();
 const startAgentRegistrationMock = vi.fn();
+const validateAgentRegistrationPaymentSourcesPreflightMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
-const shapeAgentWithMergedMetadataMock = vi.fn();
+const shapeAgentForApiMock = vi.fn();
+const loadSupportedPaymentSourcesMapMock = vi.fn();
 const agentFindFirstMock = vi.fn();
 const listWalletOwnedAgentsForUserMock = vi.fn();
 const createIntegrationConnectionMock = vi.fn();
@@ -45,6 +47,8 @@ vi.mock("@/lib/auth/oidc-api-permissions", () => ({
 vi.mock("@/lib/agent-registration", () => ({
   buildAgentPricing: buildAgentPricingMock,
   startAgentRegistration: startAgentRegistrationMock,
+  validateAgentRegistrationPaymentSourcesPreflight:
+    validateAgentRegistrationPaymentSourcesPreflightMock,
 }));
 
 vi.mock("@/lib/agents/wallet-ownership", () => ({
@@ -57,7 +61,11 @@ vi.mock("@/lib/credits/service", () => ({
 }));
 
 vi.mock("@/lib/api/agent-metadata", () => ({
-  shapeAgentWithMergedMetadata: shapeAgentWithMergedMetadataMock,
+  shapeAgentForApi: shapeAgentForApiMock,
+}));
+
+vi.mock("@masumi/payment-source-x402/supported-payment-sources", () => ({
+  loadSupportedPaymentSourcesMap: loadSupportedPaymentSourcesMapMock,
 }));
 
 vi.mock("@/lib/integrations/connections", () => ({
@@ -86,7 +94,6 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
     .object({
       name: z.string().min(1),
       description: z.string().optional().or(z.literal("")),
-      extendedDescription: z.string().optional().or(z.literal("")),
       apiUrl: z.string().url().optional(),
       runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]).optional(),
       integrationConnectionId: z.string().optional(),
@@ -102,6 +109,7 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
       capabilityName: z.string().optional().or(z.literal("")),
       capabilityVersion: z.string().optional().or(z.literal("")),
       exampleOutputs: z.array(z.any()).optional(),
+      payoutAddress: z.string().max(250).optional().or(z.literal("")),
     })
     .strict();
 
@@ -127,12 +135,25 @@ vi.mock("@/lib/schemas/agent", async (importOriginal) => {
 describe("/api/agents POST", () => {
   let POST: typeof import("./route").POST;
 
+  const TEST_PAYOUT_ADDRESS =
+    "addr_test1qqexamplepayoutaddressqqexamplepayoutqq";
+
+  function registerAgentBody(overrides: Record<string, unknown> = {}) {
+    return {
+      name: "Research assistant",
+      description: "Helps with literature review",
+      apiUrl: "https://agent.example.com/mip",
+      tags: "research, nlp",
+      payoutAddress: TEST_PAYOUT_ADDRESS,
+      ...overrides,
+    };
+  }
+
   const agentResponseShape = {
     id: "agent-1",
     userId: "user-1",
     name: "Research assistant",
     description: "Helps with literature review",
-    extendedDescription: null,
     apiUrl: "https://agent.example.com/mip",
     organizationId: null,
     registrationState: "RegistrationConfirmed",
@@ -172,6 +193,9 @@ describe("/api/agents POST", () => {
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
+    validateAgentRegistrationPaymentSourcesPreflightMock.mockResolvedValue({
+      ok: true,
+    });
     startAgentRegistrationMock.mockResolvedValue({
       success: true,
       agentId: "agent-1",
@@ -199,7 +223,17 @@ describe("/api/agents POST", () => {
       ...agentResponseShape,
       agentReference: null,
     });
-    shapeAgentWithMergedMetadataMock.mockReturnValue(agentResponseShape);
+    loadSupportedPaymentSourcesMapMock.mockResolvedValue(new Map());
+    shapeAgentForApiMock.mockImplementation((agent, sources) => {
+      const { agentReference: _ref, ...rest } = agent as {
+        agentReference?: unknown;
+      };
+      return {
+        ...agentResponseShape,
+        ...rest,
+        supportedPaymentSources: sources ?? null,
+      };
+    });
   });
 
   it("consumes one credit before starting registration", async () => {
@@ -208,12 +242,7 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          description: "Helps with literature review",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-        }),
+        body: JSON.stringify(registerAgentBody()),
       },
     );
 
@@ -236,6 +265,35 @@ describe("/api/agents POST", () => {
     expect(startAgentRegistrationMock).toHaveBeenCalledTimes(1);
   });
 
+  it("allows Free registration without a payout address", async () => {
+    buildAgentPricingMock.mockReturnValue({ pricingType: "Free" });
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          registerAgentBody({
+            pricing: { pricingType: "Free" },
+            payoutAddress: undefined,
+          }),
+        ),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(startAgentRegistrationMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        agentPricing: { pricingType: "Free" },
+        payoutAddress: "",
+      }),
+    );
+  });
+
   it("returns 503 when Mainnet payment-source config is missing", async () => {
     const { PaymentNodeConfigError } =
       await import("@/lib/payment-node/config");
@@ -250,12 +308,12 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          description: "Helps with literature review",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            // Mainnet rejects addr_test… before registration starts.
+            payoutAddress: "addr1qqexamplepayoutaddressqqexamplepayoutqq",
+          }),
+        ),
       },
     );
 
@@ -277,7 +335,6 @@ describe("/api/agents POST", () => {
         id: "agent-1",
         name: "Visible confirmed agent",
         description: "shown",
-        extendedDescription: null,
         apiUrl: "https://visible.example.com",
         tags: ["wallet"],
         verificationStatus: "VERIFIED",
@@ -290,7 +347,6 @@ describe("/api/agents POST", () => {
         id: "agent-2",
         name: "Hidden pending agent",
         description: "shown if search matches",
-        extendedDescription: null,
         apiUrl: "https://hidden.example.com",
         tags: ["other"],
         verificationStatus: "PENDING",
@@ -353,12 +409,7 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          description: "Helps with literature review",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-        }),
+        body: JSON.stringify(registerAgentBody()),
       },
     );
 
@@ -376,13 +427,9 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Research assistant",
-          description: "Helps with literature review",
-          apiUrl: "https://agent.example.com/mip",
-          tags: "research, nlp",
-          pricing: { pricingType: "Dynamic" },
-        }),
+        body: JSON.stringify(
+          registerAgentBody({ pricing: { pricingType: "Dynamic" } }),
+        ),
       },
     );
 
@@ -403,12 +450,12 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runtimeProvider: "DIRECT_MIP",
-          name: "Research assistant",
-          description: "Helps with literature review",
-          tags: "research, nlp",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            runtimeProvider: "DIRECT_MIP",
+            apiUrl: undefined,
+          }),
+        ),
       },
     );
 
@@ -425,15 +472,15 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runtimeProvider: "LANGDOCK",
-          name: "Research assistant",
-          description: "Helps with literature review",
-          tags: "research, nlp",
-          langdockApiKey: "ld_test",
-          langdockAgentId: "ld-agent-1",
-          langdockBaseUrl: "https://langdock.example.com/api",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            runtimeProvider: "LANGDOCK",
+            apiUrl: undefined,
+            langdockApiKey: "ld_test",
+            langdockAgentId: "ld-agent-1",
+            langdockBaseUrl: "https://langdock.example.com/api",
+          }),
+        ),
       },
     );
 
@@ -494,15 +541,15 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runtimeProvider: "LANGDOCK",
-          name: "Research assistant",
-          description: "Helps with literature review",
-          tags: "research, nlp",
-          integrationConnectionId: "connection-1",
-          langdockAgentId: "ld-agent-1",
-          langdockBaseUrl: "",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            runtimeProvider: "LANGDOCK",
+            apiUrl: undefined,
+            integrationConnectionId: "connection-1",
+            langdockAgentId: "ld-agent-1",
+            langdockBaseUrl: "",
+          }),
+        ),
       },
     );
 
@@ -533,14 +580,14 @@ describe("/api/agents POST", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          runtimeProvider: "LANGDOCK",
-          name: "Research assistant",
-          description: "Helps with literature review",
-          tags: "research, nlp",
-          langdockApiKey: "bad",
-          langdockAgentId: "ld-agent-1",
-        }),
+        body: JSON.stringify(
+          registerAgentBody({
+            runtimeProvider: "LANGDOCK",
+            apiUrl: undefined,
+            langdockApiKey: "bad",
+            langdockAgentId: "ld-agent-1",
+          }),
+        ),
       },
     );
 
@@ -562,7 +609,128 @@ describe("/api/agents POST", () => {
           name: "Research assistant",
           apiUrl: "https://agent.example.com/mip",
           tags: "",
+          payoutAddress: TEST_PAYOUT_ADDRESS,
         }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(startAgentRegistrationMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid supportedPaymentSources before registration starts", async () => {
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          registerAgentBody({
+            supportedPaymentSources: [
+              {
+                chain: "EVM",
+                network: "not-caip2",
+                scheme: "Exact",
+                payTo: "0x1111111111111111111111111111111111111111",
+                pricing: {
+                  pricingType: "Fixed",
+                  fixed: [
+                    {
+                      asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                      amount: "10000",
+                      decimals: 6,
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+        ),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(startAgentRegistrationMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects x402 payment options for Free pricing", async () => {
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          registerAgentBody({
+            name: "Free research assistant",
+            pricing: { pricingType: "Free" },
+            supportedPaymentSources: [
+              {
+                chain: "EVM",
+                network: "eip155:84532",
+                scheme: "Exact",
+                payTo: "0x1111111111111111111111111111111111111111",
+                pricing: {
+                  pricingType: "Fixed",
+                  fixed: [
+                    {
+                      asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                      amount: "10000",
+                      decimals: 6,
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+        ),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(startAgentRegistrationMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects x402 payment options for Dynamic pricing", async () => {
+    buildAgentPricingMock.mockReturnValue({ pricingType: "Dynamic" });
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          registerAgentBody({
+            name: "Dynamic research assistant",
+            pricing: { pricingType: "Dynamic" },
+            supportedPaymentSources: [
+              {
+                chain: "EVM",
+                network: "eip155:84532",
+                scheme: "Exact",
+                payTo: "0x1111111111111111111111111111111111111111",
+                pricing: {
+                  pricingType: "Fixed",
+                  fixed: [
+                    {
+                      asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                      amount: "10000",
+                      decimals: 6,
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+        ),
       },
     );
 

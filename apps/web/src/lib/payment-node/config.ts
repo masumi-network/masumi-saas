@@ -96,6 +96,31 @@ function getRegistrationFundingWallets(network: PaymentNodeNetwork): string[] {
   );
 }
 
+const DEFAULT_REGISTRY_HOLDING_WALLET_FUNDING_ADA = 10;
+const LOVELACE_PER_ADA = BigInt(1_000_000);
+
+export const REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV =
+  "PAYMENT_NODE_REGISTRY_HOLDING_WALLET_FUNDING_ADA" as const;
+
+/**
+ * Lovelace sent to the holder wallet during agent registration (`sendFundingLovelace`).
+ * Optional env: ADA amount; defaults to 10 ADA.
+ */
+function getRegistryHoldingWalletFundingLovelace(): string {
+  const raw = process.env[REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV]?.trim();
+  const ada =
+    raw === undefined || raw === ""
+      ? DEFAULT_REGISTRY_HOLDING_WALLET_FUNDING_ADA
+      : Number(raw);
+  if (!Number.isFinite(ada) || ada <= 0) {
+    throw new PaymentNodeConfigError(
+      `${REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV} must be a positive number of ADA when set`,
+      { envName: REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV },
+    );
+  }
+  return (BigInt(Math.round(ada)) * LOVELACE_PER_ADA).toString();
+}
+
 /**
  * Optional Cardano address of the payment smart contract for the configured source.
  * When set, avoids an extra GET /payment-source round-trip for filters and deregister fallback.
@@ -113,6 +138,7 @@ export const paymentNodeConfig = {
   getPaymentSourceIdEnvName,
   getPaymentSourceId: getPaymentNodePaymentSourceId,
   getRegistrationFundingWallets,
+  getRegistryHoldingWalletFundingLovelace,
   getSmartContractAddressEnvName,
   tryGetSmartContractAddress: tryGetPaymentNodeSmartContractAddress,
 } as const;

@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { AgentVerifiedShield } from "@/components/agent-verified-shield";
+import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
 import { OrganizationRoleBadge } from "@/components/organizations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,8 +42,8 @@ import {
   isAgentVerificationFlowEnabled,
   isKybVerificationEnabled,
 } from "@/lib/config/verification.config";
+import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/agent-completion-context";
 import { useOrganizationContext } from "@/lib/context/organization-context";
-import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusKey,
@@ -252,6 +252,14 @@ export function OrganizationDashboardOverview({
               {tDetail("switchTo")}
             </Button>
           )}
+          {!isLoading && isActive && (
+            <Button
+              variant="outline"
+              onClick={() => setActiveOrganization(null)}
+            >
+              {tDetail("switchToPersonal")}
+            </Button>
+          )}
           {isOwnerOrAdmin && (
             <InviteMemberDialog
               organizationId={organization.id}
@@ -318,7 +326,15 @@ export function OrganizationDashboardOverview({
                               }
                             }}
                           >
-                            <AgentVerifiedShield className="-mt-px" />
+                            <AgentVerificationShieldIndicator
+                              agentId={agent.id}
+                              dbVerificationStatus={agent.verificationStatus}
+                              registered={
+                                agent.registrationState ===
+                                "RegistrationConfirmed"
+                              }
+                              className="-mt-px"
+                            />
                           </span>
                         ) : null}
                       </div>

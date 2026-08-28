@@ -13,6 +13,7 @@ const resolveRegistrationFundingWalletMock = vi.fn();
 const generateWalletMock = vi.fn();
 const addWalletsToPaymentSourceMock = vi.fn();
 const getPaymentSourcesMock = vi.fn();
+const getWalletListMock = vi.fn();
 const getRegistryInboxMock = vi.fn();
 const getRegistryInboxByIdMock = vi.fn();
 const getPaymentNodeClientForUserMock = vi.fn();
@@ -86,9 +87,11 @@ describe("prepareManagedInboxRegistration", () => {
       generateWallet: generateWalletMock,
       addWalletsToPaymentSource: addWalletsToPaymentSourceMock,
       getPaymentSources: getPaymentSourcesMock,
+      getWalletList: getWalletListMock,
       getRegistryInbox: getRegistryInboxMock,
       getRegistryInboxById: getRegistryInboxByIdMock,
     });
+    getWalletListMock.mockResolvedValue({ Wallets: [] });
   });
 
   it("uses the configured registration funding wallet as the inbox executing wallet", async () => {
@@ -426,9 +429,11 @@ describe("listOwnedInboxAgentsForUser", () => {
     }));
     createPaymentNodeClientMock.mockReturnValue({
       getPaymentSources: getPaymentSourcesMock,
+      getWalletList: getWalletListMock,
       getRegistryInbox: getRegistryInboxMock,
       getRegistryInboxById: getRegistryInboxByIdMock,
     });
+    getWalletListMock.mockResolvedValue({ Wallets: [] });
   });
 
   it("returns an empty list without payment-node lookup when no DB ownership references exist", async () => {
@@ -1128,9 +1133,11 @@ describe("getOwnedInboxAgentForUser", () => {
     inboxAgentReferenceFindFirstMock.mockResolvedValue(null);
     createPaymentNodeClientMock.mockReturnValue({
       getPaymentSources: getPaymentSourcesMock,
+      getWalletList: getWalletListMock,
       getRegistryInbox: getRegistryInboxMock,
       getRegistryInboxById: getRegistryInboxByIdMock,
     });
+    getWalletListMock.mockResolvedValue({ Wallets: [] });
   });
 
   it("returns null without payment-node lookup when no DB ownership reference exists", async () => {
