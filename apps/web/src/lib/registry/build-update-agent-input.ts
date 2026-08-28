@@ -128,13 +128,6 @@ export function buildUpdateAgentInput(
   };
 
   if (isV2) {
-    const supportedPaymentSources =
-      metadata.supportedPaymentSources ??
-      registryEntry.supportedPaymentSources ??
-      undefined;
-    if (supportedPaymentSources != null) {
-      return { ...base, supportedPaymentSources };
-    }
     return base;
   }
 
