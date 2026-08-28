@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   canDeregisterAgent,
+  canEditAgentDetails,
   canRequestAgentVerification,
   isAgentLiveOnRegistry,
   isRegistrationSyncPending,
   isRegistrationUiPending,
   isUpdateRequestedStale,
   registrationStateFromRegistryEntry,
+  REGISTRY_UPDATE_ABANDONED_MS,
   resolveRegistrationStateAfterSync,
   STALE_UPDATE_REQUESTED_MS,
 } from "./registration-state";
@@ -62,6 +64,30 @@ describe("resolveRegistrationStateAfterSync", () => {
       }),
     ).toBe("UpdateRequested");
   });
+
+  it("releases abandoned UpdateRequested when the node is still queued", () => {
+    const now = 1_000_000_000_000;
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "UpdateRequested",
+        updatedAt: new Date(now - REGISTRY_UPDATE_ABANDONED_MS),
+        now,
+      }),
+    ).toBe("RegistrationConfirmed");
+  });
+
+  it("keeps in-flight UpdateRequested within the abandoned window", () => {
+    const now = 1_000_000_000_000;
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "UpdateRequested",
+        updatedAt: new Date(now - (REGISTRY_UPDATE_ABANDONED_MS - 1)),
+        now,
+      }),
+    ).toBe("UpdateRequested");
+  });
 });
 
 describe("pending helpers", () => {
@@ -105,6 +131,28 @@ describe("canDeregisterAgent", () => {
     expect(canDeregisterAgent("UpdateRequested")).toBe(false);
     expect(canDeregisterAgent("UpdateInitiated")).toBe(false);
     expect(canDeregisterAgent("DeregistrationRequested")).toBe(false);
+  });
+});
+
+describe("canEditAgentDetails", () => {
+  const agentIdentifier = "a".repeat(56) + "b".repeat(64);
+
+  it("allows registered agents with an identifier", () => {
+    expect(
+      canEditAgentDetails({
+        registrationState: "RegistrationConfirmed",
+        agentIdentifier,
+      }),
+    ).toBe(true);
+  });
+
+  it("blocks pending updates", () => {
+    expect(
+      canEditAgentDetails({
+        registrationState: "UpdateInitiated",
+        agentIdentifier,
+      }),
+    ).toBe(false);
   });
 });
 

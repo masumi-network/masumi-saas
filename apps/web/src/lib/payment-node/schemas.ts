@@ -296,7 +296,7 @@ export const registryAgentOnChainMetadataSchema = z
       })
       .nullable()
       .optional(),
-    AgentPricing: agentPricingSchema.optional(),
+    AgentPricing: agentPricingSchema.nullable().optional(),
     supportedPaymentSources: z
       .array(supportedPaymentSourceSchema)
       .max(25)

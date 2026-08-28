@@ -5,6 +5,7 @@ import {
   DollarSign,
   Fingerprint,
   Link2,
+  Pencil,
   ShieldCheck,
   Tag,
   Tags,
@@ -31,8 +32,10 @@ import { useFormatDate } from "@/hooks/use-format-date";
 import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
 import {
   canDeregisterAgent,
+  canEditAgentDetails,
   isRegistrationConfirmedOnNetwork,
   isRegistrationUiPending,
+  isRegistryVerificationUpdatePending,
 } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
@@ -51,6 +54,7 @@ import {
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 import { AgentPayoutAddressDialog } from "../agent-payout-address-dialog";
 import { AgentVerificationOverviewLine } from "../agent-verification-overview-line";
+import { EditAgentDialog } from "../edit-agent-dialog";
 
 interface AgentDetailsProps {
   agent: Agent;
@@ -64,6 +68,11 @@ interface AgentDetailsProps {
 }
 
 const STUCK_PENDING_MS = 2 * 60 * 1000;
+
+// Registry metadata edits submit an on-chain update via the payment node. Keep hidden until
+// payment-service holder-wallet funding for update transactions is fixed; SaaS already avoids
+// wedging users when those txs fail, but edits would still not succeed on-chain (MAS-499).
+const AGENT_DETAILS_EDIT_ENABLED = false;
 
 export function AgentDetails({
   agent,
@@ -127,10 +136,21 @@ export function AgentDetails({
     showVerificationCta && Boolean(onVerificationSuccess);
 
   const [isPayoutDialogOpen, setIsPayoutDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const requiresPayoutAddress = agentPricingRequiresPayoutAddress(
     agent.pricing,
   );
   const showPayoutAddressBanner = requiresPayoutAddress && !agent.payoutAddress;
+  const showEditButton =
+    AGENT_DETAILS_EDIT_ENABLED &&
+    isRegistrationConfirmedOnNetwork(agent.registrationState) &&
+    Boolean(agent.agentIdentifier) &&
+    !isRegistryVerificationUpdatePending(agent.registrationState) &&
+    canEditAgentDetails({
+      registrationState: agent.registrationState,
+      agentIdentifier: agent.agentIdentifier,
+      updatedAt: new Date(agent.updatedAt),
+    });
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -229,7 +249,7 @@ export function AgentDetails({
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="flex shrink-0 items-center gap-2">
               <Badge
                 variant={registrationBadgeVariant}
                 className={cn(
@@ -250,6 +270,18 @@ export function AgentDetails({
                   className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   aria-label={t("refresh")}
                 />
+              ) : null}
+              {showEditButton ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5"
+                  onClick={() => setIsEditDialogOpen(true)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  {t("edit")}
+                </Button>
               ) : null}
             </div>
           </CardHeader>
@@ -478,6 +510,15 @@ export function AgentDetails({
             agent={agent}
             open={isPayoutDialogOpen}
             onOpenChange={setIsPayoutDialogOpen}
+            onUpdated={(updatedAgent) => onAgentUpdated?.(updatedAgent)}
+          />
+        ) : null}
+
+        {showEditButton ? (
+          <EditAgentDialog
+            agent={agent}
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
             onUpdated={(updatedAgent) => onAgentUpdated?.(updatedAgent)}
           />
         ) : null}
