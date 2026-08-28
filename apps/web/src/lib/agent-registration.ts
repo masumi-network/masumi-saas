@@ -480,7 +480,10 @@ export async function validateAgentRegistrationPaymentSourcesPreflight(
         error: "x402 payment sources require a V2 payment source.",
       };
     }
-    return { ok: true };
+    return {
+      ok: false,
+      error: "Agent registration requires a V2 payment source.",
+    };
   }
 
   try {
@@ -654,25 +657,25 @@ async function registerAgentOnChainUntilSetup(
   }
 
   let mergedSupportedPaymentSources: SupportedPaymentSource[] | null = null;
-  if (configuredPaymentSource.paymentSourceType === "Web3CardanoV2") {
-    try {
-      mergedSupportedPaymentSources =
-        prepareSupportedPaymentSourcesForRegistration(
-          network,
-          configuredPaymentSource.smartContractAddress,
-          params.supportedPaymentSources,
-          toCardanoSourcePricing(params.agentPricing),
-        );
-    } catch (error) {
-      return {
-        success: false,
-        error: formatSupportedPaymentSourceError(error),
-      };
-    }
-  } else if (params.supportedPaymentSources?.length) {
+  if (configuredPaymentSource.paymentSourceType !== "Web3CardanoV2") {
     return {
       success: false,
-      error: "x402 payment sources require a V2 payment source.",
+      error: "Agent registration requires a V2 payment source.",
+    };
+  }
+
+  try {
+    mergedSupportedPaymentSources =
+      prepareSupportedPaymentSourcesForRegistration(
+        network,
+        configuredPaymentSource.smartContractAddress,
+        params.supportedPaymentSources,
+        toCardanoSourcePricing(params.agentPricing),
+      );
+  } catch (error) {
+    return {
+      success: false,
+      error: formatSupportedPaymentSourceError(error),
     };
   }
 
@@ -1138,20 +1141,24 @@ export async function completeOnChainRegistration(
     }
 
     const isV2 = paymentSourceType === PaymentSourceType.Web3CardanoV2;
-    if (isV2 && !smartContractAddress) {
+    if (!isV2) {
+      throw new Error(
+        "Agent registration requires a V2 payment source on the payment node.",
+      );
+    }
+    if (!smartContractAddress) {
       throw new Error(
         "Configured payment source smart contract address is missing for agent registration.",
       );
     }
 
-    const supportedPaymentSources = isV2
-      ? prepareSupportedPaymentSourcesForRegistration(
-          network,
-          smartContractAddress,
-          (storedSources ?? []).filter((source) => source.chain !== "Cardano"),
-          toCardanoSourcePricing(payload.agentPricing),
-        )
-      : null;
+    const supportedPaymentSources =
+      prepareSupportedPaymentSourcesForRegistration(
+        network,
+        smartContractAddress,
+        (storedSources ?? []).filter((source) => source.chain !== "Cardano"),
+        toCardanoSourcePricing(payload.agentPricing),
+      );
 
     const registerPromise = adminClient.registerAgent({
       network,
@@ -1184,9 +1191,7 @@ export async function completeOnChainRegistration(
             },
           }
         : {}),
-      ...(isV2 && supportedPaymentSources
-        ? { supportedPaymentSources }
-        : { AgentPricing: payload.agentPricing }),
+      supportedPaymentSources,
     });
     let timeoutId: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {

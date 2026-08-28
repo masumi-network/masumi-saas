@@ -29,19 +29,15 @@ export function resolveRegistryLookupFilter(
 }
 
 /**
- * Registry list defaults to V1 when unfiltered. Merge V2 (configured source)
- * with V1 so confirmed wallet-owned agents stay visible after registration.
+ * Registry list filters for SaaS agent visibility. V2-only for new work; legacy
+ * agents remain reachable via per-agent smartContractAddress in metadata.
  */
 export function getRegistryListFilters(
   network: PaymentNodeNetwork,
 ): RegistryLookupFilter[] {
-  const filters: RegistryLookupFilter[] = [];
   const contractAddress = paymentNodeConfig.tryGetSmartContractAddress(network);
   if (contractAddress) {
-    filters.push({ filterSmartContractAddress: contractAddress });
-  } else {
-    filters.push({ filterPaymentSourceType: "Web3CardanoV2" });
+    return [{ filterSmartContractAddress: contractAddress }];
   }
-  filters.push({ filterPaymentSourceType: "Web3CardanoV1" });
-  return filters;
+  return [{ filterPaymentSourceType: "Web3CardanoV2" }];
 }
