@@ -19,7 +19,7 @@ export function AuthPageHeader({
         {title}
       </h1>
       {description ? (
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+        <p className="mx-auto mt-3 w-full max-w-form text-sm leading-snug text-muted-foreground">
           {description}
         </p>
       ) : null}

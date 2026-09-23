@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { AgentIcon } from "@/components/agent-icon";
-import { AgentVerifiedShield } from "@/components/agent-verified-shield";
+import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -68,7 +68,13 @@ export function AgentPageHeader({
             {agent.name}
           </h1>
           {agent.verificationStatus === "VERIFIED" ? (
-            <AgentVerifiedShield size="md" className="-mt-0.5 shrink-0" />
+            <AgentVerificationShieldIndicator
+              agentId={agent.id}
+              dbVerificationStatus={agent.verificationStatus}
+              registered={agent.registrationState === "RegistrationConfirmed"}
+              size="md"
+              className="-mt-0.5 shrink-0"
+            />
           ) : null}
         </div>
       </div>

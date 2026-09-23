@@ -3,8 +3,8 @@ import prisma from "@masumi/database/client";
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
-import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
+import { createAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
+import { resolveSmartContractAddressForDeregister } from "@/lib/payment-node/resolve-deregister-smart-contract";
 
 const DEFAULT_NETWORK: PaymentNodeNetwork = "Preprod";
 
@@ -49,13 +49,9 @@ export async function deregisterAgentForUser(
       };
     }
 
-    const userClient = await getPaymentNodeClientForUser(userId);
-    if (!userClient) {
-      return {
-        success: false,
-        error: "Something went wrong. Please try again.",
-      };
-    }
+    // Registry rows are created with the admin key (requestedById), so the
+    // wallet-scoped user key cannot mutate them. Deregister via the admin key.
+    const paymentNodeClient = createAdminPaymentNodeClient();
 
     const network = (agent.agentReference?.networkIdentifier ??
       options?.networkFallback ??
@@ -63,21 +59,18 @@ export async function deregisterAgentForUser(
 
     const refMeta = (agent.agentReference?.metadata ?? {}) as {
       smartContractAddress?: string;
+      paymentSourceId?: string;
     };
-    let smartContractAddress =
-      typeof refMeta.smartContractAddress === "string"
-        ? refMeta.smartContractAddress
-        : undefined;
-    if (!smartContractAddress) {
-      smartContractAddress =
-        (await getSmartContractAddressForConfiguredSource(
-          userClient,
-          userId,
-          network,
-        )) ?? undefined;
-    }
+    const smartContractAddress =
+      (await resolveSmartContractAddressForDeregister(
+        paymentNodeClient,
+        userId,
+        network,
+        agentIdentifier,
+        refMeta,
+      )) ?? undefined;
 
-    await userClient.deregisterAgent({
+    await paymentNodeClient.deregisterAgent({
       network,
       agentIdentifier,
       ...(smartContractAddress && { smartContractAddress }),
@@ -100,11 +93,36 @@ export async function deregisterAgentForUser(
       error instanceof Error ? error.message : "Failed to deregister agent";
     if (/^\d{3}:/.test(message)) {
       const status = message.slice(0, 3);
+      const detail = message.slice(4).trim();
       if (status === "404") {
         return {
           success: false,
           error:
             "Registration not found on the network. It may already be deregistered.",
+        };
+      }
+      if (status === "409") {
+        // Payment node only allows deregister from RegistrationConfirmed (or
+        // DeregistrationFailed). A pending registration/update/deregistration
+        // transaction must confirm first.
+        if (/update/i.test(detail)) {
+          return {
+            success: false,
+            error:
+              "This agent has a verification update in progress. Please wait for it to confirm on-chain, then try deregistering again.",
+          };
+        }
+        return {
+          success: false,
+          error:
+            detail ||
+            "This agent can't be deregistered while a transaction is pending. Please wait for it to confirm and try again.",
+        };
+      }
+      if (status.startsWith("4")) {
+        return {
+          success: false,
+          error: detail || "Could not deregister this agent. Please try again.",
         };
       }
       return {

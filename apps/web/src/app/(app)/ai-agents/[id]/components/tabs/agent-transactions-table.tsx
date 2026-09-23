@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -112,7 +113,7 @@ export function AgentTransactionsTable({
   const { formatDateTime } = useFormatDate();
 
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <HorizontalScrollArea className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -192,6 +193,6 @@ export function AgentTransactionsTable({
           )}
         </TableBody>
       </Table>
-    </div>
+    </HorizontalScrollArea>
   );
 }

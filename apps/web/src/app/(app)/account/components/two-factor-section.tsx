@@ -157,7 +157,7 @@ export function TwoFactorSection() {
 
   function copyBackupCodes() {
     try {
-      navigator.clipboard.writeText(backupCodes.join("\n"));
+      void navigator.clipboard.writeText(backupCodes.join("\n"));
       toast.success(t("setup.copied"));
     } catch {
       toast.error(t("errors.copyFailed"));
@@ -396,7 +396,7 @@ export function TwoFactorSection() {
               placeholder={t("passwordPlaceholder")}
               className="mt-1.5"
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleEnableStart();
+                if (e.key === "Enter") void handleEnableStart();
               }}
               autoFocus
             />

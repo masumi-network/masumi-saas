@@ -95,28 +95,28 @@ export default function SignInForm({
     <div className="w-full space-y-6 animate-page-in">
       <AuthPageHeader title={t("title")} description={t("description")} />
 
-      {oauthProviders.length > 0 && (
+      <div className="flex w-full flex-col gap-4">
         <SocialAuthButtons
           providers={oauthProviders}
           callbackURL={safeCallbackUrl}
         />
-      )}
 
-      {usePassword ? (
-        <SigninPasswordForm
-          ref={passwordRef}
-          seedFromMagicLink={seedPassword}
-          safeCallbackUrl={safeCallbackUrl}
-        />
-      ) : (
-        <SigninMagicLinkForm
-          key={magicFormKey}
-          ref={magicRef}
-          seedFromPassword={seedMagic}
-          safeCallbackUrl={safeCallbackUrl}
-          onMagicLinkSent={(email) => setMagicLinkEmail(email)}
-        />
-      )}
+        {usePassword ? (
+          <SigninPasswordForm
+            ref={passwordRef}
+            seedFromMagicLink={seedPassword}
+            safeCallbackUrl={safeCallbackUrl}
+          />
+        ) : (
+          <SigninMagicLinkForm
+            key={magicFormKey}
+            ref={magicRef}
+            seedFromPassword={seedMagic}
+            safeCallbackUrl={safeCallbackUrl}
+            onMagicLinkSent={(email) => setMagicLinkEmail(email)}
+          />
+        )}
+      </div>
 
       <div className="flex flex-col gap-3 w-full">
         <Button

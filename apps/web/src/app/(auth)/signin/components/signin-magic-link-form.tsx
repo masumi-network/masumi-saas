@@ -105,7 +105,7 @@ export const SigninMagicLinkForm = forwardRef<
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex flex-col items-center gap-2 w-full"
       >
-        <p className="mx-auto w-full max-w-md text-center text-sm text-muted-foreground">
+        <p className="w-full text-center text-xs leading-snug text-muted-foreground sm:text-sm">
           {t("magicLinkDescription")}
         </p>
 

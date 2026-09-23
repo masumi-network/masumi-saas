@@ -10,6 +10,7 @@ const ENV_KEYS = [
   "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET",
   "PAYMENT_NODE_SMART_CONTRACT_ADDRESS_PREPROD",
   "PAYMENT_NODE_SMART_CONTRACT_ADDRESS_MAINNET",
+  "PAYMENT_NODE_REGISTRY_HOLDING_WALLET_FUNDING_ADA",
 ] as const;
 
 const ORIGINAL_ENV = Object.fromEntries(
@@ -75,6 +76,30 @@ describe("paymentNodeConfig", () => {
 
     expect(() => paymentNodeConfig.getPaymentSourceId("Mainnet")).toThrow(
       "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
+    );
+  });
+
+  it("defaults holder wallet funding to 10 ADA in lovelace", () => {
+    expect(paymentNodeConfig.getRegistryHoldingWalletFundingLovelace()).toBe(
+      "10000000",
+    );
+  });
+
+  it("reads holder wallet funding from PAYMENT_NODE_REGISTRY_HOLDING_WALLET_FUNDING_ADA", () => {
+    process.env.PAYMENT_NODE_REGISTRY_HOLDING_WALLET_FUNDING_ADA = "25";
+
+    expect(paymentNodeConfig.getRegistryHoldingWalletFundingLovelace()).toBe(
+      "25000000",
+    );
+  });
+
+  it("rejects invalid holder wallet funding ADA values", () => {
+    process.env.PAYMENT_NODE_REGISTRY_HOLDING_WALLET_FUNDING_ADA = "0";
+
+    expect(() =>
+      paymentNodeConfig.getRegistryHoldingWalletFundingLovelace(),
+    ).toThrow(
+      "PAYMENT_NODE_REGISTRY_HOLDING_WALLET_FUNDING_ADA must be a positive number of ADA when set",
     );
   });
 });

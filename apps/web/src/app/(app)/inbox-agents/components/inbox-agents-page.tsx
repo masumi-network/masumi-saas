@@ -4,9 +4,10 @@ import { ExternalLink, Inbox, Search, Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { DiscoveryEmptyState } from "@/components/discovery-empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -45,12 +47,19 @@ import { useFormatDate } from "@/hooks/use-format-date";
 import {
   type InboxAgent,
   inboxAgentApiClient,
-  type InboxAgentFilterStatus,
 } from "@/lib/api/inbox-agent.client";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { cn, shortenAddress } from "@/lib/utils";
 
 import { InboxAgentsDiscovery } from "./inbox-agents-discovery";
+import {
+  countInboxManageListFilters,
+  InboxAgentsFiltersPopover,
+  type InboxManageListFilters,
+  inboxManageListFiltersToApi,
+  inboxManageListFiltersToSearchParams,
+  parseInboxManageListFilters,
+} from "./inbox-agents-filters-popover";
 
 const PAGE_SIZE = 10;
 const MAX_VISIBLE_PAGES = 5;
@@ -59,8 +68,21 @@ const DASH = "\u2014";
 const MIDDLE_DOT = "\u00b7";
 const METADATA_VERSION_PREFIX = "v";
 
-type InboxTabKey = "all" | "registered" | "deregistered" | "pending" | "failed";
 type InboxSection = (typeof VALID_SECTIONS)[number];
+
+function getEmptyMessageKey(
+  filters: InboxManageListFilters,
+  hasSearch: boolean,
+  activeFilterCount: number,
+): string {
+  if (hasSearch) return "emptyTitle";
+  if (filters.status === "registered") return "noRegisteredInboxes";
+  if (filters.status === "deregistered") return "noDeregisteredInboxes";
+  if (filters.status === "pending") return "noPendingInboxes";
+  if (filters.status === "failed") return "noFailedInboxes";
+  if (activeFilterCount > 0) return "noInboxesMatchingFilters";
+  return "emptyTitle";
+}
 
 type CursorPageState<T> = {
   pages: T[][];
@@ -123,21 +145,6 @@ function getPageNumbers(
   }
 
   return pages;
-}
-
-function getFilterForTab(tab: InboxTabKey): InboxAgentFilterStatus | undefined {
-  switch (tab) {
-    case "registered":
-      return "Registered";
-    case "deregistered":
-      return "Deregistered";
-    case "pending":
-      return "Pending";
-    case "failed":
-      return "Failed";
-    default:
-      return undefined;
-  }
 }
 
 function getInboxAgentStatusKey(state: InboxAgent["state"]): string {
@@ -218,28 +225,30 @@ function DetailField({
 function InboxAgentsSkeleton() {
   return (
     <div className="rounded-xl border border-border/80">
-      <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <TableHead key={index}>
-                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <TableRow key={index}>
-              {Array.from({ length: 6 }).map((__, cellIndex) => (
-                <TableCell key={cellIndex}>
-                  <div className="h-4 w-full animate-pulse rounded bg-muted" />
-                </TableCell>
+      <HorizontalScrollArea>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <TableHead key={index}>
+                  <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                </TableHead>
               ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <TableRow key={index}>
+                {Array.from({ length: 6 }).map((__, cellIndex) => (
+                  <TableCell key={cellIndex}>
+                    <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </HorizontalScrollArea>
     </div>
   );
 }
@@ -582,8 +591,17 @@ export function InboxAgentsPage() {
   const activeSection = VALID_SECTIONS.includes(sectionParam as InboxSection)
     ? (sectionParam as InboxSection)
     : "manage";
-  const [activeTab, setActiveTab] = useState<InboxTabKey>("all");
+  const listFilters = useMemo(
+    () => parseInboxManageListFilters(searchParams),
+    [searchParams],
+  );
+  const activeFilterCount = useMemo(
+    () => countInboxManageListFilters(listFilters),
+    [listFilters],
+  );
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
   const [selectedAgent, setSelectedAgent] = useState<InboxAgent | null>(null);
   const [state, setState] = useState<CursorPageState<InboxAgent>>(
@@ -594,7 +612,7 @@ export function InboxAgentsPage() {
     async (cursorId?: string) =>
       inboxAgentApiClient.getInboxAgents(
         {
-          filterStatus: getFilterForTab(activeTab),
+          filterStatus: inboxManageListFiltersToApi(listFilters),
           search: debouncedSearch || undefined,
         },
         {
@@ -603,7 +621,7 @@ export function InboxAgentsPage() {
           network,
         },
       ),
-    [activeTab, debouncedSearch, network],
+    [debouncedSearch, listFilters, network],
   );
 
   const loadFirstPage = useCallback(async () => {
@@ -646,6 +664,37 @@ export function InboxAgentsPage() {
     };
   }, [activeSection, loadFirstPage]);
 
+  useEffect(() => {
+    if (activeSection !== "manage") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key?.toLowerCase() !== "f") return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeSection]);
+
+  const pushListFilters = useCallback(
+    (next: InboxManageListFilters) => {
+      const params = inboxManageListFiltersToSearchParams(next, searchParams);
+      const query = params.toString();
+      router.push(query ? `/inbox-agents?${query}` : "/inbox-agents");
+    },
+    [router, searchParams],
+  );
+
   const handlePageChange = useCallback(
     async (page: number) => {
       const totalPages = getKnownTotalPages(state);
@@ -682,13 +731,6 @@ export function InboxAgentsPage() {
     [fetchPage, state],
   );
 
-  const tabs = [
-    { name: t("tabs.all"), key: "all" },
-    { name: t("tabs.registered"), key: "registered" },
-    { name: t("tabs.deregistered"), key: "deregistered" },
-    { name: t("tabs.pending"), key: "pending" },
-    { name: t("tabs.failed"), key: "failed" },
-  ];
   const sections = [
     { name: t("sections.manage"), key: "manage" },
     { name: t("sections.discovery"), key: "discovery" },
@@ -707,6 +749,11 @@ export function InboxAgentsPage() {
 
   const currentItems = getCurrentPageItems(state);
   const totalPages = getKnownTotalPages(state);
+  const emptyMessageKey = getEmptyMessageKey(
+    listFilters,
+    !!debouncedSearch,
+    activeFilterCount,
+  );
 
   return (
     <div className="space-y-6">
@@ -716,14 +763,6 @@ export function InboxAgentsPage() {
           activeSection === "manage"
             ? t("manageDescription", { network: network })
             : t("discoveryDescription", { network: network })
-        }
-        actions={
-          activeSection === "manage" ? (
-            <RefreshButton
-              onRefresh={() => void loadFirstPage()}
-              isRefreshing={state.isLoading || state.isPageLoading}
-            />
-          ) : undefined
         }
       />
 
@@ -737,27 +776,41 @@ export function InboxAgentsPage() {
         />
 
         {activeSection === "manage" ? (
-          <div className="space-y-4 rounded-2xl border border-border/80 bg-background/95 p-4 sm:p-6">
-            <Tabs
-              tabs={tabs}
-              activeTab={activeTab}
-              onTabChange={(tab) => setActiveTab(tab as InboxTabKey)}
-            />
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative w-full max-w-md">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div
+                onClick={() => searchInputRef.current?.focus()}
+                className="relative flex min-w-0 flex-1 cursor-text items-center gap-2 rounded-lg border border-border/80 bg-muted-surface/60 px-3 py-2.5 text-sm ring-offset-background transition-colors focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 md:max-w-md lg:max-w-sm"
+              >
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <Input
+                  ref={searchInputRef}
+                  type="search"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
                   placeholder={t("searchPlaceholder")}
-                  className="pl-10"
+                  className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
                 />
+                {!isSearchFocused && (
+                  <kbd className="pointer-events-none hidden h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground sm:inline-flex">
+                    {t("searchShortcut")}
+                  </kbd>
+                )}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {state.isPageLoading
-                  ? t("loadingPage")
-                  : t("page", { page: state.currentPage })}
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <InboxAgentsFiltersPopover
+                  filters={listFilters}
+                  activeFilterCount={activeFilterCount}
+                  onChange={pushListFilters}
+                  onClear={() => pushListFilters({})}
+                />
+                <RefreshButton
+                  onRefresh={() => void loadFirstPage()}
+                  isRefreshing={state.isLoading || state.isPageLoading}
+                  size="md"
+                />
               </div>
             </div>
 
@@ -768,117 +821,120 @@ export function InboxAgentsPage() {
                 {state.error}
               </div>
             ) : currentItems.length === 0 ? (
-              <div className="rounded-xl border border-dashed px-6 py-14 text-center">
-                <div className="mx-auto max-w-md space-y-3">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                    <Inbox className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-base font-medium">{t("emptyTitle")}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("emptyDescription")}
-                  </p>
-                </div>
-              </div>
+              <DiscoveryEmptyState
+                icon={Inbox}
+                message={t(emptyMessageKey)}
+                description={t("emptyDescription")}
+              />
             ) : (
               <>
                 <div className="rounded-xl border border-border/80">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead>{t("table.name")}</TableHead>
-                        <TableHead>{t("table.added")}</TableHead>
-                        <TableHead>{t("table.inboxSlug")}</TableHead>
-                        <TableHead>{t("table.agentId")}</TableHead>
-                        <TableHead>{t("table.wallets")}</TableHead>
-                        <TableHead>{t("table.status")}</TableHead>
-                        <TableHead className="text-right">
-                          {t("table.actions")}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {currentItems.map((agent, index) => {
-                        const holdingWallet =
-                          agent.RecipientWallet ?? agent.SmartContractWallet;
+                  <HorizontalScrollArea>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead>{t("table.name")}</TableHead>
+                          <TableHead>{t("table.added")}</TableHead>
+                          <TableHead>{t("table.inboxSlug")}</TableHead>
+                          <TableHead>{t("table.agentId")}</TableHead>
+                          <TableHead>{t("table.wallets")}</TableHead>
+                          <TableHead>{t("table.status")}</TableHead>
+                          <TableHead className="text-right">
+                            {t("table.actions")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {currentItems.map((agent, index) => {
+                          const holdingWallet =
+                            agent.RecipientWallet ?? agent.SmartContractWallet;
 
-                        return (
-                          <TableRow
-                            key={agent.id}
-                            className="cursor-pointer hover:bg-muted/50 animate-table-row-in"
-                            style={{ animationDelay: `${index * 40}ms` }}
-                            onClick={() => setSelectedAgent(agent)}
-                          >
-                            <TableCell className="max-w-56">
-                              <div className="space-y-1">
-                                <div className="font-medium">{agent.name}</div>
-                                <div className="truncate text-xs text-muted-foreground">
-                                  {agent.description || t("noDescription")}
+                          return (
+                            <TableRow
+                              key={agent.id}
+                              className="cursor-pointer hover:bg-muted/50 animate-table-row-in"
+                              style={{ animationDelay: `${index * 40}ms` }}
+                              onClick={() => setSelectedAgent(agent)}
+                            >
+                              <TableCell className="max-w-56">
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {agent.name}
+                                  </div>
+                                  <div className="truncate text-xs text-muted-foreground">
+                                    {agent.description || t("noDescription")}
+                                  </div>
                                 </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {formatRelativeDate(agent.createdAt)}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">
-                              {agent.agentSlug}
-                            </TableCell>
-                            <TableCell className="max-w-44">
-                              {agent.agentIdentifier ? (
-                                <div
-                                  className="flex items-center gap-2"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  <span className="truncate font-mono text-xs">
-                                    {shortenAddress(agent.agentIdentifier, 8)}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {formatRelativeDate(agent.createdAt)}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {agent.agentSlug}
+                              </TableCell>
+                              <TableCell className="max-w-44">
+                                {agent.agentIdentifier ? (
+                                  <div
+                                    className="flex items-center gap-2"
+                                    onClick={(event) => event.stopPropagation()}
+                                  >
+                                    <span className="truncate font-mono text-xs">
+                                      {shortenAddress(agent.agentIdentifier, 8)}
+                                    </span>
+                                    <CopyButton
+                                      value={agent.agentIdentifier}
+                                      className="h-8 w-8 shrink-0"
+                                    />
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">
+                                    {DASH}
                                   </span>
-                                  <CopyButton
-                                    value={agent.agentIdentifier}
-                                    className="h-8 w-8 shrink-0"
-                                  />
-                                </div>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">
-                                  {DASH}
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              <div>
-                                {t("regWalletPrefix")}{" "}
-                                {shortenAddress(
-                                  agent.SmartContractWallet.walletAddress,
-                                  8,
                                 )}
-                              </div>
-                              <div>
-                                {t("fundWalletPrefix")}{" "}
-                                {shortenAddress(holdingWallet.walletAddress, 8)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={getInboxAgentBadgeVariant(agent.state)}
-                              >
-                                {t(getInboxAgentStatusKey(agent.state))}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setSelectedAgent(agent);
-                                }}
-                              >
-                                {t("details")}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                <div>
+                                  {t("regWalletPrefix")}{" "}
+                                  {shortenAddress(
+                                    agent.SmartContractWallet.walletAddress,
+                                    8,
+                                  )}
+                                </div>
+                                <div>
+                                  {t("fundWalletPrefix")}{" "}
+                                  {shortenAddress(
+                                    holdingWallet.walletAddress,
+                                    8,
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={getInboxAgentBadgeVariant(
+                                    agent.state,
+                                  )}
+                                >
+                                  {t(getInboxAgentStatusKey(agent.state))}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelectedAgent(agent);
+                                  }}
+                                >
+                                  {t("details")}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </HorizontalScrollArea>
                 </div>
 
                 <InboxAgentsPagination

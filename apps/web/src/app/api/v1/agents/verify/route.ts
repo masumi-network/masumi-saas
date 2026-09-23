@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi";
-import prisma from "@masumi/database/client";
 
 import { checkRateLimitOrRespond } from "@/lib/api/rate-limit-with-response";
+import { resolveAgentVerification } from "@/lib/registry/resolve-agent-verification";
 import { agentVerifyQuerySchema } from "@/lib/schemas";
 import { verifyAgentResultSchema } from "@/lib/swagger/generator";
 import { z } from "@/lib/zod-openapi";
@@ -28,7 +28,7 @@ app.openapi(
     tags: ["Agents"],
     summary: "Verify agent identifier",
     description:
-      "Looks up a public agent by `agentIdentifier` and reports whether it currently has an active verification credential.",
+      "Looks up a public agent by `agentIdentifier` and reports whether it has an active verification credential. Prefers on-chain registry `Metadata.verifications` anchors when configured, with optional SaaS database fallback during backfill.",
     request: { query: agentVerifyQuerySchema },
     responses: {
       200: {
@@ -73,45 +73,21 @@ app.openapi(
     };
 
     try {
-      const agent = await prisma.agent.findFirst({
-        where: { agentIdentifier },
-        select: {
-          id: true,
-          name: true,
-          apiUrl: true,
-          verificationStatus: true,
-          veridianCredentialId: true,
-        },
-      });
+      const result = await resolveAgentVerification({ agentIdentifier });
 
-      if (!agent || agent.verificationStatus !== "VERIFIED") {
+      if (!("credentialId" in result)) {
         return respondNotVerified();
       }
-
-      const credential = await prisma.veridianCredential.findFirst({
-        where: { agentId: agent.id, status: "ISSUED" },
-        select: { credentialId: true, expiresAt: true },
-        orderBy: { issuedAt: "desc" },
-      });
-
-      if (!credential) {
-        return respondNotVerified();
-      }
-
-      const isExpired =
-        credential.expiresAt !== null && credential.expiresAt < new Date();
 
       const res = c.json(
         {
           success: true as const,
           data: {
-            verified: !isExpired,
-            credentialId: credential.credentialId,
-            expiresAt: credential.expiresAt
-              ? credential.expiresAt.toISOString()
-              : null,
-            agentName: agent.name,
-            apiUrl: agent.apiUrl,
+            verified: result.verified,
+            credentialId: result.credentialId,
+            expiresAt: result.expiresAt,
+            agentName: result.agentName,
+            apiUrl: result.apiUrl,
           },
         },
         200,

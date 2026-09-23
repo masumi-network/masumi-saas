@@ -11,9 +11,10 @@ import { type TabKey, TabSkeleton } from "./agent-tab-skeletons";
 export function AgentPageLoading() {
   const searchParams = useSearchParams();
   const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
-  const tabParam = searchParams.get("tab");
+  const tabParamRaw = searchParams.get("tab");
+  const tabParam = tabParamRaw === "credentials" ? "verification" : tabParamRaw;
   const validTabKeys: TabKey[] = agentVerificationUiEnabled
-    ? ["details", "earnings", "transactions", "credentials"]
+    ? ["details", "earnings", "transactions", "verification"]
     : ["details", "earnings", "transactions"];
   const activeTab: TabKey =
     tabParam && validTabKeys.includes(tabParam as TabKey)
@@ -26,7 +27,7 @@ export function AgentPageLoading() {
     { name: "Transactions", key: "transactions" },
   ];
   if (agentVerificationUiEnabled) {
-    tabs.push({ name: "Credentials", key: "credentials" });
+    tabs.push({ name: "Verification", key: "verification" });
   }
 
   return (

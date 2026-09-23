@@ -60,22 +60,12 @@ export type OrganizationAgentPreview = {
   registrationState: string;
 };
 
-export type OrganizationApiKeyPreview = {
-  id: string;
-  name: string;
-  keyPrefix: string;
-  enabled: boolean;
-};
-
 export type OrganizationDashboardData = {
   organization: OrganizationInfo;
   memberCount: number;
   kybStatus: string | null;
   agentCount: number;
   agents: OrganizationAgentPreview[];
-  apiKeyCount: number;
-  activeApiKeyCount: number;
-  apiKeys: OrganizationApiKeyPreview[];
 };
 
 export async function getOrganizationsAction(): Promise<
@@ -160,15 +150,7 @@ export async function getOrganizationDashboardAction(
     });
     const organizationId = member.organizationId;
 
-    const [
-      organization,
-      memberCount,
-      apiKeyCount,
-      activeApiKeyCount,
-      agentCount,
-      agents,
-      apiKeys,
-    ] = await Promise.all([
+    const [organization, memberCount, agentCount, agents] = await Promise.all([
       prisma.organization.findUniqueOrThrow({
         where: { id: organizationId },
         select: {
@@ -179,8 +161,6 @@ export async function getOrganizationDashboardAction(
         },
       }),
       prisma.member.count({ where: { organizationId } }),
-      prisma.orgApiKey.count({ where: { organizationId } }),
-      prisma.orgApiKey.count({ where: { organizationId, enabled: true } }),
       prisma.agent.count({ where: { organizationId } }),
       prisma.agent.findMany({
         where: { organizationId },
@@ -191,12 +171,6 @@ export async function getOrganizationDashboardAction(
           verificationStatus: true,
           registrationState: true,
         },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      }),
-      prisma.orgApiKey.findMany({
-        where: { organizationId },
-        select: { id: true, name: true, keyPrefix: true, enabled: true },
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
@@ -215,9 +189,6 @@ export async function getOrganizationDashboardAction(
         kybStatus: organization.kybVerification?.status ?? null,
         agentCount,
         agents,
-        apiKeyCount,
-        activeApiKeyCount,
-        apiKeys,
       },
     };
   } catch (error) {

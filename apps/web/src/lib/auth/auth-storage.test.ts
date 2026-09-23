@@ -197,6 +197,79 @@ describe("securePrismaAuthAdapter", () => {
     );
   });
 
+  it("does not double-hash session tokens already loaded from storage on update", async () => {
+    const authStorageModule = await import("./auth-storage");
+    const storedToken = authStorageModule.hashAuthLookupValue(
+      "raw-session-token",
+      "session.token",
+    );
+
+    adapterMethods.update.mockImplementation(async ({ where, update }) => ({
+      id: "session-1",
+      token: where[0].value,
+      ...update,
+    }));
+
+    const adapterFactory = authStorageModule.securePrismaAuthAdapter(
+      {} as never,
+      {
+        provider: "postgresql",
+      },
+    );
+    const adapter = adapterFactory({} as never);
+
+    await adapter.update({
+      model: "session",
+      where: [{ field: "token", value: storedToken }],
+      update: { activeOrganizationId: "org-1" },
+    });
+
+    expect(adapterMethods.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: [{ field: "token", value: storedToken }],
+        update: { activeOrganizationId: "org-1" },
+      }),
+    );
+  });
+
+  it("re-hashes a digest-shaped token on reads so a leaked digest cannot be replayed", async () => {
+    const authStorageModule = await import("./auth-storage");
+    const storedToken = authStorageModule.hashAuthLookupValue(
+      "raw-session-token",
+      "session.token",
+    );
+    adapterMethods.findOne.mockResolvedValue(null);
+
+    const adapterFactory = authStorageModule.securePrismaAuthAdapter(
+      {} as never,
+      { provider: "postgresql" },
+    );
+    const adapter = adapterFactory({} as never);
+
+    // An attacker presents the stored digest verbatim as a bearer/cookie value.
+    await adapter.findOne({
+      model: "session",
+      where: [{ field: "token", value: storedToken }],
+      select: ["token"],
+    });
+
+    // The read path must hash it again (not match the stored digest directly),
+    // so the digest is useless as a raw credential.
+    expect(adapterMethods.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: [
+          {
+            field: "token",
+            value: authStorageModule.hashAuthLookupValue(
+              storedToken,
+              "session.token",
+            ),
+          },
+        ],
+      }),
+    );
+  });
+
   it("writes a resolved OIDC session id to the rotated refresh token record", async () => {
     const authStorageModule = await import("./auth-storage");
     prismaMock.oauthAccessToken.updateMany.mockResolvedValue({ count: 1 });

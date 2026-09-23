@@ -114,6 +114,15 @@ class CredentialApiClient {
       { method: "GET" },
     );
   }
+
+  async getPendingCredential(
+    agentId: string,
+  ): Promise<ApiResponse<{ pendingCredentialId: string | null }>> {
+    return this.request<{ pendingCredentialId: string | null }>(
+      `/pending?agentId=${encodeURIComponent(agentId)}`,
+      { method: "GET" },
+    );
+  }
 }
 
 export const credentialApiClient = new CredentialApiClient();

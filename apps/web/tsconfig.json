@@ -41,9 +41,10 @@
     "eslint.config.mjs",
     "**/*.ts",
     "**/*.tsx",
+    "src/app/.well-known/**/*.ts",
     ".next/types/**/*.ts",
     "src/types/**/*.d.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "scripts"]
 }

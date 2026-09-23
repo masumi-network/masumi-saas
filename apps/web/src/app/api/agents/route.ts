@@ -2,15 +2,17 @@ import { randomUUID } from "node:crypto";
 
 import { createRoute } from "@hono/zod-openapi";
 import prisma, { RegistrationState } from "@masumi/database/client";
+import { loadSupportedPaymentSourcesMap } from "@masumi/payment-source-x402/supported-payment-sources";
 import { getCookie } from "hono/cookie";
 
 import {
   buildAgentPricing,
   type RegisterAgentParams,
   startAgentRegistration,
+  validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
-import { shapeAgentWithMergedMetadata } from "@/lib/api/agent-metadata";
+import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
@@ -28,6 +30,7 @@ import {
 } from "@/lib/integrations/langdock";
 import { getPublicMipAgentBaseUrl } from "@/lib/mip/public-url";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
+import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
 import { parseNetwork } from "@/lib/schemas";
 import {
   agentsListQuerySchema,
@@ -53,7 +56,6 @@ function matchesAgentSearch(
   agent: {
     name: string;
     description: string | null;
-    extendedDescription: string | null;
     apiUrl: string;
     tags: string[];
   },
@@ -65,7 +67,6 @@ function matchesAgentSearch(
   return (
     agent.name.toLowerCase().includes(query) ||
     agent.description?.toLowerCase().includes(query) === true ||
-    agent.extendedDescription?.toLowerCase().includes(query) === true ||
     agent.apiUrl.toLowerCase().includes(query) ||
     agent.tags.some((tag) => tag.toLowerCase().includes(query))
   );
@@ -197,15 +198,23 @@ app.openapi(
       const nextCursor =
         hasMore && page.length > 0 ? (page[page.length - 1]?.id ?? null) : null;
 
+      const sourcesByAgentId = await loadSupportedPaymentSourcesMap(
+        page.map((agent) => agent.id),
+      );
+
       // Prisma `verificationStatus`/dates are looser than the OpenAPI response
       // schema. Cast so Hono accepts the response body shape.
       type AgentsListData = z.infer<typeof agentsListSuccessSchema>["data"];
       return c.json(
         {
           success: true as const,
-          data: page.map(
-            ({ agentReference: _agentReference, ...agent }) => agent,
-          ) as unknown as AgentsListData,
+          data: page.map((agent) => {
+            const { agentReference: _agentReference, ...rest } = agent;
+            return shapeAgentForApi(
+              agent,
+              sourcesByAgentId.get(agent.id) ?? null,
+            );
+          }) as unknown as AgentsListData,
           nextCursor,
         },
         200,
@@ -258,7 +267,6 @@ app.openapi(
     const {
       name,
       description,
-      extendedDescription,
       apiUrl,
       runtimeProvider,
       integrationConnectionId,
@@ -274,6 +282,8 @@ app.openapi(
       capabilityName,
       capabilityVersion,
       exampleOutputs,
+      supportedPaymentSources,
+      payoutAddress,
     } = c.req.valid("json");
 
     const tagsArray = tags
@@ -398,7 +408,62 @@ app.openapi(
         };
       }
 
-      const agentPricing = buildAgentPricing(network, pricing ?? undefined);
+      let agentPricing: ReturnType<typeof buildAgentPricing>;
+      try {
+        agentPricing = buildAgentPricing(network, pricing ?? undefined);
+      } catch (error) {
+        // An unparseable fixed price is a client input error, not a 500.
+        throw new ApiError(
+          400,
+          error instanceof Error ? error.message : "Invalid agent pricing",
+        );
+      }
+
+      if (
+        agentPricing.pricingType === "Free" &&
+        supportedPaymentSources &&
+        supportedPaymentSources.length > 0
+      ) {
+        throw new ApiError(
+          400,
+          "Free agents cannot include x402 payment options.",
+        );
+      }
+
+      if (
+        agentPricing.pricingType === "Dynamic" &&
+        supportedPaymentSources &&
+        supportedPaymentSources.length > 0
+      ) {
+        throw new ApiError(
+          400,
+          "Dynamic pricing agents cannot include x402 payment options.",
+        );
+      }
+
+      const paymentSourcesPreflight =
+        await validateAgentRegistrationPaymentSourcesPreflight(
+          network,
+          supportedPaymentSources,
+          agentPricing,
+        );
+      if (!paymentSourcesPreflight.ok) {
+        throw new ApiError(400, paymentSourcesPreflight.error);
+      }
+
+      // Validate the payout address format BEFORE consuming a credit. The
+      // registration path re-validates (defense in depth), but validating here
+      // avoids burning the user's credit on a malformed address that would only
+      // fail later with no refund path.
+      if (agentPricing.pricingType !== "Free") {
+        const payoutAddressError = validatePayoutAddressForNetwork(
+          payoutAddress?.trim() ?? "",
+          network,
+        );
+        if (payoutAddressError) {
+          throw new ApiError(400, payoutAddressError);
+        }
+      }
 
       await consumeCreditIfRequired({
         userId: user.id,
@@ -418,9 +483,6 @@ app.openapi(
         id: agentId,
         name,
         description: description?.trim() || null,
-        extendedDescription: (extendedDescription?.trim() || null) as
-          | string
-          | null,
         apiUrl: resolvedApiUrl,
         runtimeProvider: selectedRuntimeProvider,
         integrationConnectionId: resolvedIntegrationConnectionId,
@@ -434,6 +496,8 @@ app.openapi(
         termsOfUseUrl: termsOfUseUrl?.trim() || null,
         privacyPolicyUrl: privacyPolicyUrl?.trim() || null,
         otherUrl: otherUrl?.trim() || null,
+        supportedPaymentSources,
+        payoutAddress: payoutAddress?.trim() ?? "",
       };
 
       const result = await startAgentRegistration(
@@ -457,7 +521,13 @@ app.openapi(
         if (!agent) {
           throw new ApiError(500, "Failed to load created agent");
         }
-        const data = shapeAgentWithMergedMetadata(agent);
+        const sourcesByAgentId = await loadSupportedPaymentSourcesMap([
+          agent.id,
+        ]);
+        const data = shapeAgentForApi(
+          agent,
+          sourcesByAgentId.get(agent.id) ?? null,
+        );
         // Prisma types are looser than the OpenAPI response schema. Cast.
         type StartRegistrationData = z.infer<
           typeof startRegistrationSuccessSchema

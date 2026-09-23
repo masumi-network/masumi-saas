@@ -19,61 +19,44 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
+import { REGISTRATION_SYNC_STATES } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
-import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
+import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/agent-completion-context";
 import { useOrganizationContext } from "@/lib/context/organization-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
-import { EVENT_AGENT_REGISTRATION_COMPLETE } from "@/lib/context/registration-completion-context";
 
 import { AgentsDiscovery } from "./agents-discovery";
+import {
+  type AgentListFilters,
+  agentListFiltersToApi,
+  agentListFiltersToSearchParams,
+  AgentsFiltersPopover,
+  countAgentListFilters,
+  parseAgentListFilters,
+} from "./agents-filters-popover";
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { RegisterAgentDialog } from "./register-agent-dialog";
 
-/** States we sync on list load (in-flight only). Excludes failed states to avoid N syncs + refetch on "failed" tab. */
-const SYNC_ON_LOAD_STATES = [
-  "RegistrationRequested",
-  "RegistrationInitiated",
-  "DeregistrationRequested",
-  "DeregistrationInitiated",
-] as const;
-
-const ALL_TABS = [
-  "all",
-  "verified",
-  "registered",
-  "pending",
-  "failed",
-] as const;
-
 const VALID_SECTIONS = ["manage", "discovery"] as const;
 
-function getFiltersForTab(tab: string) {
-  switch (tab) {
-    case "verified":
-      return { verificationStatus: "VERIFIED" as const };
-    case "registered":
-      return { registrationState: "RegistrationConfirmed" as const };
-    case "pending":
-      return {
-        registrationStateIn: [
-          "RegistrationRequested",
-          "DeregistrationRequested",
-        ],
-      };
-    case "failed":
-      return {
-        registrationStateIn: ["RegistrationFailed", "DeregistrationFailed"],
-      };
-    default:
-      return undefined;
-  }
+function getEmptyStateMessageKey(
+  filters: AgentListFilters,
+  hasSearch: boolean,
+  activeFilterCount: number,
+): string {
+  if (hasSearch) return "noAgentsMatchingSearch";
+  if (filters.registration === "registered") return "noRegisteredAgents";
+  if (filters.registration === "pending") return "noPendingAgents";
+  if (filters.registration === "failed") return "noFailedAgents";
+  if (filters.verification === "verified") return "noVerifiedAgents";
+  if (activeFilterCount > 0) return "noAgentsMatchingFilters";
+  return "noAgents";
 }
 
 export function AgentsContent() {
   const t = useTranslations("App.Agents");
   const router = useRouter();
-  const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const { activeOrganizationId } = useOrganizationContext();
   const { network } = usePaymentNetwork();
   const searchParams = useSearchParams();
@@ -85,11 +68,14 @@ export function AgentsContent() {
   )
     ? (sectionParam as (typeof VALID_SECTIONS)[number])
     : "manage";
-  const validTabs: readonly string[] = agentVerificationUiEnabled
-    ? ALL_TABS
-    : ALL_TABS.filter((tab) => tab !== "verified");
-  const tabParam = searchParams.get("tab");
-  const activeTab = tabParam && validTabs.includes(tabParam) ? tabParam : "all";
+  const listFilters = useMemo(
+    () => parseAgentListFilters(searchParams),
+    [searchParams],
+  );
+  const activeFilterCount = useMemo(
+    () => countAgentListFilters(listFilters),
+    [listFilters],
+  );
   const [isPending, startTransition] = useTransition();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -123,7 +109,7 @@ export function AgentsContent() {
 
   const fetchAgents = useCallback(
     async (cursorId?: string) => {
-      const filters = getFiltersForTab(activeTab);
+      const filters = agentListFiltersToApi(listFilters);
       const result = await agentApiClient.getAgents(
         {
           ...filters,
@@ -140,7 +126,7 @@ export function AgentsContent() {
       }
       return null;
     },
-    [activeTab, debouncedSearch, network],
+    [debouncedSearch, listFilters, network],
   );
 
   /** Shared: sync in-flight agents then refetch. Returns refetched page or initial if nothing to sync. */
@@ -150,7 +136,7 @@ export function AgentsContent() {
       cursorId?: string,
     ) => {
       const toSync = initial.data.filter((a) =>
-        (SYNC_ON_LOAD_STATES as readonly string[]).includes(
+        (REGISTRATION_SYNC_STATES as readonly string[]).includes(
           a.registrationState,
         ),
       );
@@ -228,23 +214,21 @@ export function AgentsContent() {
       window.removeEventListener(EVENT_AGENT_REGISTRATION_COMPLETE, handler);
   }, [activeSection, loadPage]);
 
+  const pushListFilters = useCallback(
+    (next: AgentListFilters) => {
+      const params = agentListFiltersToSearchParams(next, searchParams);
+      const query = params.toString();
+      router.push(query ? `/ai-agents?${query}` : "/ai-agents");
+    },
+    [router, searchParams],
+  );
+
   const handleSectionChange = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (key === "manage") {
       params.delete("section");
     } else {
       params.set("section", key);
-    }
-    const query = params.toString();
-    router.push(query ? `/ai-agents?${query}` : "/ai-agents");
-  };
-
-  const handleTabChange = (key: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (key === "all") {
-      params.delete("tab");
-    } else {
-      params.set("tab", key);
     }
     const query = params.toString();
     router.push(query ? `/ai-agents?${query}` : "/ai-agents");
@@ -278,7 +262,7 @@ export function AgentsContent() {
   const handleLoadMore = () => {
     if (!nextCursor || isLoadingMore) return;
     setIsLoadingMore(true);
-    loadPage(nextCursor).then((page) => {
+    void loadPage(nextCursor).then((page) => {
       if (page) {
         setAgents((prev) => [...prev, ...page.data]);
         setNextCursor(page.nextCursor);
@@ -287,31 +271,18 @@ export function AgentsContent() {
     });
   };
 
-  const tabs = useMemo(() => {
-    const items = [
-      { name: t("tabs.all"), count: null, key: "all" },
-      { name: t("tabs.registered"), count: null, key: "registered" },
-      { name: t("tabs.pending"), count: null, key: "pending" },
-      { name: t("tabs.failed"), count: null, key: "failed" },
-    ];
-
-    if (agentVerificationUiEnabled) {
-      items.splice(1, 0, {
-        name: t("tabs.verified"),
-        count: null,
-        key: "verified",
-      });
-    }
-
-    return items;
-  }, [agentVerificationUiEnabled, t]);
-
   const sections = useMemo(
     () => [
       { name: t("sections.manage"), key: "manage" },
       { name: t("sections.discovery"), key: "discovery" },
     ],
     [t],
+  );
+
+  const emptyStateMessageKey = getEmptyStateMessageKey(
+    listFilters,
+    !!debouncedSearch,
+    activeFilterCount,
   );
 
   return (
@@ -324,13 +295,7 @@ export function AgentsContent() {
         />
 
         {activeSection === "manage" ? (
-          <div className="space-y-4 rounded-2xl border border-border/80 bg-background/95 p-4 sm:p-6">
-            <Tabs
-              tabs={tabs}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-            />
-
+          <div className="space-y-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <div
                 onClick={() => searchInputRef.current?.focus()}
@@ -354,6 +319,12 @@ export function AgentsContent() {
                 )}
               </div>
               <div className="ml-auto flex shrink-0 items-center gap-2">
+                <AgentsFiltersPopover
+                  filters={listFilters}
+                  activeFilterCount={activeFilterCount}
+                  onChange={pushListFilters}
+                  onClear={() => pushListFilters({})}
+                />
                 <RefreshButton
                   onRefresh={() => {
                     startTransition(async () => {
@@ -396,17 +367,7 @@ export function AgentsContent() {
                         <Bot className="h-6 w-6 text-muted-foreground" />
                       </div>
                       <p className="text-base font-medium">
-                        {debouncedSearch
-                          ? t("noAgentsMatchingSearch")
-                          : activeTab === "registered"
-                            ? t("noRegisteredAgents")
-                            : activeTab === "pending"
-                              ? t("noPendingAgents")
-                              : activeTab === "failed"
-                                ? t("noFailedAgents")
-                                : activeTab === "verified"
-                                  ? t("noVerifiedAgents")
-                                  : t("noAgents")}
+                        {t(emptyStateMessageKey)}
                       </p>
                     </div>
                   </div>

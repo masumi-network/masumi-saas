@@ -3,8 +3,8 @@
  *
  * Thin shim over `@masumi_network/identity-sdk`. Most functions are backed by
  * a singleton `MasumiIdentity` client configured from environment variables.
- * A small number of SaaS-specific helpers (schema SAID lookup, raw OOBI
- * resolution) remain inline.
+ * A small number of SaaS-specific helpers (schema SAID lookup, contact OOBI
+ * lookup) remain inline.
  */
 
 import { MasumiIdentity } from "@masumi_network/identity-sdk";
@@ -97,51 +97,19 @@ export async function issueCredential(
 }
 
 /**
- * Resolve an OOBI (Out-of-Band Introduction) on the credential server.
+ * Connect a wallet AID to the credential server via its OOBI.
  *
- * Must be called before issuing credentials so the credential server knows
- * about the recipient AID. Not yet exposed by the SDK — kept inline until a
- * future SDK release adds an explicit `resolveOobi` primitive.
+ * Must be called before issuing credentials so the server knows how to reach
+ * the recipient. Delegates to {@link MasumiIdentity.connectToAid}.
  */
-export async function resolveOobi(
+export async function connectToAid(
   oobi: string,
 ): Promise<{ success: boolean; data: string }> {
-  if (!oobi || typeof oobi !== "string" || oobi.trim().length === 0) {
-    throw new Error("Invalid OOBI: OOBI must be a non-empty string");
-  }
-
-  const url = `${getCredentialServerUrl()}/resolveOobi`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ oobi }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      let errorData: { data?: string } = {};
-      try {
-        errorData = JSON.parse(errorText) as { data?: string };
-      } catch {
-        // fall through to generic error
-      }
-
-      throw new Error(
-        errorData.data ||
-          `Failed to resolve OOBI: ${response.status} ${response.statusText}. ${errorText}`,
-      );
-    }
-
-    return (await response.json()) as { success: boolean; data: string };
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to resolve OOBI: ${error.message}`);
-    }
-    throw new Error("Failed to resolve OOBI: Unknown error");
-  }
+  return getSdk().connectToAid(oobi);
 }
+
+/** @deprecated Prefer {@link connectToAid} — kept for existing call sites. */
+export const resolveOobi = connectToAid;
 
 export type {
   Credential,

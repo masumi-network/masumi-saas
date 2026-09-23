@@ -1,19 +1,17 @@
 "use client";
 
-import { FilterIcon, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { type Agent } from "@/lib/api/agent.client";
 
+import {
+  AgentTransactionsFiltersPopover,
+  countAgentTransactionFilters,
+} from "./agent-transactions-filters-popover";
 import {
   AgentTransactionsTable,
   type TransactionFilter,
@@ -43,6 +41,12 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
   const [transactions, setTransactions] = useState<ApiTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const activeFilterCount = useMemo(
+    () => countAgentTransactionFilters(filter),
+    [filter],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -80,17 +84,14 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
     return () => {
       cancelled = true;
     };
-  }, [agent.id]);
+  }, [agent.id, refreshKey]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger when "f" is pressed without modifiers (Ctrl/Cmd/Alt).
-      // Modifiers would indicate a browser shortcut (e.g. Cmd+F) which we must not override.
       if (e.key.toLowerCase() !== "f") return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       const target = e.target as HTMLElement;
-      // Don't steal focus when user is typing in an input or editable field
       if (
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
@@ -106,12 +107,16 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const handleRefresh = useCallback(() => {
+    setRefreshKey((key) => key + 1);
+  }, []);
+
   return (
     <div className="w-full space-y-4">
-      <div className="flex flex-row gap-4 items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div
           onClick={() => searchInputRef.current?.focus()}
-          className="flex w-full max-w-64 sm:max-w-80 cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+          className="flex w-full max-w-64 cursor-text items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 sm:max-w-80"
         >
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
@@ -125,36 +130,29 @@ export function AgentTransactions({ agent }: AgentTransactionsProps) {
             className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
           />
           {!isFocused && (
-            <kbd className="hidden sm:inline-flex h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground pointer-events-none">
+            <kbd className="pointer-events-none hidden h-6 shrink-0 items-center justify-center rounded-md border bg-muted px-2 font-mono text-xs text-foreground sm:inline-flex">
               {t("searchShortcut")}
             </kbd>
           )}
         </div>
-        <div className="text-sm flex items-center gap-2 self-end sm:self-auto">
-          <span className="hidden sm:block">{t("showing")}</span>
-          <Select
-            value={filter}
-            onValueChange={(value) => setFilter(value as TransactionFilter)}
-          >
-            <SelectTrigger className="w-fit flex items-center gap-2 [&>*:last-child]:hidden sm:[&>*:last-child]:inline">
-              <FilterIcon className="block sm:hidden size-4 shrink-0" />
-              <div className="hidden sm:block">
-                <SelectValue className="text-sm" />
-              </div>
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="all">{t("filterAll")}</SelectItem>
-              <SelectItem value="payments">{t("filterPayments")}</SelectItem>
-              <SelectItem value="purchases">{t("filterPurchases")}</SelectItem>
-              <SelectItem value="refundRequests">
-                {t("filterRefundRequests")}
-              </SelectItem>
-              <SelectItem value="disputes">{t("filterDisputes")}</SelectItem>
-            </SelectContent>
-          </Select>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <AgentTransactionsFiltersPopover
+            filter={filter}
+            activeFilterCount={activeFilterCount}
+            onFilterChange={setFilter}
+            onClear={() => setFilter("all")}
+          />
+          <RefreshButton
+            onRefresh={handleRefresh}
+            isRefreshing={isLoading}
+            size="md"
+            aria-label={t("refreshAria")}
+          />
         </div>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <AgentTransactionsTable
         agentId={agent.id}
         transactions={transactions}

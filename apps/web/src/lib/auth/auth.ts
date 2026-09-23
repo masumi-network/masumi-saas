@@ -38,6 +38,11 @@ import {
   resetEmailSendLimit,
 } from "@/lib/auth/email-send-rate-limit";
 import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
+import {
+  ACCOUNT_SOFT_DELETED_MESSAGE,
+  assertUserIsNotSoleOrgOwner,
+  softDeleteUserAccount,
+} from "@/lib/auth/soft-delete-account";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig, getPostmarkFromHeader } from "@/lib/config/email.config";
 import {
@@ -253,7 +258,17 @@ export const auth = betterAuth({
     ...getTrustedOidcOrigins(),
     ...(process.env.NODE_ENV === "production"
       ? []
-      : ["http://localhost:2999", "http://127.0.0.1:2999"]),
+      : [
+          "http://localhost:2999",
+          "http://127.0.0.1:2999",
+          "http://localhost:3001",
+          "http://127.0.0.1:3001",
+          "http://localhost:3010",
+          "http://127.0.0.1:3010",
+        ]),
+    ...(process.env.NETWORK_SITE_URL?.trim()
+      ? [process.env.NETWORK_SITE_URL.trim()]
+      : []),
   ],
   advanced: {
     // In production we force secure cookies on regardless of BETTER_AUTH_URL.
@@ -422,6 +437,19 @@ export const auth = betterAuth({
     },
     deleteUser: {
       enabled: true,
+      // Soft delete: Better Auth verifies the password before this hook, then we
+      // disable the account (ban + revoke API keys + sessions) and abort the
+      // hard delete by throwing, so the row and all its financial/audit data are
+      // retained. `deleteAccountAction` treats this sentinel as success.
+      beforeDelete: async (user) => {
+        // Refuse if the user is the sole owner of any org (throws a user-facing
+        // message; nothing is disabled yet).
+        await assertUserIsNotSoleOrgOwner(user.id);
+        await softDeleteUserAccount(user.id);
+        throw new APIError("BAD_REQUEST", {
+          message: ACCOUNT_SOFT_DELETED_MESSAGE,
+        });
+      },
     },
   },
   databaseHooks: {
@@ -646,6 +674,8 @@ export const auth = betterAuth({
           console.error("[Postmark] Magic link email failed:", err);
           if (process.env.NODE_ENV === "development") {
             console.log("[DEV] Magic link (Postmark failed):", url);
+            // Do not fail local auth when Postmark credentials are bad.
+            return;
           }
           throw new APIError("INTERNAL_SERVER_ERROR", {
             message: "Failed to send magic link. Please try again.",
@@ -686,6 +716,11 @@ export const auth = betterAuth({
       },
     }),
     organization({
+      // Soft-delete policy: organizations are never hard-deleted (which would
+      // cascade/SetNull their x402 networks & wallets and can collide with the
+      // personal-scope unique indexes). Disable Better Auth's hard-delete
+      // endpoint; a soft org-delete flow can be added if/when needed.
+      disableOrganizationDeletion: true,
       organizationCreation: {
         afterCreate: async ({ organization: _organization }) => {
           // Organization post-creation logic (e.g., Stripe customer setup)

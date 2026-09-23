@@ -15,6 +15,7 @@ import {
 import type { ReactNode } from "react";
 
 import { emailConfig } from "../config/email.config";
+import { SUPPORT_PAGE_URL } from "../config/masumi-external-links";
 
 type AgentMessengerEmailLayoutProps = {
   preview: string;
@@ -29,7 +30,7 @@ type AgentMessengerEmailLayoutProps = {
 
 const DEFAULT_FOOTER_LINKS = [
   { label: "Website", href: "https://masumi.network" },
-  { label: "Support", href: "https://masumi.network/support" },
+  { label: "Support", href: SUPPORT_PAGE_URL },
 ];
 
 export function AgentMessengerEmailLayout({

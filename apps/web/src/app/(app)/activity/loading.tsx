@@ -1,3 +1,4 @@
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -17,16 +18,13 @@ export default function ActivityLoading() {
       </div>
 
       <div className="space-y-6">
-        <div className="flex gap-2 border-b flex-wrap">
+        <div className="flex gap-2 border-b">
           <Skeleton className="h-10 w-14" />
           <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-24" />
           <Skeleton className="h-10 w-28" />
-          <Skeleton className="h-10 w-20" />
-          <Skeleton className="h-10 w-20" />
         </div>
 
-        <div className="rounded-md border overflow-x-auto">
+        <HorizontalScrollArea className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -75,7 +73,7 @@ export default function ActivityLoading() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </HorizontalScrollArea>
       </div>
     </div>
   );

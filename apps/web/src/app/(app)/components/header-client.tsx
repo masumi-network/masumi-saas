@@ -8,6 +8,10 @@ import { useEffect, useState } from "react";
 import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
+import {
+  MASUMI_EXTERNAL_LINK_PROPS,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
 
 import { CreditBalanceLink } from "./credit-balance-link";
 import { NotificationsDialog } from "./notifications-dialog";
@@ -102,14 +106,14 @@ export function HeaderClient({
                 asChild
                 className="hidden md:flex"
               >
-                <Link
-                  href="https://www.masumi.network/contact"
-                  target="_blank"
+                <a
+                  href={SUPPORT_PAGE_URL}
+                  {...MASUMI_EXTERNAL_LINK_PROPS}
                   className="flex items-center gap-2"
                 >
                   <MessageSquare className="h-4 w-4" />
                   {t("support")}
-                </Link>
+                </a>
               </Button>
               <div className="hidden md:flex">
                 <NotificationsDialog />

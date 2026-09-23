@@ -1,14 +1,20 @@
 "use client";
 
+import { isCardanoAddressForNetwork } from "@masumi/payment-source-x402/payment-source";
 import { CircleHelp, Plug, Sparkles, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { RichTextEditor } from "@/components/rich-text-editor";
+import {
+  LangdockConnectionFields,
+  type LangdockIntegrationConnection,
+  NEW_LANGDOCK_CONNECTION,
+  prefillLangdockFromConnection,
+} from "@/components/integrations/langdock-connection-fields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -29,28 +35,34 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useRegistrationCompletion } from "@/lib/context/registration-completion-context";
+import { syncPricesValidationAfterPricingModeChange } from "@/lib/agents/register-agent-pricing-effects";
+import { useAgentCompletion } from "@/lib/context/agent-completion-context";
+import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
 import { zodResolver } from "@/lib/form-zod-resolver";
+import { useX402Networks } from "@/lib/hooks/use-x402-networks";
+import { normalizePayoutAddress } from "@/lib/payment-node/payout-address";
+import {
+  getDefaultPricingAssetId,
+  getPricingAssetOptions,
+} from "@/lib/payment-node/pricing-assets";
 import { cn } from "@/lib/utils";
 
 import { AgentIconPicker } from "./agent-icon-picker";
-
-const CURRENCY_SYMBOL = "$";
-const NEW_LANGDOCK_CONNECTION = "__new__";
+import { type AgentPriceField, PricingFields } from "./pricing-fields";
+import {
+  validateX402Options,
+  type X402OptionDraft,
+  X402OptionsSection,
+} from "./x402-options-section";
 
 type RuntimeProvider = "DIRECT_MIP" | "LANGDOCK";
 
@@ -61,6 +73,7 @@ type RegisterAgentFormType = AgentFormFields & {
   langdockApiKey: string;
   langdockAgentId: string;
   langdockBaseUrl: string;
+  payoutAddress: string;
 };
 
 interface RegisterAgentDialogProps {
@@ -74,9 +87,8 @@ type PricingMode = "Free" | "Fixed" | "Dynamic";
 type AgentFormFields = {
   name: string;
   description?: string;
-  extendedDescription?: string;
   pricingType: PricingMode;
-  prices: Array<{ amount: string }>;
+  prices: Array<{ amount: string; asset: string }>;
   tags?: string;
   icon?: string;
   authorName?: string;
@@ -91,12 +103,7 @@ type AgentFormFields = {
   exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
 };
 
-type IntegrationConnection = {
-  id: string;
-  name: string;
-  provider: string;
-  metadata?: Record<string, unknown> | null;
-};
+type IntegrationConnection = LangdockIntegrationConnection;
 
 function ExampleOutputsFields({
   form: outputsForm,
@@ -194,99 +201,15 @@ function ExampleOutputsFields({
   );
 }
 
-function PricingFields({
-  form: pricingForm,
-  t: pricingT,
-  pricingMode,
-}: {
-  form: UseFormReturn<AgentFormFields>;
-  t: (key: string) => string;
-  pricingMode: PricingMode;
-}) {
-  const fixedLocked = pricingMode !== "Fixed";
-  const { fields, append, remove } = useFieldArray({
-    control: pricingForm.control,
-    name: "prices",
-  });
-
-  return (
-    <div
-      className="space-y-3 transition-opacity duration-200"
-      style={{
-        opacity: fixedLocked ? 0.4 : 1,
-        pointerEvents: fixedLocked ? "none" : undefined,
-      }}
-    >
-      <div className="flex items-center justify-between">
-        <FormLabel>{pricingT("prices")}</FormLabel>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={fixedLocked}
-          onClick={() => append({ amount: "" })}
-        >
-          {pricingT("addPrice")}
-        </Button>
-      </div>
-      <div className="space-y-2">
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex gap-2 items-center">
-            <span className="text-muted-foreground text-sm shrink-0">
-              {CURRENCY_SYMBOL}
-            </span>
-            <FormField
-              control={pricingForm.control}
-              name={`prices.${index}.amount`}
-              render={({ field: amountField }) => (
-                <FormItem className="flex-1">
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder={pricingT("amountPlaceholder")}
-                      min="0"
-                      step="0.01"
-                      {...amountField}
-                      disabled={fixedLocked}
-                      className="h-11"
-                      onChange={(e) => amountField.onChange(e.target.value)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {fields.length > 1 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={fixedLocked}
-                onClick={() => remove(index)}
-                className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        ))}
-        {pricingForm.formState.errors.prices && (
-          <p className="text-sm text-destructive">
-            {pricingForm.formState.errors.prices.message}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function RegisterAgentDialog({
   open,
   onClose,
   onSuccess,
 }: RegisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Register");
-  const { addPendingAgent } = useRegistrationCompletion();
+  const { addPendingRegistration } = useAgentCompletion();
+  const { network } = usePaymentNetwork();
+  const defaultPricingAssetId = getDefaultPricingAssetId(network);
 
   const [isLoading, setIsLoading] = useState(false);
   const closedViaConfirmRef = useRef(false);
@@ -301,6 +224,10 @@ export function RegisterAgentDialog({
   const [connections, setConnections] = useState<IntegrationConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [testingLangdock, setTestingLangdock] = useState(false);
+  const { networks: x402Networks, isLoading: x402NetworksLoading } =
+    useX402Networks({ silentErrors: true, requireFacilitator: true });
+  const [x402Options, setX402Options] = useState<X402OptionDraft[]>([]);
+  const [x402Error, setX402Error] = useState<string | null>(null);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -336,11 +263,6 @@ export function RegisterAgentDialog({
         .max(250, t("descriptionMaxLength"))
         .optional()
         .or(z.literal("")),
-      extendedDescription: z
-        .string()
-        .max(5000, t("extendedDescriptionMaxLength"))
-        .optional()
-        .or(z.literal("")),
       runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]),
       apiUrl: z.string().optional().or(z.literal("")),
       integrationConnectionId: z.string().optional().or(z.literal("")),
@@ -350,7 +272,12 @@ export function RegisterAgentDialog({
         .union([z.literal(""), z.string().url().max(250)])
         .optional(),
       pricingType: z.enum(["Free", "Fixed", "Dynamic"]),
-      prices: z.array(z.object({ amount: z.string() })),
+      prices: z.array(
+        z.object({
+          amount: z.string(),
+          asset: z.string(),
+        }),
+      ),
       tags: z.string().optional(),
       icon: z.string().max(2000).optional(),
       termsOfUseUrl: z
@@ -371,6 +298,7 @@ export function RegisterAgentDialog({
           }),
         )
         .optional(),
+      payoutAddress: z.string().optional().or(z.literal("")),
     })
     .refine(
       (data) => {
@@ -420,6 +348,26 @@ export function RegisterAgentDialog({
           });
         }
       }
+
+      const payoutAddress = normalizePayoutAddress(data.payoutAddress ?? "");
+      if (data.pricingType !== "Free") {
+        if (!payoutAddress) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("payoutAddressRequired"),
+            path: ["payoutAddress"],
+          });
+        } else if (!isCardanoAddressForNetwork(payoutAddress, network)) {
+          ctx.addIssue({
+            code: "custom",
+            message:
+              network === "Mainnet"
+                ? t("payoutAddressInvalidMainnet")
+                : t("payoutAddressInvalidPreprod"),
+            path: ["payoutAddress"],
+          });
+        }
+      }
     });
 
   const form = useForm<RegisterAgentFormType>({
@@ -427,7 +375,6 @@ export function RegisterAgentDialog({
     defaultValues: {
       name: "",
       description: "",
-      extendedDescription: "",
       runtimeProvider: "DIRECT_MIP",
       apiUrl: "",
       integrationConnectionId: NEW_LANGDOCK_CONNECTION,
@@ -435,7 +382,7 @@ export function RegisterAgentDialog({
       langdockAgentId: "",
       langdockBaseUrl: "",
       pricingType: "Fixed",
-      prices: [{ amount: "" }],
+      prices: [{ amount: "", asset: defaultPricingAssetId }],
       tags: "",
       icon: "bot",
       termsOfUseUrl: "",
@@ -444,6 +391,7 @@ export function RegisterAgentDialog({
       capabilityName: "",
       capabilityVersion: "",
       exampleOutputs: [],
+      payoutAddress: "",
     },
   });
 
@@ -453,17 +401,66 @@ export function RegisterAgentDialog({
     defaultValue: "Fixed",
   }) as PricingMode;
 
+  useEffect(() => {
+    syncPricesValidationAfterPricingModeChange(pricingType, form);
+    if (pricingType === "Fixed") return;
+    setX402Options([]);
+    setX402Error(null);
+  }, [pricingType, form]);
+
+  useEffect(() => {
+    if (!open) return;
+    const allowedAssets = new Set(
+      getPricingAssetOptions(network).map((option) => option.id),
+    );
+    const prices = form.getValues("prices") ?? [];
+    prices.forEach((price, index) => {
+      const asset = price.asset?.trim() || defaultPricingAssetId;
+      if (!allowedAssets.has(asset)) {
+        form.setValue(`prices.${index}.asset`, defaultPricingAssetId, {
+          shouldDirty: false,
+        });
+      } else if (!price.asset?.trim()) {
+        form.setValue(`prices.${index}.asset`, defaultPricingAssetId, {
+          shouldDirty: false,
+        });
+      }
+    });
+  }, [open, network, defaultPricingAssetId, form]);
+
   const runtimeProvider = useWatch({
     control: form.control,
     name: "runtimeProvider",
     defaultValue: "DIRECT_MIP",
   }) as RuntimeProvider;
 
-  const selectedConnectionId = useWatch({
-    control: form.control,
-    name: "integrationConnectionId",
-    defaultValue: NEW_LANGDOCK_CONNECTION,
-  });
+  useEffect(() => {
+    if (!open || connectionsLoading || connections.length === 0) return;
+    const currentId = form.getValues("integrationConnectionId");
+    const hasValidSavedSelection =
+      currentId !== NEW_LANGDOCK_CONNECTION &&
+      connections.some((connection) => connection.id === currentId);
+    if (hasValidSavedSelection) return;
+
+    const first = connections[0]!;
+    form.setValue("integrationConnectionId", first.id, { shouldDirty: false });
+    prefillLangdockFromConnection<RegisterAgentFormType>(first, (name, value) =>
+      form.setValue(name, value, { shouldDirty: false }),
+    );
+  }, [open, connections, connectionsLoading, form]);
+
+  const handleLangdockConnectionSelect = useCallback(
+    (connectionId: string) => {
+      if (connectionId === NEW_LANGDOCK_CONNECTION) return;
+      const connection = connections.find((item) => item.id === connectionId);
+      if (!connection) return;
+      prefillLangdockFromConnection<RegisterAgentFormType>(
+        connection,
+        (name, value) => form.setValue(name, value),
+      );
+    },
+    [connections, form],
+  );
 
   const handleAddTag = () => {
     const tag = tagInput.trim();
@@ -485,7 +482,6 @@ export function RegisterAgentDialog({
     form.reset({
       name: "",
       description: "",
-      extendedDescription: "",
       runtimeProvider: "DIRECT_MIP",
       apiUrl: "",
       integrationConnectionId: NEW_LANGDOCK_CONNECTION,
@@ -493,7 +489,7 @@ export function RegisterAgentDialog({
       langdockAgentId: "",
       langdockBaseUrl: "",
       pricingType: "Fixed",
-      prices: [{ amount: "" }],
+      prices: [{ amount: "", asset: defaultPricingAssetId }],
       tags: "",
       icon: "bot",
       termsOfUseUrl: "",
@@ -505,6 +501,8 @@ export function RegisterAgentDialog({
     });
     setTags([]);
     setTagInput("");
+    setX402Options([]);
+    setX402Error(null);
   };
 
   const finalizeSuccessfulSubmit = () => {
@@ -565,6 +563,17 @@ export function RegisterAgentDialog({
     setIsLoading(true);
     const submitId = ++submitIdRef.current;
     try {
+      if (data.pricingType === "Fixed" && x402Options.length > 0) {
+        const x402ValidationError = validateX402Options(x402Options);
+        if (x402ValidationError) {
+          setX402Error(x402ValidationError);
+          toast.error(x402ValidationError);
+          setIsLoading(false);
+          return;
+        }
+      }
+      setX402Error(null);
+
       const exampleOutputs = (data.exampleOutputs ?? []).filter(
         (e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim(),
       );
@@ -580,15 +589,37 @@ export function RegisterAgentDialog({
                   .filter((p) => p.amount?.trim())
                   .map((p) => ({
                     amount: p.amount.trim(),
-                    currency: "USD",
+                    currency: p.asset?.trim() || defaultPricingAssetId,
                   })),
               };
+
+      const evmSupportedSources =
+        data.pricingType === "Fixed"
+          ? x402Options.map((option) => ({
+              chain: "EVM" as const,
+              network: option.caip2Network,
+              scheme: "Exact" as const,
+              payTo: option.payTo,
+              ...(option.resource.trim()
+                ? { resource: option.resource.trim() }
+                : {}),
+              pricing: {
+                pricingType: "Fixed" as const,
+                fixed: [
+                  {
+                    asset: option.asset,
+                    amount: option.amount,
+                    decimals: Number(option.decimals),
+                  },
+                ],
+              },
+            }))
+          : [];
 
       const body = {
         runtimeProvider: data.runtimeProvider,
         name: data.name,
         description: data.description?.trim() ?? "",
-        extendedDescription: data.extendedDescription?.trim() ?? "",
         apiUrl: data.runtimeProvider === "DIRECT_MIP" ? data.apiUrl : undefined,
         integrationConnectionId:
           data.runtimeProvider === "LANGDOCK" &&
@@ -617,6 +648,12 @@ export function RegisterAgentDialog({
         capabilityName: data.capabilityName?.trim() ?? "",
         capabilityVersion: data.capabilityVersion?.trim() ?? "",
         exampleOutputs: exampleOutputs.length > 0 ? exampleOutputs : undefined,
+        ...(data.pricingType !== "Free" && data.payoutAddress.trim()
+          ? { payoutAddress: data.payoutAddress.trim() }
+          : {}),
+        ...(evmSupportedSources.length > 0
+          ? { supportedPaymentSources: evmSupportedSources }
+          : {}),
       };
 
       const res = await fetch("/api/agents", {
@@ -635,7 +672,7 @@ export function RegisterAgentDialog({
         json.success === true &&
         typeof json.agentId === "string";
       if (registrationAccepted) {
-        addPendingAgent(json.agentId);
+        addPendingRegistration(json.agentId);
         if (closedViaConfirmRef.current) {
           toast.info(t("registrationStarted"));
           onSuccessRef.current();
@@ -697,7 +734,12 @@ export function RegisterAgentDialog({
           className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
           closeButtonClassName="top-8 right-4 -translate-y-1/2"
         >
-          <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+          <div
+            className={cn(
+              "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+              dialogHeaderEnterClass,
+            )}
+          >
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold tracking-tight">
                 {t("title")}
@@ -710,7 +752,7 @@ export function RegisterAgentDialog({
               className="flex flex-1 flex-col min-h-0 overflow-hidden"
               onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
             >
-              <DialogBody stagger={false} className="space-y-8">
+              <DialogBody className="space-y-8">
                 {/* Icon section */}
                 <FormField
                   control={form.control}
@@ -720,15 +762,14 @@ export function RegisterAgentDialog({
                       value={field.value ?? "bot"}
                       onChange={field.onChange}
                       onClearError={() => form.clearErrors("icon")}
-                      onClearIcon={() => form.setValue("icon", "bot")}
                       translations={{
                         icon: t("icon"),
                         iconTooltip: t("iconTooltip"),
                         iconDescription: t("iconDescription"),
-                        iconCustomUrlPlaceholder: t("iconCustomUrlPlaceholder"),
+                        iconSearchPlaceholder: t("iconSearchPlaceholder"),
+                        iconSearchEmpty: t("iconSearchEmpty"),
                         scrollLeft: t("scrollLeft"),
                         scrollRight: t("scrollRight"),
-                        iconClear: t("iconClear"),
                       }}
                     />
                   )}
@@ -763,10 +804,10 @@ export function RegisterAgentDialog({
                       <FormItem>
                         <FormLabel>{t("description")}</FormLabel>
                         <FormControl>
-                          <Input
+                          <Textarea
                             placeholder={t("descriptionPlaceholder")}
                             {...field}
-                            className="h-11"
+                            className="min-h-24 resize-none"
                             maxLength={251}
                           />
                         </FormControl>
@@ -775,37 +816,6 @@ export function RegisterAgentDialog({
                           {" / "}
                           {250}
                         </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="extendedDescription"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-2">
-                          <FormLabel>{t("extendedDescription")}</FormLabel>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                                <CircleHelp className="h-4 w-4" />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t("descriptionRichTextHint")}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <FormControl>
-                          <RichTextEditor
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                            placeholder={t("extendedDescriptionPlaceholder")}
-                            minHeight="min-h-28"
-                          />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -892,120 +902,15 @@ export function RegisterAgentDialog({
                       )}
                     />
                   ) : (
-                    <div className="space-y-4 rounded-lg border border-border/80 bg-muted/30 p-4">
-                      {connections.length > 0 && (
-                        <FormField
-                          control={form.control}
-                          name="integrationConnectionId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("langdockConnection")}</FormLabel>
-                              <Select
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                disabled={connectionsLoading}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="h-11">
-                                    <SelectValue
-                                      placeholder={t("langdockConnection")}
-                                    />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value={NEW_LANGDOCK_CONNECTION}>
-                                    {t("langdockNewConnection")}
-                                  </SelectItem>
-                                  {connections.map((connection) => (
-                                    <SelectItem
-                                      key={connection.id}
-                                      value={connection.id}
-                                    >
-                                      {connection.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-
-                      {selectedConnectionId === NEW_LANGDOCK_CONNECTION && (
-                        <FormField
-                          control={form.control}
-                          name="langdockApiKey"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("langdockApiKey")}</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="password"
-                                  placeholder={t("langdockApiKeyPlaceholder")}
-                                  {...field}
-                                  className="h-11 font-mono text-sm"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <FormField
-                          control={form.control}
-                          name="langdockAgentId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("langdockAgentId")}</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder={t("langdockAgentIdPlaceholder")}
-                                  {...field}
-                                  className="h-11 font-mono text-sm"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="langdockBaseUrl"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("langdockBaseUrl")}</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="url"
-                                  placeholder="https://api.langdock.com"
-                                  {...field}
-                                  className="h-11 font-mono text-sm"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={testLangdockAndAutofill}
-                        disabled={testingLangdock}
-                        className="gap-2"
-                      >
-                        {testingLangdock ? (
-                          <Spinner size={16} />
-                        ) : (
-                          <Sparkles className="h-4 w-4" />
-                        )}
-                        {t("langdockTestAutofill")}
-                      </Button>
-                    </div>
+                    <LangdockConnectionFields
+                      control={form.control}
+                      connections={connections}
+                      connectionsLoading={connectionsLoading}
+                      testingLangdock={testingLangdock}
+                      onTest={() => void testLangdockAndAutofill()}
+                      onConnectionSelect={handleLangdockConnectionSelect}
+                      t={t}
+                    />
                   )}
 
                   <FormField
@@ -1072,15 +977,73 @@ export function RegisterAgentDialog({
 
                   {pricingType === "Dynamic" && (
                     <div className="rounded-lg border border-dashed border-primary/35 bg-muted/30 px-4 py-3 text-sm text-muted-foreground leading-relaxed">
-                      {t("pricingDynamicContext")}
+                      <p>{t("pricingDynamicContext")}</p>
+                      <p className="mt-2">{t("pricingDynamicNoX402")}</p>
                     </div>
                   )}
 
                   <PricingFields
-                    form={form as unknown as UseFormReturn<AgentFormFields>}
+                    form={
+                      form as unknown as UseFormReturn<{
+                        prices: AgentPriceField[];
+                      }>
+                    }
                     t={t}
                     pricingMode={pricingType}
+                    network={network}
                   />
+
+                  {pricingType !== "Free" ? (
+                    <FormField
+                      control={form.control}
+                      name="payoutAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center gap-1.5">
+                            <FormLabel>{t("payoutAddress")}</FormLabel>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                                  <CircleHelp className="h-3.5 w-3.5" />
+                                  <span className="sr-only">
+                                    {t("payoutAddressHint")}
+                                  </span>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                {t("payoutAddressHint")}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder={t(
+                                network === "Mainnet"
+                                  ? "payoutAddressPlaceholderMainnet"
+                                  : "payoutAddressPlaceholderPreprod",
+                              )}
+                              className="h-11 font-mono text-sm"
+                              spellCheck={false}
+                              autoComplete="off"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : null}
+
+                  {pricingType === "Fixed" ? (
+                    <X402OptionsSection
+                      options={x402Options}
+                      networks={x402Networks}
+                      networksLoading={x402NetworksLoading}
+                      onChange={setX402Options}
+                      error={x402Error}
+                      t={t}
+                    />
+                  ) : null}
                 </div>
 
                 <Separator />

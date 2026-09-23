@@ -9,6 +9,8 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { credentialMatchesAgentRegistryId } from "@/lib/registry/stored-credential-attributes";
+import { writeOnChainVerificationsFromStoredCredential } from "@/lib/registry/write-on-chain-verifications";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
   errBodyWithOptionalDetails,
@@ -19,6 +21,7 @@ import {
   verifyAgentSuccessSchema,
 } from "@/lib/swagger/saas-app-openapi";
 import {
+  extractCredentialAttributes,
   fetchContactCredentials,
   findCredentialBySchema,
   getAgentVerificationSchemaSaid,
@@ -141,6 +144,9 @@ app.openapi(
       }
 
       let credentialId: string | null = null;
+      let validatedCredential: Awaited<
+        ReturnType<typeof findCredentialBySchema>
+      >;
       try {
         const credentials = await fetchContactCredentials(aid);
 
@@ -151,8 +157,18 @@ app.openapi(
           );
         }
 
-        const expectedSchemaSaid =
-          schemaSaid || getAgentVerificationSchemaSaid();
+        // Verification must be granted only via the configured agent
+        // verification credential schema. A client-supplied `schemaSaid`
+        // may narrow to that schema, but must never redirect verification to
+        // a different (e.g. self-issued) credential type.
+        const agentVerificationSchemaSaid = getAgentVerificationSchemaSaid();
+        if (schemaSaid && schemaSaid !== agentVerificationSchemaSaid) {
+          throw new ApiError(
+            400,
+            "Unsupported schemaSaid: agent verification requires the agent verification credential schema.",
+          );
+        }
+        const expectedSchemaSaid = agentVerificationSchemaSaid;
 
         const selectedCredential = findCredentialBySchema(
           credentials,
@@ -164,6 +180,28 @@ app.openapi(
             400,
             `Required credential with schema SAID '${expectedSchemaSaid}' not found. Please ensure you have the correct credential issued to this identifier.`,
           );
+        }
+
+        validatedCredential = selectedCredential;
+
+        // Bind the selected credential to THIS agent's registry identifier
+        // before trusting it. When one wallet AID legitimately holds
+        // verification credentials for several of the caller's agents,
+        // findCredentialBySchema could otherwise return another agent's
+        // credential and mark (and on-chain anchor) the wrong agent VERIFIED.
+        // Mirrors resolve-agent-verification.ts.
+        const credentialAttrs = extractCredentialAttributes(selectedCredential);
+        const credentialAgentId =
+          typeof credentialAttrs.agentId === "string"
+            ? credentialAttrs.agentId
+            : undefined;
+        if (
+          !credentialMatchesAgentRegistryId(
+            credentialAgentId,
+            agent.agentIdentifier ?? "",
+          )
+        ) {
+          throw new ApiError(400, "Credential does not bind to this agent.");
         }
 
         const validationResult = validateCredential(selectedCredential);
@@ -197,6 +235,29 @@ app.openapi(
       });
 
       await recordAgentActivityEvent(agentId, "AgentVerified");
+
+      if (validatedCredential) {
+        const onChainResult =
+          await writeOnChainVerificationsFromStoredCredential({
+            agentId,
+            userId: authContext.user.id,
+            credential: validatedCredential,
+            storedAttributesRaw:
+              existingCredential.attributes ??
+              existingCredential.credentialData,
+            veridianCredentialId: existingCredential.id,
+          });
+        if (onChainResult && !onChainResult.success) {
+          console.error(
+            "[Veridian] On-chain verification write failed after verify:",
+            {
+              agentId,
+              userId: authContext.user.id,
+              error: onChainResult.error,
+            },
+          );
+        }
+      }
 
       // Prisma `verificationStatus`/dates are looser than the OpenAPI response
       // schema. Cast so Hono accepts the response body shape.

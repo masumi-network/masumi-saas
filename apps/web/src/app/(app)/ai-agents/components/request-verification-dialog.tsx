@@ -2,6 +2,8 @@
 
 import {
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
   CircleHelp,
   ExternalLink,
   Eye,
@@ -17,6 +19,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CodeEditor } from "@/components/ui/code-editor";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
@@ -45,36 +48,45 @@ import {
 } from "@/components/ui/tooltip";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
+import {
+  MASUMI_EXTERNAL_LINK_PROPS,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
+import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import {
   getKycStatusBadgeKey,
   getKycStatusBadgeVariant,
 } from "@/lib/kyc-status";
-import { parseAidFromOobi } from "@/lib/veridian/parse-aid-from-oobi";
 import {
   getVerificationCodeSnippet,
   VERIFICATION_SNIPPET_LANGUAGES,
   type VerificationSnippetLang,
 } from "@/lib/verification-code-snippets";
 
-const STEP_COUNT = 4;
+const STEP_COUNT = 5;
+const STEP_CREATE_CONNECTION = 2;
+const STEP_IDENTIFIER = 3;
+const STEP_SUBMIT = 4;
+
+type WalletAcceptancePhase = "awaiting_wallet" | "complete";
 
 const VERIDIAN_CONNECT_URL =
   process.env.NEXT_PUBLIC_VERIDIAN_KERIA_CONNECT_URL ?? "";
 const VERIDIAN_BOOT_URL = process.env.NEXT_PUBLIC_VERIDIAN_KERIA_BOOT_URL ?? "";
-const CREDENTIAL_POLL_MS = 3000;
-const CREDENTIAL_POLL_MAX = 100;
 const CONNECTION_POLL_MS = 4000;
 const CONNECTION_POLL_MAX = 100;
-
-type ConnectionMode = "oobi" | "direct";
 
 interface RequestVerificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   agent: Agent;
   kycStatus: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW" | null;
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
+  /** Resume wallet-acceptance step for an existing pending credential row. */
+  resumePendingCredentialId?: string | null;
+  /** Clears resume state when the dialog closes or resume validation fails. */
+  onResumePendingCredentialConsumed?: () => void;
 }
 
 export function RequestVerificationDialog({
@@ -83,15 +95,16 @@ export function RequestVerificationDialog({
   agent,
   kycStatus,
   onSuccess,
+  resumePendingCredentialId = null,
+  onResumePendingCredentialConsumed,
 }: RequestVerificationDialogProps) {
   const t = useTranslations("App.Agents.Details.Verification");
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
   const tStatus = useTranslations("App.Agents");
+  const { addPendingOnChainVerification } = useAgentCompletion();
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [connectionMode, setConnectionMode] = useState<ConnectionMode>("oobi");
-  const [walletOobiInput, setWalletOobiInput] = useState("");
-  const [aidDirectInput, setAidDirectInput] = useState("");
+  const [holderAidInput, setHolderAidInput] = useState("");
   const [issuerOobi, setIssuerOobi] = useState<string | null>(null);
   const [isLoadingIssuerOobi, setIsLoadingIssuerOobi] = useState(false);
 
@@ -113,7 +126,10 @@ export function RequestVerificationDialog({
   const [pendingCredentialId, setPendingCredentialId] = useState<string | null>(
     null,
   );
-  const [isWaitingForAcceptance, setIsWaitingForAcceptance] = useState(false);
+  const [walletAcceptancePhase, setWalletAcceptancePhase] =
+    useState<WalletAcceptancePhase | null>(null);
+  const [isConfirmingAcceptance, setIsConfirmingAcceptance] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const lastCheckedAidRef = useRef<string | null>(null);
   const prevDerivedAidRef = useRef<string | null>(null);
   const connPollAttemptsRef = useRef(0);
@@ -126,27 +142,10 @@ export function RequestVerificationDialog({
     onOpenChangeRef.current = onOpenChange;
   }, [onSuccess, onOpenChange]);
 
-  const derivedAid = useMemo(() => {
-    if (connectionMode === "direct") {
-      const trimmed = aidDirectInput.trim();
-      return trimmed.length > 0 ? trimmed : null;
-    }
-    const raw = walletOobiInput.trim();
-    if (!raw) return null;
-    return parseAidFromOobi(raw);
-  }, [connectionMode, aidDirectInput, walletOobiInput]);
-
-  const invalidOobiPaste =
-    connectionMode === "oobi" &&
-    walletOobiInput.trim().length > 0 &&
-    derivedAid === null;
-
-  const walletOobiPayload = useMemo(() => {
-    if (connectionMode !== "oobi") return undefined;
-    const trim = walletOobiInput.trim();
-    if (!trim || !derivedAid) return undefined;
-    return trim;
-  }, [connectionMode, walletOobiInput, derivedAid]);
+  const holderAid = useMemo(() => {
+    const trimmed = holderAidInput.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }, [holderAidInput]);
 
   useEffect(() => {
     if (!agentVerificationEnabled) {
@@ -155,9 +154,7 @@ export function RequestVerificationDialog({
 
     if (!open) {
       setStep(0);
-      setConnectionMode("oobi");
-      setWalletOobiInput("");
-      setAidDirectInput("");
+      setHolderAidInput("");
       setIssuerOobi(null);
       setConnectionExists(null);
       setConnectionCheckFailed(false);
@@ -170,13 +167,115 @@ export function RequestVerificationDialog({
       setShowSecret(false);
       setIssueError(null);
       setPendingCredentialId(null);
-      setIsWaitingForAcceptance(false);
+      setWalletAcceptancePhase(null);
+      setIsConfirmingAcceptance(false);
+      setShowCloseConfirm(false);
     }
   }, [agentVerificationEnabled, open]);
 
   useEffect(() => {
+    if (!agentVerificationEnabled || !open || !resumePendingCredentialId) {
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const pending = await credentialApiClient.getPendingCredential(agent.id);
+      if (cancelled) return;
+
+      const belongsToAgent =
+        pending.success &&
+        pending.data.pendingCredentialId === resumePendingCredentialId;
+      if (!belongsToAgent) {
+        onResumePendingCredentialConsumed?.();
+        return;
+      }
+
+      setStep(STEP_SUBMIT);
+      setPendingCredentialId(resumePendingCredentialId);
+      setWalletAcceptancePhase("awaiting_wallet");
+      setIssueError(null);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    agentVerificationEnabled,
+    open,
+    resumePendingCredentialId,
+    agent.id,
+    onResumePendingCredentialConsumed,
+  ]);
+
+  const resolveCredentialAcceptance = useCallback(
+    async (
+      credentialId: string,
+    ): Promise<
+      | { outcome: "issued" }
+      | { outcome: "pending" }
+      | { outcome: "error"; error: string }
+    > => {
+      const result =
+        await credentialApiClient.checkCredentialStatus(credentialId);
+      if (!result.success) {
+        return { outcome: "error", error: result.error };
+      }
+      if (result.data.status === "ISSUED") {
+        return { outcome: "issued" };
+      }
+      return { outcome: "pending" };
+    },
+    [],
+  );
+
+  const handleConfirmWalletAcceptance = useCallback(async () => {
+    if (!pendingCredentialId || isConfirmingAcceptance) return;
+
+    setIsConfirmingAcceptance(true);
+    setIssueError(null);
+    try {
+      const resolution = await resolveCredentialAcceptance(pendingCredentialId);
+      if (resolution.outcome === "issued") {
+        addPendingOnChainVerification(agent.id);
+        setWalletAcceptancePhase("complete");
+        toast.success(t("walletAcceptanceConfirmed"));
+        await Promise.resolve(onSuccessRef.current());
+        return;
+      }
+      if (resolution.outcome === "error") {
+        setIssueError(resolution.error);
+        toast.error(resolution.error);
+        return;
+      }
+      toast.error(t("acceptanceNotDetectedYet"));
+    } finally {
+      setIsConfirmingAcceptance(false);
+    }
+  }, [
+    isConfirmingAcceptance,
+    pendingCredentialId,
+    resolveCredentialAcceptance,
+    addPendingOnChainVerification,
+    agent.id,
+    t,
+  ]);
+
+  const performClose = useCallback(() => {
+    onOpenChangeRef.current(false);
+  }, []);
+
+  const handleCompleteClose = useCallback(() => {
+    performClose();
+  }, [performClose]);
+
+  const isAwaitingWalletAcceptance =
+    walletAcceptancePhase === "awaiting_wallet";
+  const isWalletAcceptanceComplete = walletAcceptancePhase === "complete";
+
+  useEffect(() => {
     if (!agentVerificationEnabled) return;
-    if (!open || step !== 2) return;
+    if (!open || step !== STEP_CREATE_CONNECTION) return;
 
     let cancelled = false;
     setIsLoadingIssuerOobi(true);
@@ -234,69 +333,10 @@ export function RequestVerificationDialog({
     };
   }, [agentVerificationEnabled, open, agent.id, kycStatus, t]);
 
-  // Poll for credential acceptance after issue (timeout so user is not trapped)
-  const credentialPollAttemptsRef = useRef(0);
-  const pollIntervalIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!agentVerificationEnabled) return;
-    if (!pendingCredentialId || !isWaitingForAcceptance) return;
-    credentialPollAttemptsRef.current = 0;
-
-    const stopPolling = () => {
-      if (pollIntervalIdRef.current !== null) {
-        clearTimeout(pollIntervalIdRef.current);
-        pollIntervalIdRef.current = null;
-      }
-    };
-
-    const runPoll = async () => {
-      credentialPollAttemptsRef.current += 1;
-      if (credentialPollAttemptsRef.current > CREDENTIAL_POLL_MAX) {
-        stopPolling();
-        setIsWaitingForAcceptance(false);
-        setPendingCredentialId(null);
-        toast.error(t("acceptanceTimeout"));
-        return;
-      }
-
-      const result =
-        await credentialApiClient.checkCredentialStatus(pendingCredentialId);
-      if (!result.success) {
-        stopPolling();
-        setIsWaitingForAcceptance(false);
-        setPendingCredentialId(null);
-        setIssueError(result.error);
-        toast.error(result.error);
-        return;
-      }
-      if (result.data.status === "ISSUED") {
-        stopPolling();
-        setIsWaitingForAcceptance(false);
-        setPendingCredentialId(null);
-        toast.success(t("requestSuccess"));
-        onSuccessRef.current();
-        onOpenChangeRef.current(false);
-        return;
-      }
-      pollIntervalIdRef.current = setTimeout(runPoll, CREDENTIAL_POLL_MS);
-    };
-
-    runPoll();
-    return () => {
-      stopPolling();
-    };
-  }, [
-    agentVerificationEnabled,
-    pendingCredentialId,
-    isWaitingForAcceptance,
-    t,
-  ]);
-
   const checkConnection = useCallback(
-    async (aidToCheck: string, force = false) => {
+    async (aidToCheck: string, force = false): Promise<boolean> => {
       if (!force && lastCheckedAidRef.current === aidToCheck) {
-        return;
+        return connectionExists === true;
       }
 
       setIsCheckingConnection(true);
@@ -311,35 +351,36 @@ export function RequestVerificationDialog({
           setConnectionExists(result.data.exists);
           lastCheckedAidRef.current = aidToCheck;
           setConnectionCheckFailed(false);
-        } else {
-          console.error("Failed to check connection:", result.error);
-          setConnectionExists(null);
-          setConnectionCheckFailed(true);
-          lastCheckedAidRef.current = null;
+          return result.data.exists;
         }
+        console.error("Failed to check connection:", result.error);
+        setConnectionExists(null);
+        setConnectionCheckFailed(true);
+        lastCheckedAidRef.current = null;
+        return false;
       } catch (error) {
         console.error("Failed to check connection:", error);
         setConnectionExists(null);
         setConnectionCheckFailed(true);
         lastCheckedAidRef.current = null;
+        return false;
       } finally {
         setIsCheckingConnection(false);
       }
     },
-    [],
+    [connectionExists],
   );
 
   /** Latest `checkConnection` without listing it on polling deps (avoids reset when parent/chains change callback identity). */
   const checkConnectionRef = useRef(checkConnection);
   checkConnectionRef.current = checkConnection;
 
-  // Direct AID entry must already be connected. OOBI entry is resolved by the
-  // issue endpoint before issuance, so a first-time wallet can proceed.
+  // Check credential-server connection when the holder AID is pasted (step 4).
   useEffect(() => {
-    if (step !== 2) {
+    if (step !== STEP_IDENTIFIER) {
       return;
     }
-    if (!derivedAid || invalidOobiPaste) {
+    if (!holderAid) {
       setConnectionExists(null);
       setConnectionCheckFailed(false);
       prevDerivedAidRef.current = null;
@@ -348,35 +389,27 @@ export function RequestVerificationDialog({
       return;
     }
 
-    if (prevDerivedAidRef.current !== derivedAid) {
-      prevDerivedAidRef.current = derivedAid;
+    if (prevDerivedAidRef.current !== holderAid) {
+      prevDerivedAidRef.current = holderAid;
       setConnectionExists(null);
       setConnectionCheckFailed(false);
       lastCheckedAidRef.current = null;
       connPollAttemptsRef.current = 0;
     }
-    if (connectionMode === "oobi") {
-      setConnectionExists(null);
-      setConnectionCheckFailed(false);
-      lastCheckedAidRef.current = null;
-      return;
-    }
-    void checkConnectionRef.current(derivedAid, true);
-  }, [step, derivedAid, invalidOobiPaste, connectionMode]);
+    void checkConnectionRef.current(holderAid, true);
+  }, [step, holderAid]);
 
-  // Poll credential server connection while not yet established (or initial check failed)
+  // Poll until connected while on the identifier step.
   useEffect(() => {
-    const sessionKey = `${step}:${connectionMode}:${derivedAid ?? ""}:${invalidOobiPaste}`;
+    const sessionKey = `${step}:${holderAid ?? ""}`;
     if (connPollSessionKeyRef.current !== sessionKey) {
       connPollSessionKeyRef.current = sessionKey;
       connPollAttemptsRef.current = 0;
     }
 
     if (
-      step !== 2 ||
-      connectionMode !== "direct" ||
-      !derivedAid ||
-      invalidOobiPaste ||
+      step !== STEP_IDENTIFIER ||
+      !holderAid ||
       connectionExists === true ||
       !(connectionExists === false || connectionCheckFailed)
     ) {
@@ -392,7 +425,7 @@ export function RequestVerificationDialog({
           window.clearInterval(intervalHolder.id);
         return;
       }
-      await checkConnectionRef.current(derivedAid, true);
+      await checkConnectionRef.current(holderAid, true);
     };
 
     void tick();
@@ -405,14 +438,7 @@ export function RequestVerificationDialog({
       if (intervalHolder.id !== undefined)
         window.clearInterval(intervalHolder.id);
     };
-  }, [
-    step,
-    connectionMode,
-    derivedAid,
-    invalidOobiPaste,
-    connectionExists,
-    connectionCheckFailed,
-  ]);
+  }, [step, holderAid, connectionExists, connectionCheckFailed]);
 
   const handleRegenerateChallenge = async () => {
     setIsRegeneratingChallenge(true);
@@ -465,8 +491,8 @@ export function RequestVerificationDialog({
       return;
     }
 
-    if (!derivedAid || invalidOobiPaste) {
-      toast.error(t("toasts.needCredentialConnection"));
+    if (!holderAid) {
+      toast.error(t("toasts.needIdentifierAid"));
       return;
     }
 
@@ -475,22 +501,28 @@ export function RequestVerificationDialog({
       return;
     }
 
+    const connected = await checkConnection(holderAid, true);
+    if (!connected) {
+      toast.error(t("connectionNotEstablishedBeforeIssue"));
+      setStep(STEP_CREATE_CONNECTION);
+      return;
+    }
+
     setIsSubmitting(true);
     setIssueError(null);
     try {
       const result = await credentialApiClient.issueCredential({
-        aid: derivedAid,
-        oobi: walletOobiPayload,
+        aid: holderAid,
         agentId: agent.id,
       });
 
       if (result.success) {
         if (result.data.status === "PENDING") {
           setPendingCredentialId(result.data.id);
-          setIsWaitingForAcceptance(true);
+          setWalletAcceptancePhase("awaiting_wallet");
         } else {
           toast.success(t("requestSuccess"));
-          onSuccess();
+          await Promise.resolve(onSuccess());
           onOpenChange(false);
         }
       } else {
@@ -508,8 +540,21 @@ export function RequestVerificationDialog({
   };
 
   const handleOnOpenChange = (newOpen: boolean) => {
-    if (isSubmitting || isWaitingForAcceptance) return;
-    onOpenChange(newOpen);
+    if (newOpen) {
+      setShowCloseConfirm(false);
+      onOpenChange(true);
+      return;
+    }
+    if (isSubmitting || isConfirmingAcceptance) return;
+    if (isWalletAcceptanceComplete) {
+      onOpenChange(false);
+      return;
+    }
+    if (isAwaitingWalletAcceptance) {
+      setShowCloseConfirm(true);
+      return;
+    }
+    onOpenChange(false);
   };
 
   const steps = [
@@ -522,8 +567,12 @@ export function RequestVerificationDialog({
       description: t("stepEndpointDescription"),
     },
     {
-      title: t("stepWallet"),
-      description: t("stepWalletDescription"),
+      title: t("stepCreateConnection"),
+      description: t("stepCreateConnectionDescription"),
+    },
+    {
+      title: t("stepIdentifier"),
+      description: t("stepIdentifierDescription"),
     },
     {
       title: t("stepSubmit"),
@@ -537,17 +586,14 @@ export function RequestVerificationDialog({
     return null;
   }
 
-  const step2Blocked =
-    !derivedAid ||
-    invalidOobiPaste ||
-    (connectionMode === "direct" &&
-      (connectionExists !== true || isCheckingConnection));
+  const stepIdentifierBlocked =
+    !holderAid || connectionExists !== true || isCheckingConnection;
 
   const isNextDisabled = (() => {
     if (step === 0) return false;
     if (kycStatus !== "APPROVED") return true;
     if (step === 1) return isTestingEndpoint || !challenge || !secret;
-    if (step === 2) return step2Blocked;
+    if (step === STEP_IDENTIFIER) return stepIdentifierBlocked;
     return false;
   })();
 
@@ -558,9 +604,8 @@ export function RequestVerificationDialog({
       if (isTestingEndpoint) return t("nextDisabledReasonTestingEndpoint");
       if (!challenge || !secret) return t("nextDisabledReasonLoadingSetup");
     }
-    if (step === 2) {
-      if (invalidOobiPaste) return t("invalidOobi");
-      if (!derivedAid) return t("nextDisabledReasonPasteOobiOrAid");
+    if (step === STEP_IDENTIFIER) {
+      if (!holderAid) return t("nextDisabledReasonPasteIdentifierAid");
       if (isCheckingConnection)
         return t("nextDisabledReasonCheckingConnection");
       if (connectionExists !== true)
@@ -570,99 +615,104 @@ export function RequestVerificationDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOnOpenChange}>
-      <DialogContent
-        className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
-        closeButtonClassName="top-8 right-4 -translate-y-1/2"
-      >
-        <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
-          <DialogHeader>
-            <div className="flex items-center gap-2">
-              <DialogTitle className="text-xl font-semibold tracking-tight">
-                {t("requestVerification")}
-              </DialogTitle>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                    <CircleHelp className="h-4 w-4" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>{t("requestDescription")}</TooltipContent>
-              </Tooltip>
-            </div>
-          </DialogHeader>
-        </div>
+    <>
+      <Dialog open={open} onOpenChange={handleOnOpenChange}>
+        <DialogContent
+          className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
+          closeButtonClassName="top-8 right-4 -translate-y-1/2"
+        >
+          <div className="shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12">
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-xl font-semibold tracking-tight">
+                  {t("requestVerification")}
+                </DialogTitle>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                      <CircleHelp className="h-4 w-4" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("requestDescription")}</TooltipContent>
+                </Tooltip>
+              </div>
+            </DialogHeader>
+          </div>
 
-        <DialogBody stagger={false} className="space-y-6">
-          <Steps currentStep={step + 1} steps={steps} className="mb-4" />
-          <p className="text-sm text-muted-foreground mb-6">
-            {steps[step]?.description}
-          </p>
+          <div className="shrink-0 border-b px-6 py-4">
+            <Steps currentStep={step + 1} steps={steps} />
+          </div>
 
-          {step !== 0 && step !== 2 && kycStatus !== "APPROVED" && (
-            <div className="mb-6">
-              <h3 className="text-sm font-medium mb-2">{t("kycStatus")}</h3>
-              {kycStatus === "PENDING" ? (
-                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
-                  <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">
-                      {tStatus("status.pending")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("kycStatusPendingDescription")}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={getKycStatusBadgeVariant(kycStatus)}
-                    className="shrink-0"
-                  >
-                    {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
-                  </Badge>
-                </div>
-              ) : kycStatus === "REJECTED" ? (
-                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
-                  <XCircle className="h-5 w-5 text-destructive shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">
-                      {tStatus("status.rejected")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("kycStatusRejectedDescription")}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={getKycStatusBadgeVariant(kycStatus)}
-                    className="shrink-0"
-                  >
-                    {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
-                  </Badge>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
-                  <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">
-                      {tStatus("status.pending")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("kycStatusPendingDescription")}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={getKycStatusBadgeVariant(kycStatus)}
-                    className="shrink-0"
-                  >
-                    {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
-                  </Badge>
+          <DialogBody key={step} className="space-y-6">
+            <p className="text-sm text-muted-foreground">
+              {steps[step]?.description}
+            </p>
+
+            {step !== 0 &&
+              step !== STEP_CREATE_CONNECTION &&
+              kycStatus !== "APPROVED" && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium mb-2">{t("kycStatus")}</h3>
+                  {kycStatus === "PENDING" ? (
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
+                      <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
+                          {tStatus("status.pending")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("kycStatusPendingDescription")}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={getKycStatusBadgeVariant(kycStatus)}
+                        className="shrink-0"
+                      >
+                        {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
+                      </Badge>
+                    </div>
+                  ) : kycStatus === "REJECTED" ? (
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
+                      <XCircle className="h-5 w-5 text-destructive shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
+                          {tStatus("status.rejected")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("kycStatusRejectedDescription")}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={getKycStatusBadgeVariant(kycStatus)}
+                        className="shrink-0"
+                      >
+                        {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
+                      <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
+                          {tStatus("status.pending")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("kycStatusPendingDescription")}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={getKycStatusBadgeVariant(kycStatus)}
+                        className="shrink-0"
+                      >
+                        {tStatus(`status.${getKycStatusBadgeKey(kycStatus)}`)}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="space-y-6">
             {step === 0 && (
-              <div className="flex flex-col gap-4">
+              <>
                 <div className="flex flex-col gap-2">
                   <h3 className="text-sm font-medium">
                     {t("walletSetup.title")}
@@ -775,7 +825,7 @@ export function RequestVerificationDialog({
                     </div>
                   </div>
                 )}
-              </div>
+              </>
             )}
 
             {step === 1 && (
@@ -947,7 +997,7 @@ export function RequestVerificationDialog({
               </>
             )}
 
-            {step === 2 && (
+            {step === STEP_CREATE_CONNECTION && (
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
                   <h3 className="text-sm font-medium">
@@ -958,162 +1008,156 @@ export function RequestVerificationDialog({
                   </p>
                 </div>
 
-                {connectionMode === "oobi" && (
-                  <>
-                    {isLoadingIssuerOobi ? (
-                      <div className="flex items-center justify-center p-8">
-                        <Spinner size={24} />
-                      </div>
-                    ) : issuerOobi ? (
-                      <div className="flex flex-col items-center gap-3 rounded-lg border bg-muted/20 p-4">
-                        <div className="p-4 rounded-lg flex items-center justify-center relative bg-background border">
-                          <QRCode
-                            value={issuerOobi}
-                            size={200}
-                            fgColor="black"
-                            bgColor="white"
-                            qrStyle="squares"
-                            logoImage="/assets/qr-logo.png"
-                            logoWidth={48}
-                            logoHeight={48}
-                            logoOpacity={1}
-                            quietZone={10}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground text-center max-w-md">
-                          {t("scanIssuerQRCode")}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
-                        <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                          {t("failedToLoadIssuerOobi")}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto px-0 py-1 text-muted-foreground hover:text-foreground self-start text-xs"
-                  onClick={() => {
-                    setConnectionMode((m) =>
-                      m === "oobi" ? "direct" : "oobi",
-                    );
-                    setConnectionExists(null);
-                    prevDerivedAidRef.current = null;
-                    lastCheckedAidRef.current = null;
-                  }}
-                >
-                  {connectionMode === "oobi"
-                    ? t("alreadyConnected")
-                    : t("useOobiPaste")}
-                </Button>
-
-                {connectionMode === "direct" ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="aid-paste">{t("pasteAid")}</Label>
-                    <Input
-                      id="aid-paste"
-                      value={aidDirectInput}
-                      onChange={(e) => setAidDirectInput(e.target.value)}
-                      placeholder={t("aidPlaceholder")}
-                      className="font-mono text-xs"
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
+                {isLoadingIssuerOobi ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Spinner size={24} />
+                  </div>
+                ) : issuerOobi ? (
+                  <div className="flex flex-col items-center gap-3 rounded-lg border bg-muted/20 p-4">
+                    <div className="p-4 rounded-lg flex items-center justify-center relative bg-background border">
+                      <QRCode
+                        value={issuerOobi}
+                        size={200}
+                        fgColor="black"
+                        bgColor="white"
+                        qrStyle="squares"
+                        logoImage="/assets/qr-logo.png"
+                        logoWidth={48}
+                        logoHeight={48}
+                        logoOpacity={1}
+                        quietZone={10}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center max-w-md">
+                      {t("scanCredentialServerQRCode")}
+                    </p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <Label htmlFor="oobi-paste">{t("pasteOobi")}</Label>
-                    <textarea
-                      id="oobi-paste"
-                      value={walletOobiInput}
-                      onChange={(e) => setWalletOobiInput(e.target.value)}
-                      placeholder={t("oobiPlaceholder")}
-                      className="flex min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </div>
-                )}
-
-                {invalidOobiPaste && (
-                  <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3">
-                    <p className="text-xs text-destructive">
-                      {t("invalidOobi")}
+                  <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                      {t("failedToLoadIssuerOobi")}
                     </p>
                   </div>
                 )}
+              </div>
+            )}
 
-                {derivedAid && !invalidOobiPaste ? (
+            {step === STEP_IDENTIFIER && (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-sm font-medium">
+                    {t("pasteIdentifier")}
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t("identifierInstructions")}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="holder-aid-paste">{t("pasteAid")}</Label>
+                  <Input
+                    id="holder-aid-paste"
+                    value={holderAidInput}
+                    onChange={(e) => setHolderAidInput(e.target.value)}
+                    placeholder={t("aidPlaceholder")}
+                    className="font-mono text-xs"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </div>
+
+                {holderAid ? (
                   <div className="space-y-2">
-                    <div className="rounded-lg border bg-muted/40 p-3">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {t("parsedAid")}
-                      </p>
-                      <p className="text-xs font-mono break-all">
-                        {derivedAid}
-                      </p>
-                    </div>
-                    {connectionMode === "direct" ? (
-                      isCheckingConnection ? (
-                        <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
-                          <Spinner size={16} />
-                          <p className="text-xs text-muted-foreground">
-                            {t("checkingConnection")}
+                    {isCheckingConnection ? (
+                      <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                        <Spinner size={16} />
+                        <p className="text-xs text-muted-foreground">
+                          {t("checkingConnection")}
+                        </p>
+                      </div>
+                    ) : connectionExists === true ? (
+                      <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          {t("connectionEstablished")}
+                        </p>
+                      </div>
+                    ) : connectionExists === false || connectionCheckFailed ? (
+                      <div className="space-y-2">
+                        <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                            {connectionCheckFailed
+                              ? t("failedToCheckConnection")
+                              : t("connectionNotEstablishedReturnToScan")}
                           </p>
                         </div>
-                      ) : connectionExists === false ||
-                        connectionCheckFailed ? (
-                        <div className="space-y-2">
-                          <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3">
-                            <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                              {connectionCheckFailed
-                                ? t("failedToCheckConnection")
-                                : t("connectionNotEstablished")}
-                            </p>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              derivedAid && checkConnection(derivedAid, true)
-                            }
-                            disabled={isCheckingConnection}
-                            className="w-full"
-                          >
-                            {t("checkConnectionAgain")}
-                          </Button>
-                        </div>
-                      ) : connectionExists === true ? (
-                        <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
-                          <p className="text-xs text-green-600 dark:text-green-400">
-                            {t("connectionEstablished")}
-                          </p>
-                        </div>
-                      ) : null
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setStep(STEP_CREATE_CONNECTION)}
+                          className="w-full"
+                        >
+                          {t("goToCreateConnection")}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            holderAid && void checkConnection(holderAid, true)
+                          }
+                          disabled={isCheckingConnection}
+                          className="w-full"
+                        >
+                          {t("checkConnectionAgain")}
+                        </Button>
+                      </div>
                     ) : null}
                   </div>
                 ) : null}
               </div>
             )}
 
-            {step === 3 &&
-              (isWaitingForAcceptance ? (
-                <div className="flex flex-col items-center gap-4 py-8">
-                  <Spinner size={32} />
-                  <div className="text-center space-y-2">
-                    <p className="text-sm font-medium">
-                      {t("waitingForWalletAcceptance")}
+            {step === STEP_SUBMIT &&
+              (isWalletAcceptanceComplete ? (
+                <div className="flex flex-col gap-4 py-4">
+                  <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-4 space-y-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {t("verificationCompleteTitle")}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {t("waitingForWalletDescription")}
+                      {t("verificationCompleteOnChainDescription")}
                     </p>
                   </div>
+                </div>
+              ) : isAwaitingWalletAcceptance ? (
+                <div className="flex flex-col gap-4 py-4">
+                  <div className="rounded-lg border bg-muted/40 p-4 space-y-2">
+                    <p className="text-sm font-medium">
+                      {t("credentialIssuedTitle")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("credentialIssuedDescription")}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => void handleConfirmWalletAcceptance()}
+                    disabled={isConfirmingAcceptance}
+                  >
+                    {isConfirmingAcceptance && (
+                      <Spinner size={16} className="mr-2" />
+                    )}
+                    {t("confirmWalletAcceptance")}
+                  </Button>
+                  {isConfirmingAcceptance ? (
+                    <p className="text-center text-xs text-muted-foreground">
+                      {t("confirmingWalletAcceptance")}
+                    </p>
+                  ) : null}
+                  {issueError ? (
+                    <p className="text-sm text-destructive">{issueError}</p>
+                  ) : null}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -1127,76 +1171,98 @@ export function RequestVerificationDialog({
                   </div>
                 </div>
               ))}
-          </div>
-        </DialogBody>
+          </DialogBody>
 
-        <DialogFooter className="shrink-0 border-t bg-background px-6 py-4 justify-between">
-          <Button variant="ghost" size="sm" asChild>
-            <a
-              href="https://www.masumi.network/contact"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t("help")}
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </Button>
-          <div className="flex gap-2">
-            {step > 0 && (
-              <Button
-                variant="outline"
-                onClick={handlePrev}
-                disabled={isSubmitting}
-              >
-                {t("prev")}
-              </Button>
-            )}
-            {!isLastStep ? (
-              isNextDisabled ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex">
-                      <Button variant="primary" onClick={handleNext} disabled>
-                        {isTestingEndpoint && (
-                          <Spinner size={16} className="mr-2" />
-                        )}
-                        {t("next")}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{getNextDisabledReason()}</TooltipContent>
-                </Tooltip>
-              ) : (
-                <Button variant="primary" onClick={handleNext}>
-                  {isTestingEndpoint && <Spinner size={16} className="mr-2" />}
-                  {t("next")}
+          <DialogFooter className="shrink-0 border-t bg-background px-6 py-4 justify-between">
+            <Button variant="ghost" size="sm" asChild>
+              <a href={SUPPORT_PAGE_URL} {...MASUMI_EXTERNAL_LINK_PROPS}>
+                {t("help")}
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+            <div className="flex gap-2">
+              {step > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handlePrev}
+                  disabled={isSubmitting || isConfirmingAcceptance}
+                  className="gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  {t("prev")}
                 </Button>
-              )
-            ) : (
-              <Button
-                variant="primary"
-                onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  isWaitingForAcceptance ||
-                  !derivedAid ||
-                  invalidOobiPaste ||
-                  !challenge ||
-                  !secret ||
-                  kycStatus !== "APPROVED"
-                }
-              >
-                {(isSubmitting || isWaitingForAcceptance) && (
-                  <Spinner size={16} className="mr-2" />
-                )}
-                {isWaitingForAcceptance
-                  ? t("waitingForIssuanceSubmit")
-                  : t("submitRequest")}
-              </Button>
-            )}
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              )}
+              {!isLastStep ? (
+                isNextDisabled ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        <Button
+                          variant="primary"
+                          onClick={handleNext}
+                          disabled
+                          className="gap-2"
+                        >
+                          {isTestingEndpoint && (
+                            <Spinner size={16} className="shrink-0" />
+                          )}
+                          {t("next")}
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{getNextDisabledReason()}</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    variant="primary"
+                    onClick={handleNext}
+                    className="gap-2"
+                  >
+                    {isTestingEndpoint && (
+                      <Spinner size={16} className="shrink-0" />
+                    )}
+                    {t("next")}
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                )
+              ) : isWalletAcceptanceComplete ? (
+                <Button variant="primary" onClick={handleCompleteClose}>
+                  {t("done")}
+                </Button>
+              ) : !isAwaitingWalletAcceptance ? (
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit}
+                  disabled={
+                    isSubmitting ||
+                    !holderAid ||
+                    !challenge ||
+                    !secret ||
+                    kycStatus !== "APPROVED" ||
+                    connectionExists !== true
+                  }
+                >
+                  {isSubmitting && <Spinner size={16} className="mr-2" />}
+                  {t("submitRequest")}
+                </Button>
+              ) : null}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        onConfirm={() => {
+          performClose();
+          setShowCloseConfirm(false);
+        }}
+        title={t("closeWhileWaitingTitle")}
+        description={t("closeWhileWaitingDescription")}
+        confirmText={t("closeWhileWaitingConfirm")}
+        cancelText={t("cancel")}
+      />
+    </>
   );
 }

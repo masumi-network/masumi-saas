@@ -1,9 +1,14 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import nextPlugin from "eslint-config-next";
 import prettier from "eslint-config-prettier/flat";
 import react from "eslint-plugin-react";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import unusedImports from "eslint-plugin-unused-imports";
 import tseslint from "typescript-eslint";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const config = [
   ...nextPlugin,
@@ -12,7 +17,7 @@ const config = [
     // Generated files — authoritative content comes from the generator script.
     // Lint autofix (especially simple-import-sort) would otherwise fight the
     // generator and produce a permanent diff every time CI runs openapi:manifest.
-    ignores: ["src/lib/openapi/generated/**"],
+    ignores: ["src/lib/openapi/generated/**", "scripts/**"],
   },
   {
     plugins: {
@@ -51,6 +56,24 @@ const config = [
             "_blank",
             "_self",
           ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": [
+        "error",
+        {
+          ignoreVoid: true,
+          ignoreIIFE: true,
         },
       ],
     },

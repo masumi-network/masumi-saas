@@ -1,6 +1,6 @@
 "use client";
 
-import { Key, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
+import { Key, MoreVertical, Plus, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMemo, useState, useTransition } from "react";
@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HorizontalScrollArea } from "@/components/ui/horizontal-scroll-area";
 import { Input } from "@/components/ui/input";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Spinner } from "@/components/ui/spinner";
@@ -32,14 +33,32 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useFormatDate } from "@/hooks/use-format-date";
-import type { ApiKeyListItem } from "@/lib/actions/auth.action";
+import type { ApiKeysPageData } from "@/lib/actions/org-api-keys.action";
 import { authClient } from "@/lib/auth/auth.client";
 
 import { CreateApiKeyDialog } from "../../components/dashboard/create-api-key-dialog";
 
 const EMPTY_CELL = "\u2014";
 
-export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
+type DisplayApiKey = {
+  id: string;
+  name: string;
+  keyPreview: string | null;
+  createdAt: Date;
+  lastUsedAt: Date | null;
+};
+
+function toDisplayKeys(data: ApiKeysPageData): DisplayApiKey[] {
+  return data.keys.map((key) => ({
+    id: key.id,
+    name: key.name || key.prefix || key.start || "API Key",
+    keyPreview: key.start ?? key.prefix,
+    createdAt: key.createdAt,
+    lastUsedAt: key.lastRequest,
+  }));
+}
+
+export function ApiKeysList({ data }: { data: ApiKeysPageData }) {
   const t = useTranslations("App.ApiKeys");
   const { formatRelativeDate } = useFormatDate();
   const router = useRouter();
@@ -50,14 +69,15 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
   const [revokeLoading, setRevokeLoading] = useState(false);
   const [revokeError, setRevokeError] = useState<string | null>(null);
 
+  const keys = useMemo(() => toDisplayKeys(data), [data]);
+
   const filteredKeys = useMemo(() => {
     if (!searchQuery.trim()) return keys;
     const q = searchQuery.toLowerCase().trim();
     return keys.filter(
       (k) =>
-        k.name?.toLowerCase().includes(q) ||
-        k.prefix?.toLowerCase().includes(q) ||
-        k.start?.toLowerCase().includes(q),
+        k.name.toLowerCase().includes(q) ||
+        k.keyPreview?.toLowerCase().includes(q),
     );
   }, [keys, searchQuery]);
 
@@ -134,7 +154,7 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <HorizontalScrollArea className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -157,19 +177,17 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
                     }}
                   >
                     <TableCell className="p-4 pl-6 font-medium">
-                      {key.name || key.prefix || key.start || "API Key"}
+                      {key.name}
                     </TableCell>
                     <TableCell className="p-4 font-mono text-sm text-muted-foreground">
-                      {(key.start ?? key.prefix)
-                        ? `${key.start ?? key.prefix}…`
-                        : EMPTY_CELL}
+                      {key.keyPreview ? `${key.keyPreview}…` : EMPTY_CELL}
                     </TableCell>
                     <TableCell className="p-4 text-sm text-muted-foreground">
                       {formatRelativeDate(key.createdAt)}
                     </TableCell>
                     <TableCell className="p-4 text-sm text-muted-foreground">
-                      {key.lastRequest
-                        ? formatRelativeDate(key.lastRequest)
+                      {key.lastUsedAt
+                        ? formatRelativeDate(key.lastUsedAt)
                         : t("neverUsed")}
                     </TableCell>
                     <TableCell className="sticky right-0 z-10 w-48 min-w-48 bg-gradient-to-r from-transparent via-background/80 to-background p-4 text-right">
@@ -181,7 +199,7 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
                             className="h-8 w-8"
                             aria-label={t("actions")}
                           >
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
@@ -205,7 +223,7 @@ export function ApiKeysList({ keys }: { keys: ApiKeyListItem[] }) {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </HorizontalScrollArea>
         )}
       </div>
 

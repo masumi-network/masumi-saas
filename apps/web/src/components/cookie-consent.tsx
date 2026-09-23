@@ -5,6 +5,10 @@ import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  PRIVACY_POLICY_LINK_PROPS,
+  PRIVACY_POLICY_URL,
+} from "@/lib/config/privacy-policy-url";
 import { cn } from "@/lib/utils/cn";
 
 const COOKIE_NAME = "cookie_consent";
@@ -57,8 +61,8 @@ export default function CookieConsent({ onDismiss }: CookieConsentProps) {
         <p className="text-muted-foreground text-xs leading-relaxed flex-1">
           {t("description")}{" "}
           <Link
-            href="https://www.house-of-communication.com/de/en/footer/privacy-policy.html"
-            target="_blank"
+            href={PRIVACY_POLICY_URL}
+            {...PRIVACY_POLICY_LINK_PROPS}
             className="underline hover:text-foreground"
           >
             {t("learnMore")}

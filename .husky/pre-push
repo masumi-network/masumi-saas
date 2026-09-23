@@ -5,6 +5,22 @@ set -e
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
+protected_branches="^(main|dev)$"
+
+while IFS= read -r line || [ -n "$line" ]; do
+  if [ -z "$line" ]; then
+    continue
+  fi
+
+  remote_ref=$(echo "$line" | cut -d' ' -f3)
+  remote_branch=${remote_ref##*/}
+
+  if echo "$remote_branch" | grep -qE "$protected_branches"; then
+    echo "Direct push to $remote_branch is not allowed. Open a pull request instead."
+    exit 1
+  fi
+done
+
 pnpm --filter web run i18n:validate
 pnpm --filter web run check-openapi-json
 pnpm build

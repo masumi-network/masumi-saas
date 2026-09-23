@@ -13,6 +13,7 @@ interface CompletionStepProps {
   kycStatus?: "PENDING" | "APPROVED" | "REJECTED" | "REVIEW";
   rejectionReason?: string | null;
   kycCompletedAt?: Date | null;
+  returnTo?: string | null;
 }
 
 export function CompletionStep({
@@ -20,11 +21,23 @@ export function CompletionStep({
   kycStatus,
   rejectionReason,
   kycCompletedAt,
+  returnTo = null,
 }: CompletionStepProps) {
   const t = useTranslations("App.Verification.Completion");
   const tStatus = useTranslations("App.Home.KycStatus");
   const { formatDateTime } = useFormatDate();
   const router = useRouter();
+
+  const continueAfterVerification = () => {
+    if (returnTo) {
+      router.push(returnTo);
+      return;
+    }
+    router.refresh();
+    setTimeout(() => {
+      router.push("/");
+    }, 500);
+  };
 
   if (kycStatus === "REJECTED") {
     return (
@@ -72,16 +85,8 @@ export function CompletionStep({
               : tStatus("approved.description")}
           </p>
         </div>
-        <Button
-          onClick={() => {
-            router.refresh();
-            setTimeout(() => {
-              router.push("/");
-            }, 500);
-          }}
-          className="w-full"
-        >
-          {t("continueButton")}
+        <Button onClick={continueAfterVerification} className="w-full">
+          {returnTo ? t("continueRegistrationButton") : t("continueButton")}
         </Button>
       </div>
     );
@@ -98,16 +103,8 @@ export function CompletionStep({
             <h3 className="text-xl font-semibold">{t("successTitle")}</h3>
             <p className="text-muted-foreground mt-2">{t("successMessage")}</p>
           </div>
-          <Button
-            onClick={() => {
-              router.refresh();
-              setTimeout(() => {
-                router.push("/");
-              }, 500);
-            }}
-            className="w-full"
-          >
-            {t("continueButton")}
+          <Button onClick={continueAfterVerification} className="w-full">
+            {returnTo ? t("continueRegistrationButton") : t("continueButton")}
           </Button>
         </>
       ) : (

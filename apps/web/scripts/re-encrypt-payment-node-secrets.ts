@@ -88,4 +88,4 @@ async function main() {
   process.exit(err > 0 ? 1 : 0);
 }
 
-main();
+void main();

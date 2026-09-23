@@ -3,7 +3,24 @@
  * Parse all responses through these so the app stays in sync with the API.
  */
 
+import {
+  supportedPaymentSourceSchema,
+  supportedPaymentSourcesSchema,
+} from "@masumi/payment-source-x402/payment-source";
 import { z } from "zod";
+
+import {
+  type Verification,
+  type Verifications,
+  verificationsSchema,
+} from "./verification-schemas";
+
+export type { Verification, Verifications };
+export {
+  VerificationMethod,
+  verificationSchema,
+  verificationsSchema,
+} from "./verification-schemas";
 
 // ─── Primitives & enums ─────────────────────────────────────────────────────
 
@@ -19,8 +36,15 @@ export const registryRequestStateSchema = z.enum([
   "DeregistrationInitiated",
   "DeregistrationConfirmed",
   "DeregistrationFailed",
+  "UpdateRequested",
+  "UpdateInitiated",
+  "UpdateConfirmed",
+  "UpdateFailed",
 ]);
 export type RegistryRequestState = z.infer<typeof registryRequestStateSchema>;
+
+export const registryEntryTypeSchema = z.enum(["Standard", "OpenApi", "X402"]);
+export type RegistryEntryType = z.infer<typeof registryEntryTypeSchema>;
 
 export const registryStatusFilterSchema = z.enum([
   "Registered",
@@ -78,8 +102,12 @@ export const registryEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  apiBaseUrl: z.string(),
+  type: registryEntryTypeSchema.optional(),
+  apiBaseUrl: z.string().nullable(),
+  openApiSpecUrl: z.string().nullable().optional(),
+  x402ResourcesUrl: z.string().nullable().optional(),
   state: registryRequestStateSchema,
+  error: z.string().nullable().optional(),
   agentIdentifier: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -94,7 +122,8 @@ export const registryEntrySchema = z.object({
     organization: z.string().nullable(),
   }),
   Tags: z.array(z.string()),
-  AgentPricing: agentPricingSchema,
+  AgentPricing: agentPricingSchema.nullable(),
+  supportedPaymentSources: supportedPaymentSourcesSchema.nullable().optional(),
   SmartContractWallet: z
     .object({ walletVkey: z.string(), walletAddress: z.string() })
     .optional(),
@@ -102,6 +131,7 @@ export const registryEntrySchema = z.object({
     .object({ walletVkey: z.string(), walletAddress: z.string() })
     .nullable()
     .optional(),
+  verifications: verificationsSchema.nullable().optional(),
 });
 export type RegistryEntry = z.infer<typeof registryEntrySchema>;
 
@@ -170,9 +200,11 @@ export const registerAgentInputSchema = z.object({
   network: paymentNodeNetworkSchema,
   sellingWalletVkey: z.string(),
   recipientWalletAddress: z.string().optional(),
+  sendFundingLovelace: z.string().optional(),
   name: z.string(),
   apiBaseUrl: z.string(),
   description: z.string(),
+  image: z.string().max(250).optional(),
   Tags: z.array(z.string()),
   ExampleOutputs: z.array(
     z.object({ name: z.string(), url: z.string(), mimeType: z.string() }),
@@ -191,16 +223,98 @@ export const registerAgentInputSchema = z.object({
       other: z.string().optional(),
     })
     .optional(),
-  AgentPricing: z.union([
-    z.object({ pricingType: z.literal("Free") }),
-    z.object({ pricingType: z.literal("Dynamic") }),
-    z.object({
-      pricingType: z.literal("Fixed"),
-      Pricing: z.array(unitAmountSchema),
-    }),
-  ]),
+  AgentPricing: z
+    .union([
+      z.object({ pricingType: z.literal("Free") }),
+      z.object({ pricingType: z.literal("Dynamic") }),
+      z.object({
+        pricingType: z.literal("Fixed"),
+        Pricing: z.array(unitAmountSchema),
+      }),
+    ])
+    .optional(),
+  supportedPaymentSources: supportedPaymentSourcesSchema.optional(),
+  verifications: verificationsSchema.optional(),
 });
 export type RegisterAgentInput = z.infer<typeof registerAgentInputSchema>;
+
+export const updateAgentInputSchema = registerAgentInputSchema
+  .omit({ sellingWalletVkey: true })
+  .extend({
+    agentIdentifier: z.string().min(57).max(250),
+    smartContractAddress: z.string().optional(),
+    supportedPaymentSources: z
+      .array(
+        z.object({
+          chain: z.string(),
+          network: paymentNodeNetworkSchema,
+          paymentSourceType: z.string(),
+          address: z.string(),
+        }),
+      )
+      .max(25)
+      .optional(),
+  });
+export type UpdateAgentInput = z.infer<typeof updateAgentInputSchema>;
+
+export const registryAgentOnChainMetadataSchema = z
+  .object({
+    name: z.string(),
+    apiBaseUrl: z.string(),
+    description: z.string().nullable().optional(),
+    image: z.string().optional(),
+    metadataVersion: z.coerce.number().int().min(1).max(2),
+    Tags: z.array(z.string()).optional(),
+    ExampleOutputs: z
+      .array(
+        z.object({
+          name: z.string(),
+          url: z.string(),
+          mimeType: z.string(),
+        }),
+      )
+      .optional(),
+    Capability: z
+      .object({
+        name: z.string(),
+        version: z.string(),
+      })
+      .optional(),
+    Author: z
+      .object({
+        name: z.string(),
+        contactEmail: z.string().nullable().optional(),
+        contactOther: z.string().nullable().optional(),
+        organization: z.string().nullable().optional(),
+      })
+      .optional(),
+    Legal: z
+      .object({
+        privacyPolicy: z.string().nullable().optional(),
+        terms: z.string().nullable().optional(),
+        other: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    AgentPricing: agentPricingSchema.optional(),
+    supportedPaymentSources: z
+      .array(supportedPaymentSourceSchema)
+      .max(25)
+      .nullable()
+      .optional(),
+    verifications: verificationsSchema.nullable().optional(),
+  })
+  .passthrough();
+
+export const registryAgentIdentifierMetadataSchema = z.object({
+  policyId: z.string(),
+  assetName: z.string(),
+  agentIdentifier: z.string(),
+  Metadata: registryAgentOnChainMetadataSchema,
+});
+export type RegistryAgentIdentifierMetadata = z.infer<
+  typeof registryAgentIdentifierMetadataSchema
+>;
 
 export const deregisterAgentInputSchema = z.object({
   network: paymentNodeNetworkSchema,
@@ -475,6 +589,7 @@ export type PaymentIncomeOutput = z.infer<typeof paymentIncomeOutputSchema>;
 export const createApiKeyInputSchema = z.object({
   permission: z.enum(["Read", "ReadAndPay", "Admin"]),
   NetworkLimit: z.array(paymentNodeNetworkSchema),
+  ChainIdLimit: z.array(z.string().min(1).max(120)).optional(),
   usageLimited: z.enum(["true", "false"]),
   UsageCredits: z.array(unitAmountSchema),
   walletScopeEnabled: z.enum(["true", "false"]).default("false"),
@@ -562,7 +677,7 @@ export const walletListItemSchema = z
   .object({
     id: z.string(),
     paymentSourceId: z.string(),
-    type: z.enum(["Selling", "Purchasing"]),
+    type: z.enum(["Selling", "Purchasing", "Funding"]),
     walletVkey: z.string(),
     walletAddress: z.string(),
     collectionAddress: z.string().nullable(),
@@ -602,6 +717,12 @@ export const walletStatusSchema = z.object({
 });
 export type WalletStatus = z.infer<typeof walletStatusSchema>;
 
+export const patchWalletInputSchema = z.object({
+  id: z.string(),
+  newCollectionAddress: z.string().nullable(),
+});
+export type PatchWalletInput = z.infer<typeof patchWalletInputSchema>;
+
 // ─── UTXOs ─────────────────────────────────────────────────────────────────
 
 export const utxoAmountSchema = z.object({
@@ -624,6 +745,56 @@ export const getUtxosOutputSchema = z.object({
 export type GetUtxosOutput = z.infer<typeof getUtxosOutputSchema>;
 export type Utxo = z.infer<typeof utxoSchema>;
 export type UtxoAmount = z.infer<typeof utxoAmountSchema>;
+
+// ─── Address balance (GET /balance) ─────────────────────────────────────────
+
+export const balanceAmountSchema = utxoAmountSchema;
+export type BalanceAmount = z.infer<typeof balanceAmountSchema>;
+
+export const getBalanceOutputSchema = z.object({
+  Balance: z.array(balanceAmountSchema),
+});
+export type GetBalanceOutput = z.infer<typeof getBalanceOutputSchema>;
+
+// ─── Webhooks ───────────────────────────────────────────────────────────────
+
+export const webhookEventTypeSchema = z.enum([
+  "PURCHASE_ON_CHAIN_STATUS_CHANGED",
+  "PAYMENT_ON_CHAIN_STATUS_CHANGED",
+  "PURCHASE_ON_ERROR",
+  "PAYMENT_ON_ERROR",
+  "WALLET_LOW_BALANCE",
+  "X402_PAYMENT_SETTLED",
+  "X402_PAYMENT_FAILED",
+  "X402_WALLET_LOW_BALANCE",
+]);
+
+export const webhookEndpointSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  Events: z.array(webhookEventTypeSchema),
+  name: z.string().nullable(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  paymentSourceId: z.string().nullable(),
+  failureCount: z.number(),
+  lastSuccessAt: z.string().nullable(),
+  disabledAt: z.string().nullable(),
+  CreatedBy: z
+    .object({
+      apiKeyId: z.string(),
+      apiKeyToken: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+export const listWebhooksOutputSchema = z.object({
+  Webhooks: z.array(webhookEndpointSchema),
+});
+export type ListWebhooksOutput = z.infer<typeof listWebhooksOutputSchema>;
+export type WebhookEndpoint = z.infer<typeof webhookEndpointSchema>;
+export type WebhookEventType = z.infer<typeof webhookEventTypeSchema>;
 
 // ─── Response envelope ──────────────────────────────────────────────────────
 

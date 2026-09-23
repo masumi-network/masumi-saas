@@ -20,6 +20,7 @@ const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 const ENCRYPTION_KEY_LENGTH = 32;
 const ENCRYPTION_IV_LENGTH = 12;
 const ENCRYPTION_TAG_LENGTH = 16;
+const STORED_HASH_DIGEST_RE = /^[a-f0-9]{64}$/i;
 
 const HASHED_FIELDS = {
   session: new Set(["token"]),
@@ -109,6 +110,10 @@ function isEncryptedField(model: string, field: string): boolean {
   return fields?.has(field as never) ?? false;
 }
 
+function isStoredAuthHashDigest(value: string): boolean {
+  return STORED_HASH_DIGEST_RE.test(value);
+}
+
 export function hashAuthLookupValue(value: string, label: string): string {
   // Deterministic keyed hashing is intentional here so opaque random tokens can
   // be matched without storing them in plaintext.
@@ -169,6 +174,10 @@ export async function decryptAuthSecret(
 function transformStoredWhere(
   model: string,
   where?: AdapterWhere[],
+  // Only mutation lookups (update/delete) may match an already-stored digest verbatim.
+  // Read paths (findOne/findMany/count) MUST always re-hash so a leaked digest cannot be
+  // presented as a raw credential to establish or read a session (pass-the-hash).
+  allowStoredDigest = false,
 ): AdapterWhere[] {
   if (!where?.length) {
     return where ?? [];
@@ -180,6 +189,13 @@ function transformStoredWhere(
       isHashedField(model, clause.field) &&
       (clause.operator === undefined || clause.operator === "eq")
     ) {
+      // Session reads return the persisted digest. Better Auth reuses that value
+      // for update/delete lookups; hashing again would miss the row (Prisma P2025).
+      // This shortcut is confined to mutation lookups — never the auth read path.
+      if (allowStoredDigest && isStoredAuthHashDigest(clause.value)) {
+        return clause;
+      }
+
       return {
         ...clause,
         value: hashAuthLookupValue(
@@ -361,7 +377,7 @@ export function securePrismaAuthAdapter(
         const update = await transformStoredData(args.model, args.update);
         const result = await adapter.update({
           ...args,
-          where: transformStoredWhere(args.model, args.where),
+          where: transformStoredWhere(args.model, args.where, true),
           update,
         });
         return restoreWriteResult(args.model, result, args.update);
@@ -373,7 +389,7 @@ export function securePrismaAuthAdapter(
       }) {
         return adapter.updateMany({
           ...args,
-          where: transformStoredWhere(args.model, args.where),
+          where: transformStoredWhere(args.model, args.where, true),
           update: await transformStoredData(args.model, args.update),
         });
       },
@@ -381,7 +397,7 @@ export function securePrismaAuthAdapter(
         try {
           return await adapter.delete({
             ...args,
-            where: transformStoredWhere(args.model, args.where),
+            where: transformStoredWhere(args.model, args.where, true),
           });
         } catch (error) {
           // P2025: "Record to delete does not exist." Treat as success — the
@@ -401,7 +417,7 @@ export function securePrismaAuthAdapter(
       async deleteMany(args: { model: string; where: AdapterWhere[] }) {
         return adapter.deleteMany({
           ...args,
-          where: transformStoredWhere(args.model, args.where),
+          where: transformStoredWhere(args.model, args.where, true),
         });
       },
     };
@@ -441,6 +457,13 @@ export async function createVerificationValue(
         getFieldLabel("verification", "identifier"),
       ),
     },
+  });
+}
+
+export async function updateVerificationValue(id: string, value: string) {
+  return prisma.verification.update({
+    where: { id },
+    data: { value },
   });
 }
 

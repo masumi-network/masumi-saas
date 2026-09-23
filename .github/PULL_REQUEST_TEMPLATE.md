@@ -21,7 +21,7 @@
 
 ## **Checklist**
 
-<!-- (Ensure all tasks are completed before submitting your PR.) Only submit a PR to the `main` branch. -->
+<!-- (Ensure all tasks are completed before submitting your PR.) Only submit a PR to the `dev` branch. -->
 
 - [ ] I have used `lint` and `format` to follow the code formatting
 - [ ] I have tested my changes locally and all of them pass

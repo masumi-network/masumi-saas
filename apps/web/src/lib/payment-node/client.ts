@@ -4,7 +4,9 @@
  * Responses are parsed with Zod schemas to stay in sync with the payment node API.
  */
 
-import type { z } from "zod";
+import { z } from "zod";
+
+import { createPaymentSchemaOutput } from "@/lib/x402/schemas";
 
 import type {
   AddWalletToSourceInput,
@@ -16,6 +18,7 @@ import type {
   DeregisterAgentInput,
   DeregisterInboxAgentInput,
   GeneratedWallet,
+  GetBalanceOutput,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
   GetWalletListOutput,
@@ -23,11 +26,14 @@ import type {
   InboxAgentMetadata,
   ListPaymentsOutput,
   ListPurchasesOutput,
+  ListWebhooksOutput,
+  PatchWalletInput,
   PaymentIncomeOutput,
   PaymentNodeApiKey,
   PaymentNodeNetwork,
   RegisterAgentInput,
   RegisterInboxAgentInput,
+  RegistryAgentIdentifierMetadata,
   RegistryEntry,
   RegistryInboxCountResponse,
   RegistryInboxEntry,
@@ -35,6 +41,7 @@ import type {
   ResolvePaymentInput,
   RuntimePaymentResponse,
   SubmitPaymentResultInput,
+  UpdateAgentInput,
   UpdateApiKeyInput,
   WalletStatus,
 } from "./schemas";
@@ -44,15 +51,18 @@ import {
   createApiKeyOutputSchema,
   createPaymentInputSchema,
   generatedWalletSchema,
+  getBalanceOutputSchema,
   getPaymentSourcesOutputSchema,
   getUtxosOutputSchema,
   getWalletListOutputSchema,
   inboxAgentIdentifierMetadataSchema,
   listPaymentsOutputSchema,
   listPurchasesOutputSchema,
+  listWebhooksOutputSchema,
   parsePaymentNodeData,
   paymentIncomeOutputSchema,
   paymentNodeApiKeySchema,
+  registryAgentIdentifierMetadataSchema,
   registryEntrySchema,
   registryInboxCountResponseSchema,
   registryInboxEntrySchema,
@@ -66,17 +76,26 @@ import {
   updateApiKeyInputSchema,
   walletStatusSchema,
 } from "./schemas";
+import {
+  paymentNodeX402NetworkListSchema,
+  paymentNodeX402SettleOutputSchema,
+  paymentNodeX402VerifyOutputSchema,
+  paymentNodeX402WalletListSchema,
+  paymentNodeX402WalletSchema,
+} from "./x402-schemas";
 
 export type {
   AddWalletToSourceInput,
   AddWalletToSourceOutput,
   AgentMetadata,
+  BalanceAmount,
   CreateApiKeyInput,
   CreateApiKeyOutput,
   CreatePaymentInput,
   DeregisterAgentInput,
   DeregisterInboxAgentInput,
   GeneratedWallet,
+  GetBalanceOutput,
   GetPaymentSourcesOutput,
   GetUtxosOutput,
   GetWalletListOutput,
@@ -84,6 +103,7 @@ export type {
   InboxAgentMetadata,
   ListPaymentsOutput,
   ListPurchasesOutput,
+  ListWebhooksOutput,
   PaymentIncomeOutput,
   PaymentNodeApiKey,
   PaymentNodeNetwork,
@@ -92,6 +112,7 @@ export type {
   PaymentSourceWallet,
   RegisterAgentInput,
   RegisterInboxAgentInput,
+  RegistryAgentIdentifierMetadata,
   RegistryEntry,
   RegistryInboxCountResponse,
   RegistryInboxEntry,
@@ -100,13 +121,27 @@ export type {
   ResolvePaymentInput,
   RuntimePaymentResponse,
   SubmitPaymentResultInput,
+  UpdateAgentInput,
   UpdateApiKeyInput,
   Utxo,
   UtxoAmount,
   WalletStatus,
+  WebhookEndpoint,
+  WebhookEventType,
 } from "./schemas";
 
 const PAYMENT_NODE_HEADER_TOKEN = "token" as const;
+
+/**
+ * Abort a payment-node request that hangs longer than this. Node's global
+ * `fetch` has no short default timeout, so a stalled upstream (dropped TCP,
+ * black-holed connection) would otherwise pin a worker indefinitely. Override
+ * with PAYMENT_NODE_REQUEST_TIMEOUT_MS.
+ */
+const PAYMENT_NODE_REQUEST_TIMEOUT_MS = (() => {
+  const raw = Number(process.env.PAYMENT_NODE_REQUEST_TIMEOUT_MS);
+  return Number.isFinite(raw) && raw > 0 ? raw : 30_000;
+})();
 
 type PaymentNodeResponse<T> =
   | { status: "success"; data: T }
@@ -137,9 +172,22 @@ async function requestParse<T>(
       "Content-Type": "application/json",
     },
     body: options.body != null ? JSON.stringify(options.body) : undefined,
+    signal: AbortSignal.timeout(PAYMENT_NODE_REQUEST_TIMEOUT_MS),
   });
-  const json = (await res.json()) as PaymentNodeResponse<unknown>;
-  if (!res.ok) {
+  // Read the raw body first so a non-JSON error page (HTML 502/404 from an
+  // upstream gateway) still surfaces the HTTP status in the `${status}: ${msg}`
+  // format that callers (e.g. deregister-agent) parse, rather than throwing an
+  // opaque JSON SyntaxError that hides the status.
+  const rawBody = await res.text();
+  let json: PaymentNodeResponse<unknown> | null = null;
+  try {
+    json = rawBody
+      ? (JSON.parse(rawBody) as PaymentNodeResponse<unknown>)
+      : null;
+  } catch {
+    json = null;
+  }
+  if (!res.ok || json === null) {
     const errObj = json && "error" in json ? json.error : null;
     const msg =
       (errObj && typeof errObj === "object" && "message" in errObj
@@ -153,7 +201,9 @@ async function requestParse<T>(
       "[Payment Node] Request failed:",
       res.status,
       url.toString(),
-      JSON.stringify(json),
+      // Cap the logged body: error responses can echo addresses / ids, and an
+      // unbounded body bloats logs. A short excerpt is enough to diagnose.
+      rawBody.length > 500 ? `${rawBody.slice(0, 500)}…[truncated]` : rawBody,
     );
     throw new Error(`${res.status}: ${msg}`);
   }
@@ -175,6 +225,20 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         base,
         apiKey,
         `/registry`,
+        {
+          method: "POST",
+          body,
+        },
+        registryEntrySchema,
+      );
+    },
+
+    /** Update registry metadata (pay-authenticated). Use admin API key after SaaS ownership checks. */
+    async updateAgent(body: UpdateAgentInput): Promise<RegistryEntry> {
+      return requestParse(
+        base,
+        apiKey,
+        `/registry/update`,
         {
           method: "POST",
           body,
@@ -262,6 +326,10 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistry(params: {
       network: PaymentNodeNetwork;
       cursorId?: string;
+      limit?: number;
+      filterSmartContractAddress?: string | null;
+      filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
+      filterStatus?: RegistryStatusFilter;
     }): Promise<{ Assets: RegistryEntry[] }> {
       return requestParse(
         base,
@@ -271,7 +339,16 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           method: "GET",
           query: {
             network: params.network,
+            ...(params.limit != null && { limit: String(params.limit) }),
             ...(params.cursorId && { cursorId: params.cursorId }),
+            ...(params.filterSmartContractAddress != null &&
+              params.filterSmartContractAddress !== "" && {
+                filterSmartContractAddress: params.filterSmartContractAddress,
+              }),
+            ...(params.filterPaymentSourceType && {
+              filterPaymentSourceType: params.filterPaymentSourceType,
+            }),
+            ...(params.filterStatus && { filterStatus: params.filterStatus }),
           },
         },
         registryListResponseSchema,
@@ -313,25 +390,46 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryById(params: {
       id: string;
       network: PaymentNodeNetwork;
+      filterSmartContractAddress?: string | null;
+      filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
     }): Promise<RegistryEntry | null> {
-      // Fetch without a cursorId so the target entry is included in results.
-      // Using cursorId for the target's own id would exclude it under standard
-      // cursor-based pagination ("entries after this cursor").
-      // Each user key only sees their own agents so the result set is small.
+      const PAGE_LIMIT = 100;
       const MAX_PAGES = 20;
-      let cursorId: string | undefined;
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const { Assets } = await this.getRegistry({
-          network: params.network,
-          cursorId,
-        });
-        const match = Assets.find((a) => a.id === params.id);
-        if (match) return match;
-        if (Assets.length === 0) return null;
-        const nextCursor = Assets[Assets.length - 1]!.id;
-        // Stale cursor — API didn't advance, bail to avoid an infinite loop.
-        if (nextCursor === cursorId) return null;
-        cursorId = nextCursor;
+
+      const scan = async (filter?: {
+        filterSmartContractAddress?: string | null;
+        filterPaymentSourceType?: "Web3CardanoV1" | "Web3CardanoV2";
+      }): Promise<RegistryEntry | null> => {
+        let cursorId: string | undefined;
+        for (let page = 0; page < MAX_PAGES; page++) {
+          const { Assets } = await this.getRegistry({
+            network: params.network,
+            cursorId,
+            limit: PAGE_LIMIT,
+            filterSmartContractAddress: filter?.filterSmartContractAddress,
+            filterPaymentSourceType: filter?.filterPaymentSourceType,
+          });
+          const match = Assets.find((a) => a.id === params.id);
+          if (match) return match;
+          if (Assets.length === 0) return null;
+          const nextCursor = Assets[Assets.length - 1]!.id;
+          if (nextCursor === cursorId) return null;
+          cursorId = nextCursor;
+        }
+        return null;
+      };
+
+      const scoped = await scan({
+        filterSmartContractAddress: params.filterSmartContractAddress,
+        filterPaymentSourceType: params.filterPaymentSourceType,
+      });
+      if (scoped) return scoped;
+
+      if (
+        params.filterSmartContractAddress != null ||
+        params.filterPaymentSourceType != null
+      ) {
+        return scan(undefined);
       }
       return null;
     },
@@ -363,11 +461,12 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryByAgentIdentifier(params: {
       agentIdentifier: string;
       network: PaymentNodeNetwork;
-    }): Promise<RegistryEntry | null> {
+    }): Promise<RegistryAgentIdentifierMetadata | null> {
       const res = await fetch(
         `${base}/registry/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
         {
           headers: { [PAYMENT_NODE_HEADER_TOKEN]: apiKey },
+          signal: AbortSignal.timeout(PAYMENT_NODE_REQUEST_TIMEOUT_MS),
         },
       );
       if (res.status === 404) return null;
@@ -377,7 +476,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       }
       const json = (await res.json()) as PaymentNodeResponse<unknown>;
       if (json.status === "success" && "data" in json && json.data != null) {
-        return registryEntrySchema.parse(json.data);
+        return registryAgentIdentifierMetadataSchema.parse(json.data);
       }
       return null;
     },
@@ -391,6 +490,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
         `${base}/registry-inbox/agent-identifier?agentIdentifier=${encodeURIComponent(params.agentIdentifier)}&network=${params.network}`,
         {
           headers: { [PAYMENT_NODE_HEADER_TOKEN]: apiKey },
+          signal: AbortSignal.timeout(PAYMENT_NODE_REQUEST_TIMEOUT_MS),
         },
       );
       if (res.status === 404) return null;
@@ -605,6 +705,20 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       );
     },
 
+    /** Update wallet fields such as collection address (admin only). */
+    async patchWallet(body: PatchWalletInput): Promise<WalletStatus> {
+      return requestParse(
+        base,
+        apiKey,
+        `/wallet`,
+        {
+          method: "PATCH",
+          body,
+        },
+        walletStatusSchema,
+      );
+    },
+
     /** Get UTXOs at a Cardano address (READ access required).
      *  Throws a 404 error if the address has no UTXOs yet. */
     async getUtxos(params: {
@@ -629,6 +743,26 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           },
         },
         getUtxosOutputSchema,
+      );
+    },
+
+    /** Get confirmed address balance (READ). Prefer over paging /utxos for totals. */
+    async getBalance(params: {
+      address: string;
+      network: PaymentNodeNetwork;
+    }): Promise<GetBalanceOutput> {
+      return requestParse(
+        base,
+        apiKey,
+        `/balance`,
+        {
+          method: "GET",
+          query: {
+            address: params.address,
+            network: params.network,
+          },
+        },
+        getBalanceOutputSchema,
       );
     },
 
@@ -657,7 +791,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       take?: number;
       cursorId?: string;
       paymentSourceId?: string;
-      walletType?: "Selling" | "Purchasing";
+      walletType?: "Selling" | "Purchasing" | "Funding";
       walletVkey?: string;
       walletAddress?: string;
     }): Promise<GetWalletListOutput> {
@@ -912,6 +1046,153 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           body: parsedBody,
         },
         runtimePaymentResponseSchema,
+      );
+    },
+
+    /** Create a managed x402 EVM wallet on the payment node (keys custodied there). */
+    async createX402Wallet(body: {
+      networkId: string;
+      type: "Purchasing" | "Selling";
+      note?: string | null;
+      privateKey?: string;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets`,
+        { method: "POST", body },
+        paymentNodeX402WalletSchema,
+      );
+    },
+
+    async listX402Wallets(params?: {
+      take?: number;
+      cursorId?: string;
+      type?: "Purchasing" | "Selling";
+      networkId?: string;
+    }) {
+      const query: Record<string, string> = {};
+      if (params?.take != null) query.take = String(params.take);
+      if (params?.cursorId != null) query.cursorId = params.cursorId;
+      if (params?.type != null) query.type = params.type;
+      if (params?.networkId != null) query.networkId = params.networkId;
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets`,
+        { method: "GET", query },
+        paymentNodeX402WalletListSchema,
+      );
+    },
+
+    /** List x402 networks registered on the payment node (admin only). */
+    async listX402Networks(params?: { isTestnet?: boolean }) {
+      const query: Record<string, string> = {};
+      if (params?.isTestnet != null) {
+        query.isTestnet = params.isTestnet ? "true" : "false";
+      }
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/networks`,
+        { method: "GET", query },
+        paymentNodeX402NetworkListSchema,
+      );
+    },
+
+    async updateX402Wallet(body: { id: string; note?: string | null }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets/update`,
+        { method: "POST", body },
+        paymentNodeX402WalletSchema.omit({ privateKey: true }),
+      );
+    },
+
+    async deleteX402Wallet(body: { id: string }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets/delete`,
+        { method: "POST", body },
+        z.object({ id: z.string() }),
+      );
+    },
+
+    async bindX402WalletToNetwork(body: { id: string; networkId: string }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/wallets/bind-network`,
+        { method: "POST", body },
+        paymentNodeX402WalletSchema.omit({ privateKey: true }),
+      );
+    },
+
+    async createX402Payment(body: {
+      evmWalletId: string;
+      paymentRequired: unknown;
+      preferredNetwork?: string;
+      preferredAsset?: string;
+      paymentIdentifier?: string;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/pay`,
+        { method: "POST", body },
+        createPaymentSchemaOutput,
+      );
+    },
+
+    async verifyX402Payment(body: {
+      supportedPaymentSourceId: string;
+      paymentPayload: unknown;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/verify`,
+        { method: "POST", body },
+        paymentNodeX402VerifyOutputSchema,
+      );
+    },
+
+    async settleX402Payment(body: {
+      supportedPaymentSourceId: string;
+      paymentPayload: unknown;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/x402/settle`,
+        { method: "POST", body },
+        paymentNodeX402SettleOutputSchema,
+      );
+    },
+
+    /** List webhook endpoints registered for the authenticated API key. */
+    async listWebhooks(params?: {
+      paymentSourceId?: string | null;
+      cursorId?: string;
+      limit?: number;
+    }): Promise<ListWebhooksOutput> {
+      return requestParse(
+        base,
+        apiKey,
+        `/webhooks`,
+        {
+          method: "GET",
+          query: {
+            ...(params?.paymentSourceId != null && {
+              paymentSourceId: params.paymentSourceId,
+            }),
+            ...(params?.cursorId && { cursorId: params.cursorId }),
+            ...(params?.limit != null && { limit: String(params.limit) }),
+          },
+        },
+        listWebhooksOutputSchema,
       );
     },
   };

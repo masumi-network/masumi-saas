@@ -5,6 +5,7 @@ import {
   encryptPaymentNodeSecret,
   paymentNodeConfig,
 } from "@/lib/payment-node";
+import { resolveSignupChainIdLimit } from "@/lib/payment-node/resolve-payment-node-x402-network";
 
 /**
  * Create a payment node API key for the user and store it encrypted.
@@ -32,9 +33,11 @@ export async function createPaymentNodeKeyForUser(
 
   try {
     const adminClient = createPaymentNodeClient(baseUrl, adminKey);
+    const chainIdLimit = await resolveSignupChainIdLimit();
     const result = await adminClient.createApiKey({
       permission: "ReadAndPay",
       NetworkLimit: ["Preprod", "Mainnet"],
+      ChainIdLimit: chainIdLimit,
       usageLimited: "false",
       UsageCredits: [],
       walletScopeEnabled: "true",

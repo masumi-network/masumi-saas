@@ -2,17 +2,21 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
+import { Suspense } from "react";
 
 import { FooterSections } from "@/components/footer";
 import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog";
+import { OnboardingLogoPreload } from "@/components/onboarding/onboarding-logo-preload";
+import { RouteProgressBar } from "@/components/route-progress-bar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getBetterAuthInnerSession } from "@/lib/auth/session-types";
 import { getAuthContext } from "@/lib/auth/utils";
 import { authConfig } from "@/lib/config/auth.config";
+import { AgentCompletionProvider } from "@/lib/context/agent-completion-context";
 import { NotificationsProvider } from "@/lib/context/notifications-context";
 import { OrganizationProvider } from "@/lib/context/organization-context";
 import { PaymentNetworkProvider } from "@/lib/context/payment-network-context";
-import { RegistrationCompletionProvider } from "@/lib/context/registration-completion-context";
+import { X402RailProvider } from "@/lib/context/x402-rail-context";
 import { resolveShowOnboarding } from "@/lib/onboarding/resolve-show-onboarding";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
@@ -52,49 +56,59 @@ export default async function AppLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
+      <Suspense fallback={null}>
+        <RouteProgressBar />
+      </Suspense>
       <OrganizationProvider>
         <PaymentNetworkProvider initialNetwork={initialPaymentNetwork}>
-          <NotificationsProvider>
-            <RegistrationCompletionProvider>
-              <SidebarProvider
-                defaultOpen={defaultOpen}
-                className="flex max-w-svw overflow-clip"
-              >
-                <Sidebar session={authContext.session} />
-                <AppCanvasShell>
-                  <Header />
-                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-                    <main className="relative mx-auto w-full max-w-container flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-                      {isImpersonating && (
-                        <div className="mb-4">
-                          <ImpersonationBanner
-                            activeUserName={authContext.session.user.name}
-                            activeUserEmail={authContext.session.user.email}
-                          />
-                        </div>
-                      )}
-                      {authConfig.emailAndPassword.requireEmailVerification &&
-                        authContext.session.user.emailVerified !== true &&
-                        authContext.session.user.email && (
+          <X402RailProvider>
+            <NotificationsProvider>
+              <AgentCompletionProvider>
+                <SidebarProvider
+                  defaultOpen={defaultOpen}
+                  className="flex max-w-svw overflow-clip"
+                >
+                  <Sidebar session={authContext.session} />
+                  <AppCanvasShell>
+                    <Header />
+                    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                      <main className="relative mx-auto w-full max-w-container flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+                        {isImpersonating && (
                           <div className="mb-4">
-                            <VerifyEmailBanner
-                              email={authContext.session.user.email}
+                            <ImpersonationBanner
+                              activeUserName={authContext.session.user.name}
+                              activeUserEmail={authContext.session.user.email}
                             />
                           </div>
                         )}
-                      {children}
-                    </main>
-                    <div className="mx-auto w-full max-w-container shrink-0 border-t border-border/80">
-                      <FooterSections className="px-4 py-6 sm:px-6 lg:px-8" />
+                        {authConfig.emailAndPassword.requireEmailVerification &&
+                          authContext.session.user.emailVerified !== true &&
+                          authContext.session.user.email && (
+                            <div className="mb-4">
+                              <VerifyEmailBanner
+                                email={authContext.session.user.email}
+                              />
+                            </div>
+                          )}
+                        {children}
+                      </main>
+                      <div className="mx-auto w-full max-w-container shrink-0 border-t border-border/80">
+                        <FooterSections className="px-4 py-6 sm:px-6 lg:px-8" />
+                      </div>
                     </div>
-                  </div>
-                </AppCanvasShell>
-              </SidebarProvider>
-            </RegistrationCompletionProvider>
-          </NotificationsProvider>
+                  </AppCanvasShell>
+                </SidebarProvider>
+              </AgentCompletionProvider>
+            </NotificationsProvider>
+          </X402RailProvider>
         </PaymentNetworkProvider>
       </OrganizationProvider>
-      {showOnboarding ? <OnboardingDialog initialOpen /> : null}
+      {showOnboarding ? (
+        <>
+          <OnboardingLogoPreload />
+          <OnboardingDialog initialOpen />
+        </>
+      ) : null}
     </NextIntlClientProvider>
   );
 }

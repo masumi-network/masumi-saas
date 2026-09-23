@@ -1,16 +1,30 @@
 import prisma from "@masumi/database/client";
 
 import { getKycStatusAction } from "@/lib/actions/kyc.action";
+import { getActiveOrgMemberRole } from "@/lib/auth/org-admin";
+import { resolveUserSellingWalletsBalance } from "@/lib/payment-node/address-balance";
+import type { PaymentNodeNetwork } from "@/lib/payment-node/schemas";
 import type { DashboardOverview } from "@/lib/types/dashboard";
 
 export async function getDashboardOverview(
   userId: string,
   network?: string,
+  activeOrganizationId?: string | null,
 ): Promise<DashboardOverview> {
   const networkFilter = network
     ? { OR: [{ networkIdentifier: network }, { networkIdentifier: null }] }
     : {};
   const baseAgentWhere = { userId, ...networkFilter } as const;
+
+  const orgWorkspace = activeOrganizationId
+    ? await prisma.organization.findUnique({
+        where: { id: activeOrganizationId },
+        select: { id: true, name: true },
+      })
+    : null;
+  const orgMemberRole = activeOrganizationId
+    ? await getActiveOrgMemberRole(userId, activeOrganizationId)
+    : null;
 
   const [
     userWithOrgs,
@@ -50,7 +64,6 @@ export async function getDashboardOverview(
       where: { userId },
       select: { id: true, name: true, prefix: true, start: true },
       orderBy: { createdAt: "desc" },
-      take: 5,
     }),
     prisma.apikey.count({ where: { userId } }),
     prisma.agent.count({ where: baseAgentWhere }),
@@ -89,7 +102,7 @@ export async function getDashboardOverview(
         verificationStatus: true,
         pricing: true,
       },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { createdAt: "desc" },
       take: 10,
     }),
   ]);
@@ -124,7 +137,19 @@ export async function getDashboardOverview(
     pricing: a.pricing as Record<string, unknown> | null,
   }));
 
-  const apiKeysList = apiKeysResult.map((k) => ({
+  const balance = await resolveDashboardBalance(
+    userId,
+    network === "Mainnet" ? "Mainnet" : "Preprod",
+  );
+
+  const apiKeysList = (
+    apiKeysResult as Array<{
+      id: string;
+      name: string | null;
+      prefix: string | null;
+      start: string | null;
+    }>
+  ).map((k) => ({
     id: k.id,
     name: k.name,
     prefix: k.prefix,
@@ -147,12 +172,21 @@ export async function getDashboardOverview(
     agents: agentsList,
     apiKeys: apiKeysList,
     apiKeyCount,
+    apiKeysScope: "personal" as const,
+    apiKeysCanManage: true,
+    activeOrganizationName: orgWorkspace?.name ?? null,
     agentCount,
     verifiedAgentCount,
     runningAgentCount,
     pendingAgentCount,
     failedAgentCount,
-    // TODO: Integrate real balance from payment/wallet service
-    balance: "0",
+    balance,
   };
+}
+
+async function resolveDashboardBalance(
+  userId: string,
+  network: PaymentNodeNetwork,
+): Promise<string> {
+  return resolveUserSellingWalletsBalance(userId, network);
 }

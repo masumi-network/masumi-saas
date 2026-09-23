@@ -6,18 +6,31 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef } from "react";
 
+import {
+  MASUMI_EXTERNAL_LINK_PROPS,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
+import { cn } from "@/lib/utils";
 import { extractErrorMessage } from "@/lib/utils/extract-error";
 
 interface SumsubStepProps {
   accessToken: string;
   onComplete: () => void;
   onError: (error: string) => void;
+  showDescription?: boolean;
+  showSupportLink?: boolean;
+  containerClassName?: string;
+  wrapperClassName?: string;
 }
 
 export function SumsubStep({
   accessToken,
   onComplete,
   onError,
+  showDescription = true,
+  showSupportLink = true,
+  containerClassName,
+  wrapperClassName,
 }: SumsubStepProps) {
   const t = useTranslations("App.Verification.Verification");
   const { resolvedTheme } = useTheme();
@@ -84,7 +97,7 @@ export function SumsubStep({
       }
     };
 
-    initializeSDK();
+    void initializeSDK();
 
     return () => {
       if (sdkRef.current) {
@@ -109,22 +122,29 @@ export function SumsubStep({
   }, [accessToken, onComplete, onError, t, resolvedTheme]);
 
   return (
-    <div className="space-y-4">
-      <div className="text-sm text-muted-foreground">{t("description")}</div>
+    <div className={cn("space-y-4", wrapperClassName)}>
+      {showDescription ? (
+        <div className="text-sm text-muted-foreground">{t("description")}</div>
+      ) : null}
       <div
         ref={containerRef}
         id="sumsub-websdk-container"
-        className="w-full rounded-lg overflow-hidden border border-border"
+        className={cn(
+          "w-full overflow-hidden rounded-lg border border-border [&_iframe]:!block [&_iframe]:!max-w-none [&_iframe]:!w-full",
+          containerClassName,
+        )}
       />
-      <div className="flex justify-end">
-        <Link
-          href="https://www.masumi.network/contact"
-          target="_blank"
-          className="text-sm text-primary hover:underline"
-        >
-          {t("havingIssues")}
-        </Link>
-      </div>
+      {showSupportLink ? (
+        <div className="flex justify-end">
+          <Link
+            href={SUPPORT_PAGE_URL}
+            {...MASUMI_EXTERNAL_LINK_PROPS}
+            className="text-sm text-primary hover:underline"
+          >
+            {t("havingIssues")}
+          </Link>
+        </div>
+      ) : null}
     </div>
   );
 }

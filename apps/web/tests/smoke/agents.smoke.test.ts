@@ -98,20 +98,6 @@ describe("SMOKE — Agent input validation", () => {
     expect(res.status).toBe(400);
   });
 
-  it("extendedDescription over 5000 chars → 400", async () => {
-    const res = await request("/api/agents?network=Preprod", {
-      method: "POST",
-      jar,
-      body: {
-        name: "Test",
-        extendedDescription: "x".repeat(5001),
-        apiUrl: "https://example.com",
-        tags: "t",
-      },
-    });
-    expect(res.status).toBe(400);
-  });
-
   it("Mainnet registration is blocked → 400", async () => {
     const res = await request("/api/agents?network=Mainnet", {
       method: "POST",

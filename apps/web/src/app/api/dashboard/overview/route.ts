@@ -55,7 +55,11 @@ app.openapi(
         network,
       });
 
-      const data = await getDashboardOverview(authContext.user.id, network);
+      const data = await getDashboardOverview(
+        authContext.user.id,
+        network,
+        authContext.activeOrganizationId,
+      );
       return c.json({ success: true as const, data }, 200);
     } catch (error) {
       rethrowIfAuthOrCreditsError(error);
