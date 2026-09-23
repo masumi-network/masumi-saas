@@ -97,6 +97,9 @@ function buildTxClient(state: MockState) {
         if (data.creditsRemaining?.increment) {
           state.user.creditsRemaining += data.creditsRemaining.increment;
         }
+        if (data.creditsRemaining?.decrement) {
+          state.user.creditsRemaining -= data.creditsRemaining.decrement;
+        }
         touchUser(state);
         return { ...state.user };
       }),
@@ -136,6 +139,25 @@ function buildTxClient(state: MockState) {
         );
         if (!match) return null;
         return pickSelected(match, select);
+      }),
+      findMany: vi.fn(async ({ where, select }) => {
+        const matches = state.ledger.filter((entry) => {
+          if (where.userId != null && entry.userId !== where.userId) {
+            return false;
+          }
+          if (where.reason != null && entry.reason !== where.reason) {
+            return false;
+          }
+          const prefix = where.reference?.startsWith;
+          if (
+            typeof prefix === "string" &&
+            !entry.reference.startsWith(prefix)
+          ) {
+            return false;
+          }
+          return true;
+        });
+        return matches.map((entry) => pickSelected(entry, select));
       }),
       create: vi.fn(async ({ data }) => {
         const exists = state.ledger.some((entry) => {
@@ -211,6 +233,7 @@ const {
   InsufficientCreditsError,
   consumeCreditIfRequired,
   consumeCreditOrThrow,
+  clawBackCreditTopUpFromCheckoutSession,
   grantCreditTopUpFromCheckoutSession,
   grantInitialCreditsIfNeeded,
   refundConsumedCredit,
@@ -509,5 +532,66 @@ describe("credit service", () => {
   it("reports whether a stripe top-up would exceed the balance cap", () => {
     expect(wouldExceedCreditBalanceCap(1_999_999_990, 10)).toBe(false);
     expect(wouldExceedCreditBalanceCap(1_999_999_991, 10)).toBe(true);
+  });
+
+  it("claws back stripe top-up credits idempotently per Stripe event", async () => {
+    store.current = createState(0);
+
+    await grantCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      credits: 10,
+      checkoutSessionId: "cs_test_claw",
+    });
+    expect(store.current.user?.creditsRemaining).toBe(10);
+
+    const first = await clawBackCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      checkoutSessionId: "cs_test_claw",
+      stripeEventId: "evt_refund_1",
+      creditsToClawBack: 10,
+    });
+    expect(first).toMatchObject({
+      clawedBack: true,
+      creditsRemoved: 10,
+      balanceAfter: 0,
+      shortfall: 0,
+    });
+
+    const second = await clawBackCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      checkoutSessionId: "cs_test_claw",
+      stripeEventId: "evt_refund_1",
+      creditsToClawBack: 10,
+    });
+    expect(second.clawedBack).toBe(false);
+    expect(store.current.user?.creditsRemaining).toBe(0);
+    expect(store.current.ledger).toHaveLength(2);
+  });
+
+  it("reports shortfall when the user already spent top-up credits", async () => {
+    store.current = createState(0);
+
+    await grantCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      credits: 10,
+      checkoutSessionId: "cs_test_shortfall",
+    });
+    if (store.current.user) {
+      store.current.user.creditsRemaining = 3;
+    }
+
+    const result = await clawBackCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      checkoutSessionId: "cs_test_shortfall",
+      stripeEventId: "evt_dispute_1",
+      creditsToClawBack: 10,
+    });
+
+    expect(result).toMatchObject({
+      clawedBack: true,
+      creditsRemoved: 3,
+      balanceAfter: 0,
+      shortfall: 7,
+    });
   });
 });

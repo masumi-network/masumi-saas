@@ -14,7 +14,8 @@ export type CreditLedgerReason =
   | "agent_register"
   | "inbox_agent_register"
   | "payment_proxy_write"
-  | "stripe_checkout";
+  | "stripe_checkout"
+  | "stripe_checkout_clawback";
 
 export type CreditBalance = {
   creditsRemaining: number;
@@ -287,6 +288,175 @@ export async function grantCreditTopUpFromCheckoutSession(params: {
 
     return { granted: true, balanceAfter: user.creditsRemaining };
   });
+}
+
+function clawBackReference(
+  checkoutSessionId: string,
+  stripeEventId: string,
+): string {
+  return `clawback:${checkoutSessionId}:${stripeEventId}`;
+}
+
+/**
+ * Idempotent clawback for Stripe refunds / disputes against a prior top-up grant.
+ * Removes up to {@link params.creditsToClawBack}, capped by remaining grant balance
+ * and the user's current credit balance (shortfall is reported for ops follow-up).
+ */
+export async function clawBackCreditTopUpFromCheckoutSession(params: {
+  userId: string;
+  checkoutSessionId: string;
+  stripeEventId: string;
+  creditsToClawBack: number;
+  metadata?: CreditMetadata;
+}): Promise<{
+  clawedBack: boolean;
+  creditsRemoved: number;
+  balanceAfter: number;
+  shortfall: number;
+}> {
+  if (params.creditsToClawBack <= 0) {
+    const balance = await getCreditBalance(params.userId);
+    return {
+      clawedBack: false,
+      creditsRemoved: 0,
+      balanceAfter: balance.creditsRemaining,
+      shortfall: 0,
+    };
+  }
+
+  const reference = clawBackReference(
+    params.checkoutSessionId,
+    params.stripeEventId,
+  );
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const existing = await tx.creditLedgerEntry.findUnique({
+        where: {
+          userId_reason_reference: {
+            userId: params.userId,
+            reason: "stripe_checkout_clawback",
+            reference,
+          },
+        },
+        select: { delta: true, balanceAfter: true },
+      });
+      if (existing) {
+        return {
+          clawedBack: false,
+          creditsRemoved: -existing.delta,
+          balanceAfter: existing.balanceAfter,
+          shortfall: 0,
+        };
+      }
+
+      const grant = await tx.creditLedgerEntry.findUnique({
+        where: {
+          stripeCheckoutSessionId: params.checkoutSessionId,
+        },
+        select: { userId: true, delta: true },
+      });
+      if (grant == null || grant.userId !== params.userId || grant.delta <= 0) {
+        return {
+          clawedBack: false,
+          creditsRemoved: 0,
+          balanceAfter: (
+            await tx.user.findUniqueOrThrow({
+              where: { id: params.userId },
+              select: { creditsRemaining: true },
+            })
+          ).creditsRemaining,
+          shortfall: 0,
+        };
+      }
+
+      const priorClawbacks = await tx.creditLedgerEntry.findMany({
+        where: {
+          userId: params.userId,
+          reason: "stripe_checkout_clawback",
+          reference: { startsWith: `clawback:${params.checkoutSessionId}:` },
+        },
+        select: { delta: true },
+      });
+      const alreadyRemoved = priorClawbacks.reduce(
+        (sum, entry) => sum + (entry.delta < 0 ? -entry.delta : 0),
+        0,
+      );
+      const remainingGrant = Math.max(0, grant.delta - alreadyRemoved);
+      const targetRemoval = Math.min(params.creditsToClawBack, remainingGrant);
+      if (targetRemoval <= 0) {
+        const user = await tx.user.findUniqueOrThrow({
+          where: { id: params.userId },
+          select: { creditsRemaining: true },
+        });
+        return {
+          clawedBack: false,
+          creditsRemoved: 0,
+          balanceAfter: user.creditsRemaining,
+          shortfall: 0,
+        };
+      }
+
+      const before = await tx.user.findUniqueOrThrow({
+        where: { id: params.userId },
+        select: { creditsRemaining: true },
+      });
+      const creditsRemoved = Math.min(targetRemoval, before.creditsRemaining);
+      const shortfall = targetRemoval - creditsRemoved;
+
+      if (creditsRemoved === 0) {
+        return {
+          clawedBack: false,
+          creditsRemoved: 0,
+          balanceAfter: before.creditsRemaining,
+          shortfall,
+        };
+      }
+
+      const user = await tx.user.update({
+        where: { id: params.userId },
+        data: {
+          creditsRemaining: { decrement: creditsRemoved },
+        },
+        select: { creditsRemaining: true },
+      });
+
+      await tx.creditLedgerEntry.create({
+        data: {
+          userId: params.userId,
+          delta: -creditsRemoved,
+          balanceAfter: user.creditsRemaining,
+          reason: "stripe_checkout_clawback",
+          reference,
+          metadata: toJsonMetadata({
+            checkoutSessionId: params.checkoutSessionId,
+            stripeEventId: params.stripeEventId,
+            requestedClawback: params.creditsToClawBack,
+            shortfall,
+            ...(params.metadata ?? {}),
+          }),
+        },
+      });
+
+      return {
+        clawedBack: true,
+        creditsRemoved,
+        balanceAfter: user.creditsRemaining,
+        shortfall,
+      };
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      const balance = await getCreditBalance(params.userId);
+      return {
+        clawedBack: false,
+        creditsRemoved: 0,
+        balanceAfter: balance.creditsRemaining,
+        shortfall: 0,
+      };
+    }
+    throw error;
+  }
 }
 
 export async function refundConsumedCredit(params: {
