@@ -1441,24 +1441,39 @@ export async function createX402PaymentViaPaymentNode({
     throw createHttpError(500, "x402 payment signing failed");
   }
 
-  try {
-    const paymentPayloadHash =
-      nodeResult.paymentPayloadHash ||
-      hashX402PaymentPayload(nodeResult.paymentPayload);
+  const paymentPayloadHash =
+    nodeResult.paymentPayloadHash ||
+    hashX402PaymentPayload(nodeResult.paymentPayload);
 
+  const successResponse = {
+    attemptId: reservation.attemptId,
+    payer: normalizeAddress(nodeResult.payer || payer),
+    caip2Network: selected.network,
+    asset: normalizeAddress(selected.asset),
+    amount: selected.amount,
+    payTo: normalizeAddress(selected.payTo),
+    xPaymentHeader: nodeResult.xPaymentHeader,
+    paymentPayload: nodeResult.paymentPayload,
+    paymentPayloadHash,
+    paymentIdentifier: nodeResult.paymentIdentifier,
+  };
+
+  const resourceUrl =
+    typeof nodeResult.paymentPayload === "object" &&
+    nodeResult.paymentPayload != null &&
+    "resource" in nodeResult.paymentPayload &&
+    typeof (nodeResult.paymentPayload as { resource?: { url?: unknown } })
+      .resource?.url === "string"
+      ? (nodeResult.paymentPayload as { resource: { url: string } }).resource
+          .url
+      : null;
+
+  try {
     await prisma.x402PaymentAttempt.update({
       where: { id: reservation.attemptId },
       data: {
         status: X402PaymentStatus.Verified,
-        resource:
-          typeof nodeResult.paymentPayload === "object" &&
-          nodeResult.paymentPayload != null &&
-          "resource" in nodeResult.paymentPayload &&
-          typeof (nodeResult.paymentPayload as { resource?: { url?: unknown } })
-            .resource?.url === "string"
-            ? (nodeResult.paymentPayload as { resource: { url: string } })
-                .resource.url
-            : null,
+        resource: resourceUrl,
         paymentPayloadHash,
         paymentPayload: encryptPaymentPayloadForStorage(
           nodeResult.paymentPayload,
@@ -1466,19 +1481,6 @@ export async function createX402PaymentViaPaymentNode({
         paymentIdentifier: nodeResult.paymentIdentifier,
       },
     });
-
-    return {
-      attemptId: reservation.attemptId,
-      payer: normalizeAddress(nodeResult.payer || payer),
-      caip2Network: selected.network,
-      asset: normalizeAddress(selected.asset),
-      amount: selected.amount,
-      payTo: normalizeAddress(selected.payTo),
-      xPaymentHeader: nodeResult.xPaymentHeader,
-      paymentPayload: nodeResult.paymentPayload,
-      paymentPayloadHash,
-      paymentIdentifier: nodeResult.paymentIdentifier,
-    };
   } catch (error) {
     logger.error(
       "x402 payment signed on payment node but SaaS attempt persistence failed",
@@ -1487,11 +1489,33 @@ export async function createX402PaymentViaPaymentNode({
         error,
       },
     );
-    throw createHttpError(
-      500,
-      "x402 payment was signed but could not be recorded",
-    );
+    await prisma.x402PaymentAttempt
+      .update({
+        where: { id: reservation.attemptId },
+        data: {
+          status: X402PaymentStatus.Verified,
+          resource: resourceUrl,
+          paymentPayloadHash,
+          paymentIdentifier: nodeResult.paymentIdentifier,
+          errorReason: "x402_record_partial",
+          errorMessage:
+            "Signed payment returned to client; encrypted audit payload not stored",
+        },
+      })
+      .catch((updateError: unknown) => {
+        logger.error(
+          "x402 failed to record Verified status after payment-node sign",
+          {
+            attemptId: reservation.attemptId,
+            error: updateError,
+          },
+        );
+      });
   }
+
+  // Budget remains spent; return the signature so callers do not retry and
+  // reserve/charge again after a successful payment-node sign.
+  return successResponse;
 }
 
 export async function createX402Payment({
