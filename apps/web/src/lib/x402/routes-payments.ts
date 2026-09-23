@@ -25,6 +25,10 @@ import {
 import { proxyCreateX402PaymentIfCustodied } from "@/lib/x402/wallet-custody-ops";
 import { triggerX402Payment } from "@/lib/x402/webhook-events";
 
+import {
+  settleX402PaymentOnNode,
+  verifyX402PaymentOnNode,
+} from "./inbound-custody";
 import { handleRouteError, type X402App, x402Scope } from "./route-context";
 
 type VerifyPaymentPayload = Parameters<
@@ -66,6 +70,7 @@ export function registerX402PaymentsRoutes(app: X402App): void {
         const input = c.req.valid("json");
 
         const result = await verifyX402Payment({
+          verifyOnPaymentNode: verifyX402PaymentOnNode,
           userId: authContext.user.id,
           organizationId: authContext.activeOrganizationId,
           apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),
@@ -113,6 +118,7 @@ export function registerX402PaymentsRoutes(app: X402App): void {
         const input = c.req.valid("json");
 
         const { webhook, ...result } = await settleX402Payment({
+          settleOnPaymentNode: settleX402PaymentOnNode,
           userId: authContext.user.id,
           organizationId: authContext.activeOrganizationId,
           apiKeyId: await resolveX402ApiKeyId(authContext, input.apiKeyId),

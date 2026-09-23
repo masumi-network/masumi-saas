@@ -32,6 +32,7 @@ export {
   updateX402ManagedWallet,
   upsertX402Network,
   verifyX402Payment,
+  type X402InboundPaymentNodeContext,
   type X402PaymentNodePayResult,
 } from "./service.js";
 export * from "./supported-payment-sources.js";
