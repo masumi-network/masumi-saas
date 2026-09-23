@@ -6,8 +6,33 @@ import type Stripe from "stripe";
 
 import { clawBackCreditTopUpFromCheckoutSession } from "@/lib/credits/service";
 import { serverLog } from "@/lib/server/logger";
+import { MASUMI_CHECKOUT_METADATA_PURPOSE } from "@/lib/stripe/config";
+import { parseVerifiedTopUpCheckoutMetadata } from "@/lib/stripe/top-up-metadata";
 
 import { resolveCheckoutSessionIdForCharge } from "./resolve-checkout-session";
+
+/** Stripe should retry when the top-up grant is not in the DB yet (event ordering). */
+export class StripeClawbackRetryError extends Error {
+  readonly checkoutSessionId: string;
+
+  constructor(checkoutSessionId: string) {
+    super(
+      "Masumi top-up grant not persisted yet; retry clawback after checkout.session.completed",
+    );
+    this.name = "StripeClawbackRetryError";
+    this.checkoutSessionId = checkoutSessionId;
+  }
+}
+
+type MasumiTopUpClawbackContext =
+  | { kind: "skip" }
+  | { kind: "grant_pending"; checkoutSessionId: string }
+  | {
+      kind: "ready";
+      checkoutSessionId: string;
+      userId: string;
+      grantCredits: number;
+    };
 
 function creditsToClawBackForRefund(
   grantCredits: number,
@@ -22,8 +47,64 @@ function creditsToClawBackForRefund(
   );
 }
 
-async function clawBackForCharge(params: {
-  stripe: Stripe;
+async function resolveMasumiTopUpClawbackContext(
+  stripe: Stripe,
+  charge: Stripe.Charge,
+): Promise<MasumiTopUpClawbackContext> {
+  const checkoutSessionId = await resolveCheckoutSessionIdForCharge(
+    stripe,
+    charge,
+  );
+  if (checkoutSessionId == null) {
+    return { kind: "skip" };
+  }
+
+  const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+  if (session.metadata?.masumi_purpose !== MASUMI_CHECKOUT_METADATA_PURPOSE) {
+    return { kind: "skip" };
+  }
+
+  const grant = await prisma.creditLedgerEntry.findUnique({
+    where: { stripeCheckoutSessionId: checkoutSessionId },
+    select: { userId: true, delta: true },
+  });
+  if (grant == null || grant.delta <= 0) {
+    if (session.payment_status !== "paid") {
+      return { kind: "skip" };
+    }
+    const topUpMetadata = parseVerifiedTopUpCheckoutMetadata(session.metadata);
+    if (topUpMetadata == null) {
+      return { kind: "skip" };
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: topUpMetadata.userId },
+      select: { id: true },
+    });
+    if (user == null) {
+      return { kind: "skip" };
+    }
+    return { kind: "grant_pending", checkoutSessionId };
+  }
+
+  return {
+    kind: "ready",
+    checkoutSessionId,
+    userId: grant.userId,
+    grantCredits: grant.delta,
+  };
+}
+
+function assertGrantReady(
+  ctx: Exclude<MasumiTopUpClawbackContext, { kind: "skip" }>,
+): asserts ctx is Extract<MasumiTopUpClawbackContext, { kind: "ready" }> {
+  if (ctx.kind === "grant_pending") {
+    throw new StripeClawbackRetryError(ctx.checkoutSessionId);
+  }
+}
+
+async function clawBackForMasumiTopUp(params: {
+  userId: string;
+  checkoutSessionId: string;
   charge: Stripe.Charge;
   stripeEventId: string;
   creditsToClawBack: number;
@@ -33,25 +114,9 @@ async function clawBackForCharge(params: {
     return;
   }
 
-  const checkoutSessionId = await resolveCheckoutSessionIdForCharge(
-    params.stripe,
-    params.charge,
-  );
-  if (checkoutSessionId == null) {
-    return;
-  }
-
-  const grant = await prisma.creditLedgerEntry.findUnique({
-    where: { stripeCheckoutSessionId: checkoutSessionId },
-    select: { userId: true, delta: true },
-  });
-  if (grant == null || grant.delta <= 0) {
-    return;
-  }
-
   const result = await clawBackCreditTopUpFromCheckoutSession({
-    userId: grant.userId,
-    checkoutSessionId,
+    userId: params.userId,
+    checkoutSessionId: params.checkoutSessionId,
     stripeEventId: params.stripeEventId,
     creditsToClawBack: params.creditsToClawBack,
     metadata: {
@@ -64,7 +129,7 @@ async function clawBackForCharge(params: {
     serverLog.warn(
       "[stripe webhook] credit clawback shortfall (credits spent)",
       {
-        checkoutSessionId,
+        checkoutSessionId: params.checkoutSessionId,
         stripeEventId: params.stripeEventId,
         shortfall: result.shortfall,
         creditsRemoved: result.creditsRemoved,
@@ -74,7 +139,7 @@ async function clawBackForCharge(params: {
       level: "warning",
       tags: { component: "stripe-webhook" },
       extra: {
-        checkoutSessionId,
+        checkoutSessionId: params.checkoutSessionId,
         stripeEventId: params.stripeEventId,
         shortfall: result.shortfall,
         creditsRemoved: result.creditsRemoved,
@@ -88,18 +153,23 @@ export async function processChargeRefunded(params: {
   charge: Stripe.Charge;
   stripeEventId: string;
 }): Promise<void> {
-  const grant = await resolveGrantForCharge(params.stripe, params.charge);
-  if (grant == null) {
+  const ctx = await resolveMasumiTopUpClawbackContext(
+    params.stripe,
+    params.charge,
+  );
+  if (ctx.kind === "skip") {
     return;
   }
+  assertGrantReady(ctx);
 
   const creditsToClawBack = creditsToClawBackForRefund(
-    grant.delta,
+    ctx.grantCredits,
     params.charge,
   );
 
-  await clawBackForCharge({
-    stripe: params.stripe,
+  await clawBackForMasumiTopUp({
+    userId: ctx.userId,
+    checkoutSessionId: ctx.checkoutSessionId,
     charge: params.charge,
     stripeEventId: params.stripeEventId,
     creditsToClawBack,
@@ -125,37 +195,21 @@ export async function processChargeDisputeCreated(params: {
   }
 
   const charge = await params.stripe.charges.retrieve(chargeId);
-  const grant = await resolveGrantForCharge(params.stripe, charge);
-  if (grant == null) {
+  const ctx = await resolveMasumiTopUpClawbackContext(params.stripe, charge);
+  if (ctx.kind === "skip") {
     return;
   }
+  assertGrantReady(ctx);
 
-  await clawBackForCharge({
-    stripe: params.stripe,
+  await clawBackForMasumiTopUp({
+    userId: ctx.userId,
+    checkoutSessionId: ctx.checkoutSessionId,
     charge,
     stripeEventId: params.stripeEventId,
-    creditsToClawBack: grant.delta,
+    creditsToClawBack: ctx.grantCredits,
     metadata: {
       kind: "charge.dispute.created",
       disputeId: params.dispute.id,
     },
-  });
-}
-
-async function resolveGrantForCharge(
-  stripe: Stripe,
-  charge: Stripe.Charge,
-): Promise<{ userId: string; delta: number } | null> {
-  const checkoutSessionId = await resolveCheckoutSessionIdForCharge(
-    stripe,
-    charge,
-  );
-  if (checkoutSessionId == null) {
-    return null;
-  }
-
-  return prisma.creditLedgerEntry.findUnique({
-    where: { stripeCheckoutSessionId: checkoutSessionId },
-    select: { userId: true, delta: true },
   });
 }
