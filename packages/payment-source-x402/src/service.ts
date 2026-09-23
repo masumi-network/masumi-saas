@@ -147,6 +147,19 @@ function encryptPaymentPayloadForStorage(
   return encrypt(canonical);
 }
 
+function isHttpStatusCarrier(
+  error: unknown,
+): error is Error & { status: number } {
+  return (
+    error instanceof Error &&
+    "status" in error &&
+    typeof (error as { status: unknown }).status === "number" &&
+    Number.isInteger((error as { status: number }).status) &&
+    (error as { status: number }).status >= 400 &&
+    (error as { status: number }).status <= 599
+  );
+}
+
 function getPaymentIdentifier(paymentPayload: PaymentPayload): {
   id: string | null;
   errors: string[];
@@ -1211,17 +1224,7 @@ export async function settleX402Payment({
   };
 }
 
-export async function createX402Payment({
-  userId,
-  organizationId,
-  apiKeyId,
-  caip2NetworkLimit,
-  evmWalletId,
-  paymentRequired,
-  preferredNetwork,
-  preferredAsset,
-  paymentIdentifier,
-}: {
+type OutboundX402PaymentParams = {
   userId: string;
   organizationId?: string | null;
   apiKeyId: string;
@@ -1230,8 +1233,26 @@ export async function createX402Payment({
   paymentRequired: PaymentRequired;
   preferredNetwork?: string;
   preferredAsset?: string;
-  paymentIdentifier?: string;
-}) {
+};
+
+type SelectedOutboundX402Payment = {
+  scopeInput: X402ScopeInput;
+  selected: PaymentRequirements;
+  selectedX402NetworkId: string;
+  selectedNetworkUserId: string;
+  payer: string;
+};
+
+async function selectOutboundX402Requirement({
+  userId,
+  organizationId,
+  apiKeyId,
+  caip2NetworkLimit,
+  evmWalletId,
+  paymentRequired,
+  preferredNetwork,
+  preferredAsset,
+}: OutboundX402PaymentParams): Promise<SelectedOutboundX402Payment> {
   const scopeInput: X402ScopeInput = { userId, organizationId };
   const scope = resolveX402TenantScope(scopeInput);
   const accepts = paymentRequired.accepts;
@@ -1242,13 +1263,8 @@ export async function createX402Payment({
     );
   }
 
-  // Restrict to requirements this service can sign: exact EVM scheme on a network
-  // allowed for this API key, optionally narrowed by the caller's preference.
   const candidates = accepts.filter((requirement) => {
     if (requirement.scheme !== EXACT_SCHEME) return false;
-    // Defense-in-depth: the amount must be a positive unsigned integer before it
-    // reaches BigInt()/budget math. A negative value would invert the budget
-    // decrement (minting budget); a non-numeric value would throw.
     if (!/^\d+$/.test(requirement.amount) || BigInt(requirement.amount) <= 0n)
       return false;
     if (!/^eip155:\d+$/.test(requirement.network)) return false;
@@ -1271,8 +1287,6 @@ export async function createX402Payment({
     );
   }
 
-  // Select the first candidate whose network is enabled and that has a funded
-  // budget for this (apiKey, wallet, network, asset).
   let selectedRequirement: PaymentRequirements | null = null;
   let selectedNetworkUserId: string | null = null;
   let selectedX402NetworkId: string | null = null;
@@ -1314,7 +1328,201 @@ export async function createX402Payment({
       "No managed wallet budget can cover the forwarded x402 payment requirements",
     );
   }
-  const selected = selectedRequirement;
+
+  const wallet = await getManagedWalletOrThrow(
+    scopeInput,
+    evmWalletId,
+    X402EvmWalletType.Purchasing,
+  );
+  const payer = normalizeAddress(wallet.address);
+
+  return {
+    scopeInput,
+    selected: selectedRequirement,
+    selectedX402NetworkId,
+    selectedNetworkUserId,
+    payer,
+  };
+}
+
+async function selectAndReserveOutboundX402Payment(
+  params: OutboundX402PaymentParams,
+): Promise<
+  SelectedOutboundX402Payment & {
+    reservation: Awaited<ReturnType<typeof reserveBudgetForAttempt>>;
+  }
+> {
+  const prepared = await selectOutboundX402Requirement(params);
+  const reservation = await reserveBudgetForAttempt({
+    x402NetworkId: prepared.selectedX402NetworkId,
+    networkUserId: prepared.selectedNetworkUserId,
+    apiKeyId: params.apiKeyId,
+    evmWalletId: params.evmWalletId,
+    requirements: prepared.selected,
+    payer: prepared.payer,
+  });
+  return { ...prepared, reservation };
+}
+
+export type X402PaymentNodePayResult = {
+  payer: string;
+  caip2Network: string;
+  asset: string;
+  amount: string;
+  payTo: string;
+  xPaymentHeader: string;
+  paymentPayload: unknown;
+  paymentPayloadHash: string;
+  paymentIdentifier: string | null;
+};
+
+export async function createX402PaymentViaPaymentNode({
+  userId,
+  organizationId,
+  apiKeyId,
+  caip2NetworkLimit,
+  evmWalletId,
+  paymentRequired,
+  preferredNetwork,
+  preferredAsset,
+  paymentIdentifier: _paymentIdentifier,
+  payOnPaymentNode,
+}: OutboundX402PaymentParams & {
+  paymentIdentifier?: string;
+  payOnPaymentNode: (
+    selected: PaymentRequirements,
+  ) => Promise<X402PaymentNodePayResult>;
+}) {
+  const { selected, reservation, payer } =
+    await selectAndReserveOutboundX402Payment({
+      userId,
+      organizationId,
+      apiKeyId,
+      caip2NetworkLimit,
+      evmWalletId,
+      paymentRequired,
+      preferredNetwork,
+      preferredAsset,
+    });
+
+  let nodeResult: X402PaymentNodePayResult;
+  try {
+    nodeResult = await payOnPaymentNode(selected);
+  } catch (error) {
+    await refundBudgetReservation(reservation);
+    await prisma.x402PaymentAttempt
+      .update({
+        where: { id: reservation.attemptId },
+        data: {
+          status: X402PaymentStatus.Failed,
+          errorReason: "x402_sign_failed",
+          errorMessage: "x402 payment signing failed",
+        },
+      })
+      .catch((updateError: unknown) => {
+        logger.error(
+          "x402 failed to record Failed status after refunding reservation",
+          {
+            attemptId: reservation.attemptId,
+            error: updateError,
+          },
+        );
+      });
+    if (createHttpError.isHttpError(error)) {
+      throw error;
+    }
+    if (isHttpStatusCarrier(error)) {
+      throw createHttpError(error.status, error.message);
+    }
+    logger.error("x402 payment-node signing failed", {
+      attemptId: reservation.attemptId,
+      error,
+    });
+    throw createHttpError(500, "x402 payment signing failed");
+  }
+
+  try {
+    const paymentPayloadHash =
+      nodeResult.paymentPayloadHash ||
+      hashX402PaymentPayload(nodeResult.paymentPayload);
+
+    await prisma.x402PaymentAttempt.update({
+      where: { id: reservation.attemptId },
+      data: {
+        status: X402PaymentStatus.Verified,
+        resource:
+          typeof nodeResult.paymentPayload === "object" &&
+          nodeResult.paymentPayload != null &&
+          "resource" in nodeResult.paymentPayload &&
+          typeof (nodeResult.paymentPayload as { resource?: { url?: unknown } })
+            .resource?.url === "string"
+            ? (nodeResult.paymentPayload as { resource: { url: string } })
+                .resource.url
+            : null,
+        paymentPayloadHash,
+        paymentPayload: encryptPaymentPayloadForStorage(
+          nodeResult.paymentPayload,
+        ),
+        paymentIdentifier: nodeResult.paymentIdentifier,
+      },
+    });
+
+    return {
+      attemptId: reservation.attemptId,
+      payer: normalizeAddress(nodeResult.payer || payer),
+      caip2Network: selected.network,
+      asset: normalizeAddress(selected.asset),
+      amount: selected.amount,
+      payTo: normalizeAddress(selected.payTo),
+      xPaymentHeader: nodeResult.xPaymentHeader,
+      paymentPayload: nodeResult.paymentPayload,
+      paymentPayloadHash,
+      paymentIdentifier: nodeResult.paymentIdentifier,
+    };
+  } catch (error) {
+    logger.error(
+      "x402 payment signed on payment node but SaaS attempt persistence failed",
+      {
+        attemptId: reservation.attemptId,
+        error,
+      },
+    );
+    throw createHttpError(
+      500,
+      "x402 payment was signed but could not be recorded",
+    );
+  }
+}
+
+export async function createX402Payment({
+  userId,
+  organizationId,
+  apiKeyId,
+  caip2NetworkLimit,
+  evmWalletId,
+  paymentRequired,
+  preferredNetwork,
+  preferredAsset,
+  paymentIdentifier,
+}: OutboundX402PaymentParams & {
+  paymentIdentifier?: string;
+}) {
+  const {
+    scopeInput,
+    selected,
+    selectedX402NetworkId,
+    selectedNetworkUserId,
+    payer: budgetPayer,
+  } = await selectOutboundX402Requirement({
+    userId,
+    organizationId,
+    apiKeyId,
+    caip2NetworkLimit,
+    evmWalletId,
+    paymentRequired,
+    preferredNetwork,
+    preferredAsset,
+  });
 
   const { client, payer } = await getClientForWallet(
     scopeInput,
@@ -1361,7 +1569,7 @@ export async function createX402Payment({
     apiKeyId,
     evmWalletId,
     requirements: selected,
-    payer,
+    payer: budgetPayer,
   });
 
   try {

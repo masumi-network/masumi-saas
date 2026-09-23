@@ -17,6 +17,7 @@ export {
   confirmX402WalletBackup,
   createX402ManagedWallet,
   createX402Payment,
+  createX402PaymentViaPaymentNode,
   deleteX402ManagedWallet,
   deleteX402WalletBudget,
   getX402ManagedWallet,
@@ -31,6 +32,7 @@ export {
   updateX402ManagedWallet,
   upsertX402Network,
   verifyX402Payment,
+  type X402PaymentNodePayResult,
 } from "./service.js";
 export * from "./supported-payment-sources.js";
 export * from "./tenant-scope.js";

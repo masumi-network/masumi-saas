@@ -23,6 +23,9 @@ describe("assertSafeRpcUrl", () => {
       "http://169.254.169.254/",
       "http://[::1]/",
       "http://localhost/",
+      "http://[::ffff:127.0.0.1]/",
+      "http://[::ffff:10.0.0.1]/",
+      "http://[::ffff:93.184.216.34]/",
     ]) {
       expect(() => assertSafeRpcUrl(url), url).toThrow();
     }
