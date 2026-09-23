@@ -290,13 +290,24 @@ export function registerX402Routes(app: X402App): void {
         await requireX402PayAccess(authContext);
         const input = c.req.valid("json");
         const scope = x402Scope(authContext);
+        const apiKeyId = await requireX402ApiKeyIdForPay(
+          authContext,
+          input.apiKeyId,
+        );
+        const caip2NetworkLimit = getCaip2NetworkLimitFromAuth(
+          authContext,
+          "write",
+        );
 
         const proxied = await proxyCreateX402PaymentIfCustodied(
           authContext.user.id,
           scope,
           {
+            apiKeyId,
+            caip2NetworkLimit,
             evmWalletId: input.evmWalletId,
-            paymentRequired: input.paymentRequired,
+            paymentRequired:
+              input.paymentRequired as unknown as OutboundPaymentRequired,
             preferredNetwork: input.preferredNetwork,
             preferredAsset: input.preferredAsset,
             paymentIdentifier: input.paymentIdentifier,
@@ -315,11 +326,8 @@ export function registerX402Routes(app: X402App): void {
 
         const result = await createX402Payment({
           ...scope,
-          apiKeyId: await requireX402ApiKeyIdForPay(
-            authContext,
-            input.apiKeyId,
-          ),
-          caip2NetworkLimit: getCaip2NetworkLimitFromAuth(authContext, "write"),
+          apiKeyId,
+          caip2NetworkLimit,
           evmWalletId: input.evmWalletId,
           paymentRequired:
             input.paymentRequired as unknown as OutboundPaymentRequired,

@@ -1,7 +1,79 @@
 -- x402 budgets and payment attempts now reference Better Auth apikey (mas_*), not org-scoped api_key.
 
-DELETE FROM "x402_wallet_budget";
-UPDATE "x402_payment_attempt" SET "orgApiKeyId" = NULL WHERE "orgApiKeyId" IS NOT NULL;
+-- Preserve org-scoped API key rows as disabled Better Auth keys (hashes only; users must rotate).
+INSERT INTO "apikey" (
+  "id",
+  "name",
+  "prefix",
+  "start",
+  "key",
+  "userId",
+  "enabled",
+  "createdAt",
+  "updatedAt",
+  "metadata"
+)
+SELECT
+  k."id",
+  k."name",
+  k."keyPrefix",
+  LEFT(k."keyPrefix", 12),
+  k."keyHash",
+  COALESCE(
+    k."createdById",
+    (
+      SELECT m."userId"
+      FROM "member" AS m
+      WHERE m."organizationId" = k."organizationId"
+      ORDER BY
+        CASE m."role"
+          WHEN 'owner' THEN 0
+          WHEN 'admin' THEN 1
+          ELSE 2
+        END,
+        m."createdAt" ASC
+      LIMIT 1
+    )
+  ),
+  false,
+  k."createdAt",
+  k."updatedAt",
+  jsonb_build_object(
+    'migratedFromOrgApiKey', true,
+    'organizationId', k."organizationId",
+    'requiresKeyRotation', true
+  )::text
+FROM "api_key" AS k
+WHERE COALESCE(
+    k."createdById",
+    (
+      SELECT m."userId"
+      FROM "member" AS m
+      WHERE m."organizationId" = k."organizationId"
+      ORDER BY
+        CASE m."role"
+          WHEN 'owner' THEN 0
+          WHEN 'admin' THEN 1
+          ELSE 2
+        END,
+        m."createdAt" ASC
+      LIMIT 1
+    )
+  ) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM "apikey" AS a WHERE a."id" = k."id");
+
+-- Drop budgets and attempt links that still reference org keys we could not migrate.
+DELETE FROM "x402_wallet_budget" AS b
+WHERE NOT EXISTS (
+  SELECT 1 FROM "apikey" AS a WHERE a."id" = b."orgApiKeyId"
+);
+
+UPDATE "x402_payment_attempt" AS p
+SET "orgApiKeyId" = NULL
+WHERE p."orgApiKeyId" IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM "apikey" AS a WHERE a."id" = p."orgApiKeyId"
+  );
 
 ALTER TABLE "x402_wallet_budget" DROP CONSTRAINT IF EXISTS "x402_wallet_budget_orgApiKeyId_fkey";
 DROP INDEX IF EXISTS "x402_wallet_budget_orgApiKeyId_evmWalletId_caip2Network_ass_key";

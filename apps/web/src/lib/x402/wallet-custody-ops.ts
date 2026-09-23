@@ -4,10 +4,12 @@ import prisma from "@masumi/database/client";
 import {
   activeWalletWhere,
   cancelX402PendingWallet,
+  createX402PaymentViaPaymentNode,
   deleteX402ManagedWallet,
   resolveX402TenantScope,
   updateX402ManagedWallet,
   walletOwnershipWhere,
+  type X402PaymentNodePayResult,
   type X402ScopeInput,
 } from "@masumi/payment-source-x402";
 
@@ -15,14 +17,15 @@ import { rethrowPaymentNodeClientError } from "@/lib/payment-node/errors";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import { ApiError } from "@/server/hono/errors";
 
-import {
-  extractCaip2FromPayInput,
-  resolvePaymentNodeWalletIdForCaip2,
-} from "./payment-node-wallet-network";
+import { resolvePaymentNodeWalletIdForCaip2 } from "./payment-node-wallet-network";
 import {
   getLocalWalletWithPaymentNodeId,
   usesPaymentNodeCustody,
 } from "./wallet-custody";
+
+type OutboundPaymentRequired = Parameters<
+  typeof createX402PaymentViaPaymentNode
+>[0]["paymentRequired"];
 
 async function findOwnedWalletRecord(
   scope: ReturnType<typeof resolveX402TenantScope>,
@@ -110,8 +113,10 @@ export async function proxyCreateX402PaymentIfCustodied(
   userId: string,
   scopeInput: X402ScopeInput,
   input: {
+    apiKeyId: string;
+    caip2NetworkLimit: string[] | null;
     evmWalletId: string;
-    paymentRequired: unknown;
+    paymentRequired: OutboundPaymentRequired;
     preferredNetwork?: string;
     preferredAsset?: string;
     paymentIdentifier?: string;
@@ -145,26 +150,53 @@ export async function proxyCreateX402PaymentIfCustodied(
     throw new ApiError(404, "Managed EVM wallet not found");
   }
 
-  const caip2Network = extractCaip2FromPayInput(input);
-  let paymentNodeWalletId = walletRecord.paymentNodeWalletId;
-  if (caip2Network != null) {
-    paymentNodeWalletId = await resolvePaymentNodeWalletIdForCaip2(client, {
-      paymentNodeWalletId: walletRecord.paymentNodeWalletId,
-      address: walletRecord.address,
-      type: walletRecord.type === "Purchasing" ? "Purchasing" : "Selling",
-      caip2Network,
-    });
-  }
+  return createX402PaymentViaPaymentNode({
+    userId,
+    organizationId: scopeInput.organizationId,
+    apiKeyId: input.apiKeyId,
+    caip2NetworkLimit: input.caip2NetworkLimit,
+    evmWalletId: input.evmWalletId,
+    paymentRequired: input.paymentRequired,
+    preferredNetwork: input.preferredNetwork,
+    preferredAsset: input.preferredAsset,
+    paymentIdentifier: input.paymentIdentifier,
+    payOnPaymentNode: async (selected) => {
+      const paymentNodeWalletId = await resolvePaymentNodeWalletIdForCaip2(
+        client,
+        {
+          paymentNodeWalletId: walletRecord.paymentNodeWalletId!,
+          address: walletRecord.address,
+          type: walletRecord.type === "Purchasing" ? "Purchasing" : "Selling",
+          caip2Network: selected.network,
+        },
+      );
 
-  try {
-    return await client.createX402Payment({
-      evmWalletId: paymentNodeWalletId,
-      paymentRequired: input.paymentRequired,
-      preferredNetwork: input.preferredNetwork,
-      preferredAsset: input.preferredAsset,
-      paymentIdentifier: input.paymentIdentifier,
-    });
-  } catch (error) {
-    rethrowPaymentNodeClientError(error);
-  }
+      try {
+        const proxied = await client.createX402Payment({
+          evmWalletId: paymentNodeWalletId,
+          paymentRequired: {
+            ...input.paymentRequired,
+            accepts: [selected],
+          },
+          preferredNetwork: selected.network,
+          preferredAsset: selected.asset,
+          paymentIdentifier: input.paymentIdentifier,
+        });
+        return {
+          payer: proxied.payer,
+          caip2Network: String(proxied.caip2Network),
+          asset: proxied.asset,
+          amount: proxied.amount,
+          payTo: proxied.payTo,
+          xPaymentHeader: proxied.xPaymentHeader,
+          paymentPayload: proxied.paymentPayload,
+          paymentPayloadHash: proxied.paymentPayloadHash,
+          paymentIdentifier: proxied.paymentIdentifier,
+        } satisfies X402PaymentNodePayResult;
+      } catch (error) {
+        rethrowPaymentNodeClientError(error);
+        throw error;
+      }
+    },
+  });
 }
