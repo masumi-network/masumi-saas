@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { settleSchemaOutput, verifySchemaOutput } from "@/lib/x402/schemas";
+
 export const paymentNodeX402NetworkSchema = z.object({
   id: z.string(),
   caip2Id: z.string().regex(/^eip155:\d+$/),
@@ -35,12 +37,9 @@ export const paymentNodeX402WalletListSchema = z.object({
   Wallets: z.array(paymentNodeX402WalletSchema.omit({ privateKey: true })),
 });
 
-export const paymentNodeX402VerifyOutputSchema = z.record(
-  z.string(),
-  z.unknown(),
-);
-
-export const paymentNodeX402SettleOutputSchema = z.record(
-  z.string(),
-  z.unknown(),
-);
+export const paymentNodeX402VerifyOutputSchema = verifySchemaOutput.pick({
+  verifyResponse: true,
+});
+export const paymentNodeX402SettleOutputSchema = settleSchemaOutput.pick({
+  settleResponse: true,
+});
