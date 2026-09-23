@@ -105,6 +105,9 @@ export async function cancelX402PendingWalletWithCustody(
   if (wallet == null) {
     throw new ApiError(404, "Managed EVM wallet not found");
   }
+  if (wallet.backupConfirmedAt != null) {
+    throw new ApiError(409, "Only pending wallets can be cancelled");
+  }
   await deletePaymentNodeWalletIfCustodied(userId, wallet);
   return cancelX402PendingWallet(scopeInput, evmWalletId);
 }
