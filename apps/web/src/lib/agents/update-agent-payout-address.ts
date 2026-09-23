@@ -1,10 +1,12 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
-
 import prisma from "@masumi/database/client";
 
 import { getAgentPayoutAddress } from "@/lib/agents/agent-reference-metadata";
+import {
+  AGENT_REFERENCE_UPDATE_TIMEOUT_MS,
+  lockAgentReference,
+} from "@/lib/agents/agent-reference-updates";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
 import {
@@ -22,18 +24,6 @@ function getAgentNetwork(agent: {
   return network === "Mainnet" ? "Mainnet" : "Preprod";
 }
 
-/** Two int32 advisory-lock keys namespaced to the payout-address flow. */
-function payoutAddressLockKeys(agentId: string): [number, number] {
-  const buf = createHash("sha256")
-    .update(`payout-address:${agentId}`, "utf8")
-    .digest();
-  return [buf.readInt32BE(0), buf.readInt32BE(4)];
-}
-
-// The transaction wraps an external payment-node call, so it must outlast that
-// call's own timeout (PAYMENT_NODE_REQUEST_TIMEOUT_MS, default 30s).
-const PAYOUT_UPDATE_TX_TIMEOUT_MS = 40_000;
-
 export async function updateAgentPayoutAddress(params: {
   userId: string;
   agentId: string;
@@ -46,10 +36,9 @@ export async function updateAgentPayoutAddress(params: {
   // route) has no compare-and-swap, so without this a double-submit could land
   // two patches in nondeterministic order and leave the DB mirror pointing at a
   // different address than the wallet actually collects to.
-  const [k1, k2] = payoutAddressLockKeys(params.agentId);
   return prisma.$transaction(
     async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${k1}::integer, ${k2}::integer)`;
+      await lockAgentReference(tx, params.agentId);
 
       const agent = await tx.agent.findFirst({
         where: { id: params.agentId, userId: params.userId },
@@ -154,6 +143,6 @@ export async function updateAgentPayoutAddress(params: {
 
       return { success: true as const, payoutAddress: normalized };
     },
-    { timeout: PAYOUT_UPDATE_TX_TIMEOUT_MS },
+    { timeout: AGENT_REFERENCE_UPDATE_TIMEOUT_MS },
   );
 }

@@ -22836,6 +22836,433 @@
         }
       }
     },
+    "/api/v1/x402/wallets/balance": {
+      "get": {
+        "tags": [
+          "x402"
+        ],
+        "summary": "Read managed EVM wallet balances",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^eip155:\\d+$"
+            },
+            "required": false,
+            "name": "caip2Network",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "On-chain wallet balances",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "evmWalletId": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "string",
+                      "pattern": "^0x[a-fA-F0-9]{40}$"
+                    },
+                    "Balances": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "caip2Network": {
+                            "type": "string",
+                            "pattern": "^eip155:\\d+$"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "native": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "symbol": {
+                                "type": "string"
+                              },
+                              "decimals": {
+                                "type": "number"
+                              },
+                              "amount": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "symbol",
+                              "decimals",
+                              "amount"
+                            ]
+                          },
+                          "asset": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "asset": {
+                                "type": "string",
+                                "pattern": "^0x[a-fA-F0-9]{40}$"
+                              },
+                              "symbol": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "decimals": {
+                                "type": "number"
+                              },
+                              "amount": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "asset",
+                              "symbol",
+                              "decimals",
+                              "amount"
+                            ]
+                          },
+                          "error": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "caip2Network",
+                          "displayName",
+                          "native",
+                          "asset",
+                          "error"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "evmWalletId",
+                    "address",
+                    "Balances"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/x402/wallets/count": {
+      "get": {
+        "tags": [
+          "x402"
+        ],
+        "summary": "Count managed EVM wallets",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Purchasing",
+                "Selling"
+              ]
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wallet count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/x402/networks": {
       "get": {
         "tags": [
@@ -24940,433 +25367,6 @@
         }
       }
     },
-    "/api/v1/x402/wallets/balance": {
-      "get": {
-        "tags": [
-          "x402"
-        ],
-        "summary": "Read managed EVM wallet balances",
-        "security": [
-          {
-            "apiKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^eip155:\\d+$"
-            },
-            "required": false,
-            "name": "caip2Network",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "On-chain wallet balances",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "evmWalletId": {
-                      "type": "string"
-                    },
-                    "address": {
-                      "type": "string",
-                      "pattern": "^0x[a-fA-F0-9]{40}$"
-                    },
-                    "Balances": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "caip2Network": {
-                            "type": "string",
-                            "pattern": "^eip155:\\d+$"
-                          },
-                          "displayName": {
-                            "type": "string"
-                          },
-                          "native": {
-                            "type": "object",
-                            "nullable": true,
-                            "properties": {
-                              "symbol": {
-                                "type": "string"
-                              },
-                              "decimals": {
-                                "type": "number"
-                              },
-                              "amount": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "symbol",
-                              "decimals",
-                              "amount"
-                            ]
-                          },
-                          "asset": {
-                            "type": "object",
-                            "nullable": true,
-                            "properties": {
-                              "asset": {
-                                "type": "string",
-                                "pattern": "^0x[a-fA-F0-9]{40}$"
-                              },
-                              "symbol": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "decimals": {
-                                "type": "number"
-                              },
-                              "amount": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "asset",
-                              "symbol",
-                              "decimals",
-                              "amount"
-                            ]
-                          },
-                          "error": {
-                            "type": "string",
-                            "nullable": true
-                          }
-                        },
-                        "required": [
-                          "caip2Network",
-                          "displayName",
-                          "native",
-                          "asset",
-                          "error"
-                        ]
-                      }
-                    }
-                  },
-                  "required": [
-                    "evmWalletId",
-                    "address",
-                    "Balances"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation or bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized — valid session or API key required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden — insufficient role or feature not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/x402/wallets/count": {
-      "get": {
-        "tags": [
-          "x402"
-        ],
-        "summary": "Count managed EVM wallets",
-        "security": [
-          {
-            "apiKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "Purchasing",
-                "Selling"
-              ]
-            },
-            "required": false,
-            "name": "type",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Wallet count",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "total"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation or bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized — valid session or API key required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden — insufficient role or feature not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/x402/payments/count": {
       "get": {
         "tags": [
@@ -25612,6 +25612,392 @@
                   },
                   "required": [
                     "total"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/x402/analytics": {
+      "post": {
+        "tags": [
+          "x402"
+        ],
+        "summary": "Aggregate x402 payment analytics",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "startDate": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "caip2Network": {
+                    "type": "string",
+                    "pattern": "^eip155:\\d+$"
+                  },
+                  "timeZone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Analytics buckets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "periodStart": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "periodEnd": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "incomeCount": {
+                      "type": "number"
+                    },
+                    "spendCount": {
+                      "type": "number"
+                    },
+                    "TotalIncome": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "caip2Network": {
+                            "type": "string",
+                            "pattern": "^eip155:\\d+$"
+                          },
+                          "asset": {
+                            "type": "string"
+                          },
+                          "amount": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "caip2Network",
+                          "asset",
+                          "amount"
+                        ]
+                      }
+                    },
+                    "TotalSpend": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "caip2Network": {
+                            "type": "string",
+                            "pattern": "^eip155:\\d+$"
+                          },
+                          "asset": {
+                            "type": "string"
+                          },
+                          "amount": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "caip2Network",
+                          "asset",
+                          "amount"
+                        ]
+                      }
+                    },
+                    "Daily": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "year": {
+                            "type": "number"
+                          },
+                          "month": {
+                            "type": "number"
+                          },
+                          "day": {
+                            "type": "number"
+                          },
+                          "Income": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "caip2Network": {
+                                  "type": "string",
+                                  "pattern": "^eip155:\\d+$"
+                                },
+                                "asset": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "caip2Network",
+                                "asset",
+                                "amount"
+                              ]
+                            }
+                          },
+                          "Spend": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "caip2Network": {
+                                  "type": "string",
+                                  "pattern": "^eip155:\\d+$"
+                                },
+                                "asset": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "caip2Network",
+                                "asset",
+                                "amount"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "year",
+                          "month",
+                          "day",
+                          "Income",
+                          "Spend"
+                        ]
+                      }
+                    },
+                    "Monthly": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "year": {
+                            "type": "number"
+                          },
+                          "month": {
+                            "type": "number"
+                          },
+                          "Income": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "caip2Network": {
+                                  "type": "string",
+                                  "pattern": "^eip155:\\d+$"
+                                },
+                                "asset": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "caip2Network",
+                                "asset",
+                                "amount"
+                              ]
+                            }
+                          },
+                          "Spend": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "caip2Network": {
+                                  "type": "string",
+                                  "pattern": "^eip155:\\d+$"
+                                },
+                                "asset": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "caip2Network",
+                                "asset",
+                                "amount"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "year",
+                          "month",
+                          "Income",
+                          "Spend"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "periodStart",
+                    "periodEnd",
+                    "incomeCount",
+                    "spendCount",
+                    "TotalIncome",
+                    "TotalSpend",
+                    "Daily",
+                    "Monthly"
                   ]
                 }
               }
@@ -26352,392 +26738,6 @@
                   "required": [
                     "ruleId",
                     "deletedAt"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation or bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized — valid session or API key required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden — insufficient role or feature not enabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "error"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/x402/analytics": {
-      "post": {
-        "tags": [
-          "x402"
-        ],
-        "summary": "Aggregate x402 payment analytics",
-        "security": [
-          {
-            "apiKeyHeader": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "startDate": {
-                    "type": "string",
-                    "nullable": true,
-                    "format": "date-time"
-                  },
-                  "endDate": {
-                    "type": "string",
-                    "nullable": true,
-                    "format": "date-time"
-                  },
-                  "caip2Network": {
-                    "type": "string",
-                    "pattern": "^eip155:\\d+$"
-                  },
-                  "timeZone": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Analytics buckets",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "periodStart": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "periodEnd": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "incomeCount": {
-                      "type": "number"
-                    },
-                    "spendCount": {
-                      "type": "number"
-                    },
-                    "TotalIncome": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "caip2Network": {
-                            "type": "string",
-                            "pattern": "^eip155:\\d+$"
-                          },
-                          "asset": {
-                            "type": "string"
-                          },
-                          "amount": {
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "caip2Network",
-                          "asset",
-                          "amount"
-                        ]
-                      }
-                    },
-                    "TotalSpend": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "caip2Network": {
-                            "type": "string",
-                            "pattern": "^eip155:\\d+$"
-                          },
-                          "asset": {
-                            "type": "string"
-                          },
-                          "amount": {
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "caip2Network",
-                          "asset",
-                          "amount"
-                        ]
-                      }
-                    },
-                    "Daily": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "year": {
-                            "type": "number"
-                          },
-                          "month": {
-                            "type": "number"
-                          },
-                          "day": {
-                            "type": "number"
-                          },
-                          "Income": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "caip2Network": {
-                                  "type": "string",
-                                  "pattern": "^eip155:\\d+$"
-                                },
-                                "asset": {
-                                  "type": "string"
-                                },
-                                "amount": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "caip2Network",
-                                "asset",
-                                "amount"
-                              ]
-                            }
-                          },
-                          "Spend": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "caip2Network": {
-                                  "type": "string",
-                                  "pattern": "^eip155:\\d+$"
-                                },
-                                "asset": {
-                                  "type": "string"
-                                },
-                                "amount": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "caip2Network",
-                                "asset",
-                                "amount"
-                              ]
-                            }
-                          }
-                        },
-                        "required": [
-                          "year",
-                          "month",
-                          "day",
-                          "Income",
-                          "Spend"
-                        ]
-                      }
-                    },
-                    "Monthly": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "year": {
-                            "type": "number"
-                          },
-                          "month": {
-                            "type": "number"
-                          },
-                          "Income": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "caip2Network": {
-                                  "type": "string",
-                                  "pattern": "^eip155:\\d+$"
-                                },
-                                "asset": {
-                                  "type": "string"
-                                },
-                                "amount": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "caip2Network",
-                                "asset",
-                                "amount"
-                              ]
-                            }
-                          },
-                          "Spend": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "caip2Network": {
-                                  "type": "string",
-                                  "pattern": "^eip155:\\d+$"
-                                },
-                                "asset": {
-                                  "type": "string"
-                                },
-                                "amount": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "caip2Network",
-                                "asset",
-                                "amount"
-                              ]
-                            }
-                          }
-                        },
-                        "required": [
-                          "year",
-                          "month",
-                          "Income",
-                          "Spend"
-                        ]
-                      }
-                    }
-                  },
-                  "required": [
-                    "periodStart",
-                    "periodEnd",
-                    "incomeCount",
-                    "spendCount",
-                    "TotalIncome",
-                    "TotalSpend",
-                    "Daily",
-                    "Monthly"
                   ]
                 }
               }

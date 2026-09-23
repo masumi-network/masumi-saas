@@ -17,7 +17,7 @@ describe("address-balance", () => {
         { unit: "", quantity: 500_000 },
         { unit: "policyasset", quantity: 42 },
       ]),
-    ).toBe(2_000_000n);
+    ).toBe(BigInt(2_000_000));
   });
 
   it("treats empty balance as unfunded", () => {
@@ -34,8 +34,8 @@ describe("address-balance", () => {
   });
 
   it("formats ADA for dashboard display", () => {
-    expect(formatLovelaceBalanceDisplay(2_500_000n)).toBe("2.5 ADA");
-    expect(formatLovelaceBalanceDisplay(0n)).toBe("0 ADA");
+    expect(formatLovelaceBalanceDisplay(BigInt(2_500_000))).toBe("2.5 ADA");
+    expect(formatLovelaceBalanceDisplay(BigInt(0))).toBe("0 ADA");
   });
 
   it("checks confirmed balance for an address via GET /balance", async () => {

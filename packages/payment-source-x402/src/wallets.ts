@@ -236,7 +236,9 @@ export async function deleteX402ManagedWallet(
     }),
     prisma.x402Network.updateMany({
       where: {
-        ...networkOwnershipWhere(scope),
+        // Wallet retirement is global across chains. Clear every tenant association,
+        // including chains outside the caller's payment query scope.
+        ...networkOwnershipWhere({ ...scope, caip2NetworkLimit: null }),
         facilitatorWalletId: evmWalletId,
       },
       data: { facilitatorWalletId: null },

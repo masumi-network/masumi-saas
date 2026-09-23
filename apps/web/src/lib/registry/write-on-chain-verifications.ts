@@ -1,5 +1,6 @@
 import prisma from "@masumi/database/client";
 
+import { confirmAgentRegistryUpdate } from "@/lib/agents/agent-reference-updates";
 import {
   isUpdateRequestedStale,
   STALE_UPDATE_REQUESTED_MS,
@@ -457,24 +458,7 @@ export async function writeOnChainVerifications(params: {
         );
       if (anchored) {
         // The anchor is on-chain — treat the update as the success it actually was.
-        await prisma.$transaction([
-          prisma.agent.update({
-            where: { id: agent.id },
-            data: {
-              agentIdentifier: candidateIdentifier,
-              registrationState: "RegistrationConfirmed",
-            },
-          }),
-          prisma.agentReference.update({
-            where: { agentId: agent.id },
-            data: {
-              metadata: {
-                ...refMeta,
-                agentIdentifier: candidateIdentifier,
-              },
-            },
-          }),
-        ]);
+        await confirmAgentRegistryUpdate(agent.id, candidateIdentifier);
         return { success: true, agentIdentifier: candidateIdentifier };
       }
     } catch (error) {
@@ -508,24 +492,7 @@ export async function writeOnChainVerifications(params: {
     return { success: false, error: pollResult.error };
   }
 
-  await prisma.$transaction([
-    prisma.agent.update({
-      where: { id: agent.id },
-      data: {
-        agentIdentifier: pollResult.agentIdentifier,
-        registrationState: "RegistrationConfirmed",
-      },
-    }),
-    prisma.agentReference.update({
-      where: { agentId: agent.id },
-      data: {
-        metadata: {
-          ...refMeta,
-          agentIdentifier: pollResult.agentIdentifier,
-        },
-      },
-    }),
-  ]);
+  await confirmAgentRegistryUpdate(agent.id, pollResult.agentIdentifier);
 
   return { success: true, agentIdentifier: pollResult.agentIdentifier };
 }
