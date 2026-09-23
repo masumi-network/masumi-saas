@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -14,6 +13,7 @@ import {
   getOrganizationsAction,
   type OrganizationInfo,
 } from "@/lib/actions/organization.action";
+import { switchOrganizationWorkspace } from "@/lib/activate-organization-workspace";
 import { authClient } from "@/lib/auth/auth.client";
 import type { SessionWithOrganization } from "@/lib/auth/session-types";
 
@@ -31,7 +31,7 @@ export type OrganizationContextValue = {
   /** Switch to a different organization */
   setActiveOrganization: (organizationId: string | null) => Promise<void>;
   /** Refetch organizations and active org */
-  refetch: (opts?: { skipRefresh?: boolean }) => void;
+  refetch: () => void;
   /** After org create (Better Auth already set active org in DB). */
   syncAfterOrganizationCreate: () => Promise<void>;
 };
@@ -64,11 +64,10 @@ interface OrganizationProviderProps {
  * Must be used within an authenticated app layout.
  */
 export function OrganizationProvider({ children }: OrganizationProviderProps) {
-  const router = useRouter();
   const {
     data: session,
     isPending: sessionPending,
-    refetch: refetchSession,
+    isRefetching: sessionRefetching,
   } = authClient.useSession();
   const [organizations, setOrganizations] = useState<OrganizationInfo[]>([]);
   const [orgsLoading, setOrgsLoading] = useState(true);
@@ -86,12 +85,17 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     if (result.success) {
       setOrganizations(result.data);
     } else {
-      setOrganizations([]);
+      console.warn("[OrganizationProvider] Failed to load organizations", {
+        error: result.error,
+      });
     }
     setOrgsLoading(false);
   }, []);
 
   useEffect(() => {
+    if (sessionPending || sessionRefetching) {
+      return;
+    }
     if (!session?.user?.id) {
       queueMicrotask(() => {
         setOrganizations([]);
@@ -102,38 +106,32 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     queueMicrotask(() => setOrgsLoading(true));
     const id = setTimeout(() => void fetchOrganizations(), 0);
     return () => clearTimeout(id);
-  }, [session?.user?.id, fetchOrganizations]);
+  }, [
+    session?.user?.id,
+    sessionPending,
+    sessionRefetching,
+    fetchOrganizations,
+  ]);
 
   const setActiveOrganization = useCallback(
     async (organizationId: string | null) => {
-      const { error } = await authClient.organization.setActive({
-        organizationId,
-      });
-      if (error) {
+      try {
+        await switchOrganizationWorkspace(organizationId);
+        void fetchOrganizations();
+      } catch (error) {
         console.error("Failed to set active organization:", error);
-        return;
       }
-      await refetchSession();
-      // Do not router.refresh() here: set-active updates the session cookie and an
-      // immediate RSC refresh often runs with the previous cookie → 401 → /signin.
-      // Client session + org list update below; server pages refresh on navigation.
-      await fetchOrganizations();
     },
-    [refetchSession, fetchOrganizations],
+    [fetchOrganizations],
   );
 
   const syncAfterOrganizationCreate = useCallback(async () => {
-    await refetchSession();
     await fetchOrganizations();
-  }, [refetchSession, fetchOrganizations]);
+  }, [fetchOrganizations]);
 
-  const refetch = useCallback(
-    (opts?: { skipRefresh?: boolean }) => {
-      void fetchOrganizations();
-      if (!opts?.skipRefresh) router.refresh();
-    },
-    [fetchOrganizations, router],
-  );
+  const refetch = useCallback(() => {
+    void fetchOrganizations();
+  }, [fetchOrganizations]);
 
   const value = useMemo<OrganizationContextValue>(
     () => ({
