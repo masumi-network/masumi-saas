@@ -10,7 +10,6 @@ import {
   createVerificationValue,
   deleteVerificationByIdentifier,
   findVerificationByIdentifier,
-  updateVerificationValue,
 } from "@/lib/auth/auth-storage";
 import { displayNameFromEmail } from "@/lib/auth/display-name-from-email";
 import {
@@ -24,6 +23,7 @@ import { formatOtpExpiryMessage } from "@/lib/email/format-otp-expiry-message";
 import { getEmailMessages } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactVerificationCodeEmail } from "@/lib/email/verification-code";
+import { ApiError } from "@/server/hono/errors";
 
 function generateEmailVerificationCode(length = 6): string {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
@@ -347,76 +347,70 @@ export async function bindNetworkRegistrationDraftToTicket(params: {
   token: string;
   draftId: string;
 }): Promise<void> {
-  const token = params.token.trim();
-  const draftId = params.draftId.trim();
-  if (!token || !draftId) return;
-
-  const identifier = networkRegTicketIdentifier(token);
-  const row = await findVerificationByIdentifier(identifier, {
-    id: true,
-    value: true,
-    expiresAt: true,
-  });
-  if (!row || row.expiresAt.getTime() < Date.now()) return;
-
-  let parsed: { userId?: string; email?: string; draftId?: string };
-  try {
-    parsed = JSON.parse(row.value) as {
-      userId?: string;
-      email?: string;
-      draftId?: string;
-    };
-  } catch {
-    return;
-  }
-
-  if (parsed.draftId && parsed.draftId !== draftId) return;
-
-  await updateVerificationValue(
-    row.id,
-    JSON.stringify({
-      ...parsed,
-      draftId,
-    }),
-  );
+  await updateNetworkRegistrationTicketDraft(params, false);
 }
 
 export async function rebindNetworkRegistrationDraftToTicket(params: {
   token: string;
   draftId: string;
 }): Promise<void> {
+  await updateNetworkRegistrationTicketDraft(params, true);
+}
+
+async function updateNetworkRegistrationTicketDraft(
+  params: { token: string; draftId: string },
+  replaceStaleDraft: boolean,
+): Promise<void> {
+  const conflict = () =>
+    new ApiError(409, "Registration session changed. Please try again.");
   const token = params.token.trim();
   const draftId = params.draftId.trim();
-  if (!token || !draftId) return;
+  if (!token || !draftId) throw conflict();
 
-  const identifier = networkRegTicketIdentifier(token);
-  const row = await findVerificationByIdentifier(identifier, {
-    id: true,
-    value: true,
-    expiresAt: true,
-  });
-  if (!row || row.expiresAt.getTime() < Date.now()) return;
+  const row = await findVerificationByIdentifier(
+    networkRegTicketIdentifier(token),
+    { id: true, value: true, expiresAt: true },
+  );
+  if (!row || row.expiresAt.getTime() <= Date.now()) throw conflict();
 
   let parsed: { userId?: string; email?: string; draftId?: string };
   try {
-    parsed = JSON.parse(row.value) as {
-      userId?: string;
-      email?: string;
-      draftId?: string;
-    };
+    parsed = JSON.parse(row.value) as typeof parsed;
   } catch {
-    return;
+    throw conflict();
   }
 
   if (parsed.draftId === draftId) return;
+  if (parsed.draftId) {
+    if (!replaceStaleDraft) throw conflict();
 
-  await updateVerificationValue(
-    row.id,
-    JSON.stringify({
-      ...parsed,
-      draftId,
-    }),
-  );
+    // A delayed retry must not replace a live draft another request just bound.
+    const currentDraft = await prisma.networkRegistrationDraft.findUnique({
+      where: { id: parsed.draftId },
+      select: { email: true, userId: true, status: true, expiresAt: true },
+    });
+    if (
+      currentDraft &&
+      currentDraft.email === parsed.email &&
+      (!currentDraft.userId || currentDraft.userId === parsed.userId) &&
+      currentDraft.status !== "EXPIRED" &&
+      currentDraft.expiresAt.getTime() >= Date.now()
+    ) {
+      throw conflict();
+    }
+  }
+
+  const updated = await prisma.verification.updateMany({
+    where: {
+      id: row.id,
+      value: row.value,
+      expiresAt: { gt: new Date() },
+    },
+    data: { value: JSON.stringify({ ...parsed, draftId }) },
+  });
+  // Fail closed: the winner may revoke the ticket before the caller refreshes
+  // it. Returning would let the caller proceed with its own, unbound draft.
+  if (updated.count !== 1) throw conflict();
 }
 
 export async function revokeNetworkRegistrationTicket(

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMock = {
+  $transaction: vi.fn(),
+  $executeRaw: vi.fn(),
   user: { update: vi.fn() },
   apikey: { updateMany: vi.fn() },
   oauthAccessToken: { deleteMany: vi.fn() },
@@ -21,7 +23,10 @@ const {
 } = await import("./soft-delete-account");
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
+  prismaMock.$transaction.mockImplementation(
+    (action: (tx: typeof prismaMock) => Promise<void>) => action(prismaMock),
+  );
   prismaMock.user.update.mockResolvedValue({});
   prismaMock.apikey.updateMany.mockResolvedValue({ count: 0 });
   prismaMock.oauthAccessToken.deleteMany.mockResolvedValue({ count: 0 });
@@ -31,6 +36,74 @@ beforeEach(() => {
 });
 
 describe("softDeleteUserAccount", () => {
+  it("keeps an active owner after sequential account deletions", async () => {
+    const banned = new Set<string>();
+    prismaMock.member.findMany.mockResolvedValue([{ organizationId: "org-1" }]);
+    prismaMock.member.count.mockImplementation(
+      ({ where }) =>
+        ["owner-a", "owner-b"].filter(
+          (id) =>
+            id !== where.userId.not &&
+            (where.user?.banned !== false || !banned.has(id)),
+        ).length,
+    );
+    prismaMock.user.update.mockImplementation(({ where }) =>
+      banned.add(where.id),
+    );
+
+    await softDeleteUserAccount("owner-a");
+    await expect(softDeleteUserAccount("owner-b")).rejects.toThrow(
+      SOLE_ORG_OWNER_BLOCK_MESSAGE,
+    );
+    expect([...banned]).toEqual(["owner-a"]);
+  });
+
+  it("keeps an active owner when both owners delete concurrently", async () => {
+    const banned = new Set<string>();
+    let lock = Promise.resolve();
+    prismaMock.member.findMany.mockResolvedValue([{ organizationId: "org-1" }]);
+    prismaMock.member.count.mockImplementation(
+      ({ where }) =>
+        ["owner-a", "owner-b"].filter(
+          (id) =>
+            id !== where.userId.not &&
+            (where.user?.banned !== false || !banned.has(id)),
+        ).length,
+    );
+    prismaMock.user.update.mockImplementation(({ where }) =>
+      banned.add(where.id),
+    );
+    prismaMock.$transaction.mockImplementation(
+      async (action: (tx: typeof prismaMock) => Promise<void>) => {
+        let release: (() => void) | undefined;
+        const tx = {
+          ...prismaMock,
+          $executeRaw: vi.fn(async () => {
+            const previous = lock;
+            lock = new Promise<void>((resolve) => {
+              release = resolve;
+            });
+            await previous;
+          }),
+        };
+        try {
+          return await action(tx);
+        } finally {
+          release?.();
+        }
+      },
+    );
+
+    const results = await Promise.allSettled([
+      softDeleteUserAccount("owner-a"),
+      softDeleteUserAccount("owner-b"),
+    ]);
+    expect(
+      results.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(banned.size).toBe(1);
+  });
+
   it("bans the user, disables API keys, and revokes sessions", async () => {
     await softDeleteUserAccount("user-1");
 
