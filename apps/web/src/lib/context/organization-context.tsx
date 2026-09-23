@@ -32,6 +32,8 @@ export type OrganizationContextValue = {
   setActiveOrganization: (organizationId: string | null) => Promise<void>;
   /** Refetch organizations and active org */
   refetch: (opts?: { skipRefresh?: boolean }) => void;
+  /** After org create (Better Auth already set active org in DB). */
+  syncAfterOrganizationCreate: () => Promise<void>;
 };
 
 const OrganizationContext = createContext<OrganizationContextValue | null>(
@@ -112,10 +114,16 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         return;
       }
       await refetchSession();
-      router.refresh();
+      // Defer so Set-Cookie from set-active is visible before RSC re-fetch (avoids 401 → signin).
+      queueMicrotask(() => router.refresh());
     },
     [router, refetchSession],
   );
+
+  const syncAfterOrganizationCreate = useCallback(async () => {
+    await refetchSession();
+    await fetchOrganizations();
+  }, [refetchSession, fetchOrganizations]);
 
   const refetch = useCallback(
     (opts?: { skipRefresh?: boolean }) => {
@@ -133,6 +141,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       isLoading: sessionPending || orgsLoading,
       setActiveOrganization,
       refetch,
+      syncAfterOrganizationCreate,
     }),
     [
       activeOrganization,
@@ -142,6 +151,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       orgsLoading,
       setActiveOrganization,
       refetch,
+      syncAfterOrganizationCreate,
     ],
   );
 
