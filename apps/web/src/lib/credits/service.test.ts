@@ -568,6 +568,41 @@ describe("credit service", () => {
     expect(store.current.ledger).toHaveLength(2);
   });
 
+  it("claws back only the incremental slice across partial refund events", async () => {
+    store.current = createState(0);
+
+    await grantCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      credits: 100,
+      checkoutSessionId: "cs_test_partial_refund",
+    });
+
+    const first = await clawBackCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      checkoutSessionId: "cs_test_partial_refund",
+      stripeEventId: "evt_refund_partial_1",
+      creditsToClawBack: 30,
+    });
+    expect(first).toMatchObject({
+      clawedBack: true,
+      creditsRemoved: 30,
+      balanceAfter: 70,
+    });
+
+    const second = await clawBackCreditTopUpFromCheckoutSession({
+      userId: "user-1",
+      checkoutSessionId: "cs_test_partial_refund",
+      stripeEventId: "evt_refund_partial_2",
+      creditsToClawBack: 60,
+    });
+    expect(second).toMatchObject({
+      clawedBack: true,
+      creditsRemoved: 30,
+      balanceAfter: 40,
+    });
+    expect(store.current.user?.creditsRemaining).toBe(40);
+  });
+
   it("reports shortfall when the user already spent top-up credits", async () => {
     store.current = createState(0);
 

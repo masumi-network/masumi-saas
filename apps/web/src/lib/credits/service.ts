@@ -299,8 +299,9 @@ function clawBackReference(
 
 /**
  * Idempotent clawback for Stripe refunds / disputes against a prior top-up grant.
- * Removes up to {@link params.creditsToClawBack}, capped by remaining grant balance
- * and the user's current credit balance (shortfall is reported for ops follow-up).
+ * {@link params.creditsToClawBack} is the cumulative total that should have been
+ * clawed back for this checkout session so far (e.g. from charge.amount_refunded).
+ * Only the increment since prior clawback ledger rows is applied on this call.
  */
 export async function clawBackCreditTopUpFromCheckoutSession(params: {
   userId: string;
@@ -383,7 +384,11 @@ export async function clawBackCreditTopUpFromCheckoutSession(params: {
         0,
       );
       const remainingGrant = Math.max(0, grant.delta - alreadyRemoved);
-      const targetRemoval = Math.min(params.creditsToClawBack, remainingGrant);
+      const incrementalTarget = Math.max(
+        0,
+        params.creditsToClawBack - alreadyRemoved,
+      );
+      const targetRemoval = Math.min(incrementalTarget, remainingGrant);
       if (targetRemoval <= 0) {
         const user = await tx.user.findUniqueOrThrow({
           where: { id: params.userId },
