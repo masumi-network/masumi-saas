@@ -114,10 +114,12 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         return;
       }
       await refetchSession();
-      // Defer so Set-Cookie from set-active is visible before RSC re-fetch (avoids 401 → signin).
-      queueMicrotask(() => router.refresh());
+      // Do not router.refresh() here: set-active updates the session cookie and an
+      // immediate RSC refresh often runs with the previous cookie → 401 → /signin.
+      // Client session + org list update below; server pages refresh on navigation.
+      await fetchOrganizations();
     },
-    [router, refetchSession],
+    [refetchSession, fetchOrganizations],
   );
 
   const syncAfterOrganizationCreate = useCallback(async () => {
