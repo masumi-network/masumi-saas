@@ -23,6 +23,15 @@ import { getAuthContext } from "@/lib/auth/utils";
 import { resolveNetworkRegisterSession } from "./session";
 
 const findUnique = vi.mocked(prisma.networkRegistrationDraft.findUnique);
+const draftDefaults = {
+  name: "Demo agent",
+  userId: null,
+  payload: {},
+  error: null,
+  createdAt: new Date(0),
+  updatedAt: new Date(0),
+  expiresAt: new Date(0),
+};
 
 describe("resolveNetworkRegisterSession", () => {
   beforeEach(() => {
@@ -31,6 +40,7 @@ describe("resolveNetworkRegisterSession", () => {
 
   it("requires sign-in when there is no session", async () => {
     findUnique.mockResolvedValue({
+      ...draftDefaults,
       id: "draft-1",
       email: "ada@example.com",
       agentId: null,
@@ -55,6 +65,7 @@ describe("resolveNetworkRegisterSession", () => {
 
   it("detects signed-in email mismatch", async () => {
     findUnique.mockResolvedValue({
+      ...draftDefaults,
       id: "draft-1",
       email: "ada@example.com",
       agentId: "agent-1",

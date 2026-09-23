@@ -134,7 +134,7 @@ describe("shouldExposeNetworkRegisterDevOtp", () => {
   const originalSuppress = process.env.NETWORK_REGISTER_SUPPRESS_DEV_OTP;
 
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv;
+    Object.assign(process.env, { NODE_ENV: originalNodeEnv });
     if (originalSuppress === undefined) {
       delete process.env.NETWORK_REGISTER_SUPPRESS_DEV_OTP;
     } else {
@@ -143,19 +143,19 @@ describe("shouldExposeNetworkRegisterDevOtp", () => {
   });
 
   it("returns false outside development", () => {
-    process.env.NODE_ENV = "production";
+    Object.assign(process.env, { NODE_ENV: "production" });
     delete process.env.NETWORK_REGISTER_SUPPRESS_DEV_OTP;
     expect(shouldExposeNetworkRegisterDevOtp()).toBe(false);
   });
 
   it("returns true in development by default", () => {
-    process.env.NODE_ENV = "development";
+    Object.assign(process.env, { NODE_ENV: "development" });
     delete process.env.NETWORK_REGISTER_SUPPRESS_DEV_OTP;
     expect(shouldExposeNetworkRegisterDevOtp()).toBe(true);
   });
 
   it("returns false in development when suppress flag is enabled", () => {
-    process.env.NODE_ENV = "development";
+    Object.assign(process.env, { NODE_ENV: "development" });
     process.env.NETWORK_REGISTER_SUPPRESS_DEV_OTP = "true";
     expect(shouldExposeNetworkRegisterDevOtp()).toBe(false);
   });
