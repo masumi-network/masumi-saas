@@ -86,17 +86,17 @@ export async function resolveUserSellingWalletsBalance(
   network: PaymentNodeNetwork,
   options?: { organizationId?: string },
 ): Promise<string> {
-  const addresses = await resolveSellingWalletAddresses({
-    userId,
-    organizationId: options?.organizationId,
-  });
-
-  const client = await getPaymentNodeClientForUser(userId);
-  if (!client) {
-    return formatLovelaceBalanceDisplay(ZERO_LOVELACE);
-  }
-
   try {
+    const addresses = await resolveSellingWalletAddresses({
+      userId,
+      organizationId: options?.organizationId,
+    });
+
+    const client = await getPaymentNodeClientForUser(userId);
+    if (!client) {
+      return formatLovelaceBalanceDisplay(ZERO_LOVELACE);
+    }
+
     return await resolveAdaBalanceForAddresses(client, network, addresses);
   } catch (error) {
     console.error(
