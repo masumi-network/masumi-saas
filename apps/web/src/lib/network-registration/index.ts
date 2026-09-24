@@ -10,6 +10,7 @@ import {
 import {
   buildAgentPricing,
   completeOnChainRegistration,
+  type CompleteRegistrationResult,
   startAgentRegistration,
   validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
@@ -1222,8 +1223,10 @@ async function pollComplete(
   });
   let last: Awaited<ReturnType<typeof completeOnChainRegistration>> | null =
     null;
+  let lastSeenStatus: CompleteRegistrationResult["status"] | null = null;
   for (let i = 0; i < COMPLETE_POLL_ATTEMPTS; i += 1) {
     last = await completeOnChainRegistration(agentId, userId);
+    lastSeenStatus = last.status;
     doRuntimeDebugLog("network-register", "pollComplete attempt", {
       agentId,
       attempt: i + 1,
@@ -1244,7 +1247,7 @@ async function pollComplete(
   doRuntimeDebugLog("network-register", "pollComplete timed out", {
     agentId,
     userId,
-    lastStatus: last?.status ?? null,
+    lastStatus: lastSeenStatus,
   });
   return { ok: false, error: "Registration timed out" };
 }
