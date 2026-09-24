@@ -18301,6 +18301,20 @@
                             ]
                           }
                         ]
+                      },
+                      "payoutAddress": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 250
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          }
+                        ]
                       }
                     },
                     "required": [

@@ -96,10 +96,12 @@ describe("buildNetworkRegistrationPayload", () => {
       mint: {
         kyc: "skip",
         destination: "managed",
+        payoutAddress: "addr_test1qxyz",
       },
     });
     expect(payload.payment).toBeUndefined();
     expect(payload.effectiveDestination).toBe("managed");
+    expect(payload.mint.payoutAddress).toBe("addr_test1qxyz");
   });
 });
 
