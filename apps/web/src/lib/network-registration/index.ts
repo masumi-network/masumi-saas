@@ -757,12 +757,13 @@ export async function fulfillNetworkRegistrationDraft(params: {
     };
   }
 
+  const draftPayload = draft.payload as NetworkRegistrationPayload | null;
   doRuntimeDebugLog("network-register", "fulfillNetworkRegistrationDraft", {
     draftId: params.draftId,
     userId: params.user.id,
     draftStatus: draft.status,
     deferOnChainPolling: params.deferOnChainPolling ?? false,
-    cardanoNetwork: draft.cardanoNetwork,
+    cardanoNetwork: draftPayload?.cardanoNetwork ?? null,
   });
 
   const sessionEmail = params.user.email?.trim().toLowerCase();
