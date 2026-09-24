@@ -140,7 +140,7 @@ OpenAPI JSON for this surface: **`GET /api/v1/openapi`** (Swagger UI: **`/docs/o
 
 **Platform HTTP API** (session or API key): OpenAPI JSON at **`GET /api/openapi`** (Swagger UI: **`/docs/saas-openapi`**). Describes explicit runtime paths like `/api/agents`, `/api/dashboard/*`, `/api/credentials/*`, plus allow-listed `/pay/api/v1/*` and `/registry/api/v1/*` wrapper paths — not the public catalog above.
 
-**Documentation:** header **Documentation** opens **[docs.masumi.network](https://docs.masumi.network/)**. **`/docs`** redirects there with **307** (temporary) so browsers/CDNs do not cache a permanent hop if the external docs URL changes. **Developers** (signed-in) → **`/developers`**: **Schema Validator** and **OpenAPI**; OpenAPI iframe is **`/docs/saas-openapi`**. **Public** discovery: **`/docs/openapi`**. Old paths **`/docs/api`** and **`/docs/saas-api`** **308** to **`/docs/saas-openapi`**.
+**Documentation:** header **Documentation** opens the **[Masumi DevHub](https://www.masumi.network/dev/masumi/)**. **`/docs`** redirects there with **307** (temporary) so browsers/CDNs do not cache a permanent hop if the external docs URL changes. **Developers** (signed-in) → **`/developers`**: **Schema Validator** and **OpenAPI**; OpenAPI iframe is **`/docs/saas-openapi`**. **Public** discovery: **`/docs/openapi`**. Old paths **`/docs/api`** and **`/docs/saas-api`** **308** to **`/docs/saas-openapi`**.
 
 Example:
 
