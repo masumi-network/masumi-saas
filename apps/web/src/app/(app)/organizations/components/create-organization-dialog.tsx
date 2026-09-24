@@ -145,8 +145,8 @@ export function CreateOrganizationDialog({
       }
 
       if (data) {
-        await orgContext?.setActiveOrganization(data.id);
-        orgContext?.refetch({ skipRefresh: true });
+        // create already sets activeOrganizationId on the session (no set-active call).
+        await orgContext?.syncAfterOrganizationCreate();
         handleOpenChange(false);
         toast.success(t("success"));
       }

@@ -46,6 +46,7 @@ import {
   SUPPORT_PAGE_URL,
 } from "@/lib/config/masumi-external-links";
 import { useOrganizationContextOptional } from "@/lib/context/organization-context";
+import { useWorkspaceSwitcher } from "@/lib/hooks/use-workspace-switcher";
 
 import UserAvatarContent from "./user-avatar-content";
 
@@ -84,6 +85,10 @@ export default function UserAvatarClient({
   const [workspacePopoverOpen, setWorkspacePopoverOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const orgContext = useOrganizationContextOptional();
+  const { isActivating, handleSelectWorkspace: activateWorkspace } =
+    useWorkspaceSwitcher({
+      onActivated: orgContext?.refetch,
+    });
 
   const router = useRouter();
 
@@ -124,9 +129,12 @@ export default function UserAvatarClient({
   };
 
   const handleSelectWorkspace = (organizationId: string | null) => {
-    void orgContext?.setActiveOrganization(organizationId);
-    setWorkspacePopoverOpen(false);
+    void activateWorkspace(organizationId).finally(() => {
+      setWorkspacePopoverOpen(false);
+    });
   };
+
+  const workspaceSwitcherBusy = orgContext?.isLoading || isActivating;
 
   const workspaces: WorkspaceItem[] = [
     {
@@ -273,7 +281,7 @@ export default function UserAvatarClient({
                         key={workspace.id ?? "personal"}
                         type="button"
                         onClick={() => handleSelectWorkspace(workspace.id)}
-                        disabled={orgContext?.isLoading}
+                        disabled={workspaceSwitcherBusy}
                         className="flex w-full cursor-pointer items-center gap-3 rounded-sm py-2.5 px-2 text-left outline-none hover:bg-muted-surface focus:bg-muted-surface disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className="flex min-w-0 flex-1 items-center gap-3">
