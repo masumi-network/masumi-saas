@@ -22,6 +22,10 @@ import {
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
 import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
+import {
+  doRuntimeDebugLog,
+  serializeErrorForLog,
+} from "@/lib/debug/do-runtime-log";
 import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
 import { sendAgentRegistrationFailedEmail } from "@/lib/email/send-registration-failed";
 import {
@@ -549,6 +553,15 @@ async function registerAgentOnChainUntilSetup(
 > {
   const { user, activeOrganizationId, network } = ctx;
 
+  doRuntimeDebugLog("agent-registration", "registerAgentOnChainUntilSetup", {
+    userId: user.id,
+    network,
+    organizationId: activeOrganizationId ?? null,
+    agentName: params.name,
+    pricingType: params.agentPricing.pricingType,
+    payoutProvided: Boolean(params.payoutAddress?.trim()),
+  });
+
   if (params.tags.length === 0) {
     return { success: false, error: "At least one tag is required." };
   }
@@ -640,6 +653,12 @@ async function registerAgentOnChainUntilSetup(
     sellingWallets: configuredPaymentSourceWithWallets.SellingWallets,
   });
   if (!fundingWalletResult.wallet) {
+    doRuntimeDebugLog("agent-registration", "funding wallet missing", {
+      userId: user.id,
+      network,
+      paymentSourceId,
+      error: fundingWalletResult.error ?? null,
+    });
     return {
       success: false,
       error:
@@ -647,6 +666,17 @@ async function registerAgentOnChainUntilSetup(
         "No registration funding wallet is available for agent registration.",
     };
   }
+
+  doRuntimeDebugLog("agent-registration", "funding wallet resolved", {
+    userId: user.id,
+    network,
+    paymentSourceId,
+    fundingWalletId: fundingWalletResult.wallet.id,
+    fundingWalletAddressPrefix: fundingWalletResult.wallet.walletAddress.slice(
+      0,
+      16,
+    ),
+  });
 
   const fundingWalletNetworkError = validateRegistrationFundingWalletNetwork({
     fundingWallet: fundingWalletResult.wallet,
@@ -871,6 +901,13 @@ async function registerAgentOnChainUntilSetup(
 
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
+  doRuntimeDebugLog("agent-registration", "registerAgentOnChainUntilSetup ok", {
+    agentId: agent.id,
+    userId: user.id,
+    network,
+    registrationState: "RegistrationInitiated",
+  });
+
   return { success: true, agentId: agent.id };
 }
 
@@ -882,14 +919,34 @@ export async function completeOnChainRegistration(
   agentId: string,
   userId: string,
 ): Promise<CompleteRegistrationResult> {
+  doRuntimeDebugLog("agent-registration", "completeOnChainRegistration", {
+    agentId,
+    userId,
+  });
+
   const agent = await prisma.agent.findFirst({
     where: { id: agentId, userId },
     include: { agentReference: true },
   });
   if (!agent?.agentReference) {
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "error",
+        phase: "agent-not-found",
+      },
+    );
     return { status: "error", error: "Agent not found" };
   }
   const ref = agent.agentReference;
+  doRuntimeDebugLog("agent-registration", "completeOnChainRegistration state", {
+    agentId,
+    registrationState: agent.registrationState,
+    networkIdentifier: ref.networkIdentifier,
+    hasExternalId: Boolean(ref.externalId),
+  });
   if (ref.externalId) {
     const updated = await prisma.agent.findUnique({
       where: { id: agentId },
@@ -935,12 +992,31 @@ export async function completeOnChainRegistration(
       if (walletSync) return walletSync;
     }
 
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "pending",
+        phase: "externalId-awaiting-registry-sync",
+        externalId: ref.externalId,
+      },
+    );
     return { status: "pending" };
   }
   const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
   const managedMintAddress = meta.sellingWalletAddress;
   const payload = meta.registrationPayload;
   if (!managedMintAddress || !payload) {
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "error",
+        phase: "missing-registration-metadata",
+      },
+    );
     return { status: "error", error: "Missing registration data" };
   }
   const network = (ref.networkIdentifier ??
@@ -1013,6 +1089,17 @@ export async function completeOnChainRegistration(
     }
     fundingWalletVkey = fundingWalletResult.wallet.walletVkey;
   }
+
+  doRuntimeDebugLog(
+    "agent-registration",
+    "completeOnChainRegistration will registerAgent",
+    {
+      agentId,
+      userId,
+      network,
+      hasFundingWalletVkey: Boolean(fundingWalletVkey),
+    },
+  );
 
   const updatedAgent = await prisma.$transaction(async (tx) => {
     const rows = await tx.$queryRaw<
@@ -1160,6 +1247,14 @@ export async function completeOnChainRegistration(
         toCardanoSourcePricing(payload.agentPricing),
       );
 
+    doRuntimeDebugLog("agent-registration", "registerAgent payment-node call", {
+      agentId: agent.id,
+      userId,
+      network,
+      paymentSourceType,
+      recipientWalletAddressPrefix: recipientWalletAddress.slice(0, 16),
+    });
+
     const registerPromise = adminClient.registerAgent({
       network,
       sellingWalletVkey: fundingWalletVkey,
@@ -1240,15 +1335,33 @@ export async function completeOnChainRegistration(
       const updated = await tx.agent.findUniqueOrThrow({
         where: { id: agent.id },
       });
+      doRuntimeDebugLog("agent-registration", "registerAgent succeeded", {
+        agentId: agent.id,
+        registryEntryId: registryEntry.id,
+        registryState: registryEntry.state,
+        agentIdentifier: registryEntry.agentIdentifier ?? null,
+      });
       return { agent: updated, eventType, pending: false };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      doRuntimeDebugLog("agent-registration", "registerAgent failed", {
+        agentId: agent.id,
+        userId,
+        network,
+        ...serializeErrorForLog(error),
+      });
       if (message.includes("Network and Address combination not supported")) {
         throw new Error(
           `Payment source and wallet network mismatch. Registration is using ${network}. Check that ${paymentNodeConfig.getPaymentSourceIdEnvName(network)} points to a ${network} payment source.`,
         );
       }
       if (message.includes("Registration request timed out")) {
+        doRuntimeDebugLog("agent-registration", "registerAgent timed out", {
+          agentId: agent.id,
+          userId,
+          network,
+          timeoutMs: REGISTER_AGENT_HTTP_TIMEOUT_MS,
+        });
         await tx.agentReference.update({
           where: { agentId: agent.id },
           data: {
@@ -1278,6 +1391,15 @@ export async function completeOnChainRegistration(
     }
   });
   if (updatedAgent.pending) {
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "pending",
+        phase: "registerAgent-still-pending",
+      },
+    );
     return { status: "pending" };
   }
   if (updatedAgent.eventType) {
@@ -1290,6 +1412,16 @@ export async function completeOnChainRegistration(
       updatedAgent.agent.id,
       updatedAgent.agent.name,
     );
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "registered",
+        phase: "registration-confirmed",
+        agentIdentifier: updatedAgent.agent.agentIdentifier ?? null,
+      },
+    );
     return { status: "registered", data: updatedAgent.agent };
   }
   if (state === "RegistrationFailed") {
@@ -1300,8 +1432,28 @@ export async function completeOnChainRegistration(
       updatedAgent.agent.name,
       errorMsg,
     );
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "error",
+        phase: "registration-failed-on-chain",
+        error: errorMsg,
+      },
+    );
     return { status: "error", error: errorMsg };
   }
+  doRuntimeDebugLog(
+    "agent-registration",
+    "completeOnChainRegistration result",
+    {
+      agentId,
+      status: "pending",
+      phase: "post-registerAgent-awaiting-confirmation",
+      registrationState: state,
+    },
+  );
   return { status: "pending" };
 }
 

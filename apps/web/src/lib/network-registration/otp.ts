@@ -19,6 +19,7 @@ import {
 import { authConfig } from "@/lib/config/auth.config";
 import { getPostmarkFromHeader } from "@/lib/config/email.config";
 import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
+import { doRuntimeDebugLog } from "@/lib/debug/do-runtime-log";
 import { formatOtpExpiryMessage } from "@/lib/email/format-otp-expiry-message";
 import { getEmailMessages } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
@@ -182,12 +183,22 @@ export async function sendNetworkRegistrationOtp(params: {
       otp,
     });
 
+    doRuntimeDebugLog("network-register", "OTP sent", {
+      email,
+      postmarkConfigured: Boolean(postmarkClient),
+    });
+
     return {
       ok: true,
       email,
       ...(shouldExposeNetworkRegisterDevOtp() ? { devCode: otp } : {}),
     };
   } catch (error) {
+    doRuntimeDebugLog("network-register", "OTP send failed", {
+      email,
+      postmarkConfigured: Boolean(postmarkClient),
+      error: error instanceof Error ? error.message : String(error),
+    });
     console.error("[sendNetworkRegistrationOtp] error:", error);
     return {
       ok: false,
