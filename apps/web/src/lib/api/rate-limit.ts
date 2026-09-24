@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
+import { serializeErrorForLog } from "@/lib/debug/do-runtime-log";
 import { serverLog } from "@/lib/server/logger";
 
 export type RateLimitResult = {
@@ -133,13 +134,21 @@ export async function checkRateLimit(
 
   if (hasUpstash) {
     const limiter = getUpstashLimiter(maxRequests, windowMs);
-    const result = await limiter.limit(key);
-    return {
-      allowed: result.success,
-      limit: result.limit,
-      remaining: result.remaining,
-      resetAt: result.reset,
-    };
+    try {
+      const result = await limiter.limit(key);
+      return {
+        allowed: result.success,
+        limit: result.limit,
+        remaining: result.remaining,
+        resetAt: result.reset,
+      };
+    } catch (error) {
+      serverLog.error("[rate-limit] Upstash limit() failed", {
+        keyPrefix: key.split(":")[0],
+        ...serializeErrorForLog(error),
+      });
+      throw error;
+    }
   }
 
   if (!allowInMemoryFallback) {

@@ -15,6 +15,7 @@ import {
   isAgentVerificationFlowEnabled,
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
+import { doRuntimeDebugLog } from "@/lib/debug/do-runtime-log";
 import { type PaymentNodeNetwork } from "@/lib/payment-node";
 import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
@@ -111,7 +112,25 @@ export async function completeRegistrationIfReadyAction(
     if (!agent) {
       return { status: "error", error: "Agent not found" };
     }
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeRegistrationIfReadyAction",
+      {
+        agentId,
+        userId: user.id,
+        registrationState: agent.registrationState,
+      },
+    );
     const result = await completeOnChainRegistration(agentId, user.id);
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeRegistrationIfReadyAction result",
+      {
+        agentId,
+        status: result.status,
+        ...(result.status === "error" ? { error: result.error } : {}),
+      },
+    );
     if (result.status === "registered") {
       return { status: "registered", data: result.data };
     }

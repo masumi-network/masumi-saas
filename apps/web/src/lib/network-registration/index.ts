@@ -15,6 +15,7 @@ import {
 } from "@/lib/agent-registration";
 import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import { consumeCreditIfRequired } from "@/lib/credits/service";
+import { doRuntimeDebugLog } from "@/lib/debug/do-runtime-log";
 import { getKycStatusForUser } from "@/lib/network-registration/kyc-status";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
@@ -668,9 +669,30 @@ export async function pollNetworkRegistrationStatus(params: {
     };
   }
 
+  doRuntimeDebugLog(
+    "network-register",
+    "pollNetworkRegistrationStatus complete",
+    {
+      draftId: params.draftId,
+      agentId: draft.agentId,
+      draftStatus: draft.status,
+    },
+  );
+
   const result = await completeOnChainRegistration(
     draft.agentId,
     session.userId,
+  );
+
+  doRuntimeDebugLog(
+    "network-register",
+    "pollNetworkRegistrationStatus result",
+    {
+      draftId: params.draftId,
+      agentId: draft.agentId,
+      completeStatus: result.status,
+      ...(result.status === "error" ? { error: result.error } : {}),
+    },
   );
 
   if (result.status === "registered") {
@@ -734,6 +756,14 @@ export async function fulfillNetworkRegistrationDraft(params: {
       status: "FAILED",
     };
   }
+
+  doRuntimeDebugLog("network-register", "fulfillNetworkRegistrationDraft", {
+    draftId: params.draftId,
+    userId: params.user.id,
+    draftStatus: draft.status,
+    deferOnChainPolling: params.deferOnChainPolling ?? false,
+    cardanoNetwork: draft.cardanoNetwork,
+  });
 
   const sessionEmail = params.user.email?.trim().toLowerCase();
   if (!sessionEmail || sessionEmail !== draft.email) {
@@ -1062,8 +1092,21 @@ export async function fulfillNetworkRegistrationDraft(params: {
     );
 
     if (!started.success) {
+      doRuntimeDebugLog("network-register", "startAgentRegistration failed", {
+        draftId: draft.id,
+        userId: params.user.id,
+        network,
+        error: started.error,
+      });
       throw new Error(started.error);
     }
+
+    doRuntimeDebugLog("network-register", "startAgentRegistration ok", {
+      draftId: draft.id,
+      userId: params.user.id,
+      agentId: started.agentId,
+      network,
+    });
 
     if (params.deferOnChainPolling) {
       await prisma.networkRegistrationDraft.update({
@@ -1171,10 +1214,21 @@ async function pollComplete(
 ): Promise<
   { ok: true; status: "registered" | "pending" } | { ok: false; error: string }
 > {
+  doRuntimeDebugLog("network-register", "pollComplete start", {
+    agentId,
+    userId,
+    maxAttempts: COMPLETE_POLL_ATTEMPTS,
+  });
   let last: Awaited<ReturnType<typeof completeOnChainRegistration>> | null =
     null;
   for (let i = 0; i < COMPLETE_POLL_ATTEMPTS; i += 1) {
     last = await completeOnChainRegistration(agentId, userId);
+    doRuntimeDebugLog("network-register", "pollComplete attempt", {
+      agentId,
+      attempt: i + 1,
+      status: last.status,
+      ...(last.status === "error" ? { error: last.error } : {}),
+    });
     if (last.status === "registered") {
       return { ok: true, status: "registered" };
     }
@@ -1186,6 +1240,11 @@ async function pollComplete(
   if (last?.status === "pending") {
     return { ok: true, status: "pending" };
   }
+  doRuntimeDebugLog("network-register", "pollComplete timed out", {
+    agentId,
+    userId,
+    lastStatus: last?.status ?? null,
+  });
   return { ok: false, error: "Registration timed out" };
 }
 

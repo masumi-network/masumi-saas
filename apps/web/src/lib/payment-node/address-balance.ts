@@ -1,12 +1,24 @@
+import {
+  doRuntimeDebugLog,
+  serializeErrorForLog,
+} from "@/lib/debug/do-runtime-log";
 import type {
   PaymentNodeClient,
   PaymentNodeNetwork,
 } from "@/lib/payment-node/client";
 import { formatUnitAmount } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { serverLog } from "@/lib/server/logger";
 
+import { isWalletAddressCompatibleWithNetwork } from "./registration-wallets";
 import type { BalanceAmount } from "./schemas";
 import { resolveSellingWalletAddresses } from "./selling-wallet-addresses";
+
+function shortenAddressForLog(address: string): string {
+  const trimmed = address.trim();
+  if (trimmed.length <= 20) return trimmed;
+  return `${trimmed.slice(0, 12)}…${trimmed.slice(-8)}`;
+}
 
 const ZERO_LOVELACE = BigInt(0);
 
@@ -74,8 +86,32 @@ export async function resolveAdaBalanceForAddresses(
 
   let totalLovelace = ZERO_LOVELACE;
   for (const address of uniqueAddresses) {
-    const balance = await fetchAddressBalance(client, { address, network });
-    totalLovelace += readLovelaceFromBalanceAmounts(balance);
+    const networkMismatch = !isWalletAddressCompatibleWithNetwork(
+      address,
+      network,
+    );
+    if (networkMismatch) {
+      serverLog.warn(
+        "[Payment Node] Balance skipped: address/network mismatch",
+        {
+          network,
+          address: shortenAddressForLog(address),
+          hint: "Mainnet addresses use addr1; Preprod uses addr_test. Check network toggle vs agent payout.",
+        },
+      );
+      continue;
+    }
+    try {
+      const balance = await fetchAddressBalance(client, { address, network });
+      totalLovelace += readLovelaceFromBalanceAmounts(balance);
+    } catch (error) {
+      serverLog.error("[Payment Node] Balance lookup failed", {
+        network,
+        address: shortenAddressForLog(address),
+        ...serializeErrorForLog(error),
+      });
+      throw error;
+    }
   }
 
   return formatLovelaceBalanceDisplay(totalLovelace);
@@ -92,6 +128,14 @@ export async function resolveUserSellingWalletsBalance(
       organizationId: options?.organizationId,
     });
 
+    doRuntimeDebugLog("balance", "resolveUserSellingWalletsBalance", {
+      network,
+      userId,
+      organizationId: options?.organizationId ?? null,
+      addressCount: addresses.length,
+      addresses: addresses.map(shortenAddressForLog),
+    });
+
     const client = await getPaymentNodeClientForUser(userId);
     if (!client) {
       return formatLovelaceBalanceDisplay(ZERO_LOVELACE);
@@ -99,10 +143,12 @@ export async function resolveUserSellingWalletsBalance(
 
     return await resolveAdaBalanceForAddresses(client, network, addresses);
   } catch (error) {
-    console.error(
-      "[Payment Node] Failed to resolve selling wallet balance:",
-      error,
-    );
+    serverLog.error("[Payment Node] Failed to resolve selling wallet balance", {
+      network,
+      userId,
+      organizationId: options?.organizationId ?? null,
+      ...serializeErrorForLog(error),
+    });
     return formatLovelaceBalanceDisplay(ZERO_LOVELACE);
   }
 }
