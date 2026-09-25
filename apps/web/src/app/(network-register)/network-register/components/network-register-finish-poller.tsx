@@ -47,7 +47,17 @@ export function NetworkRegisterFinishPoller({
         if (intervalId !== undefined) {
           window.clearInterval(intervalId);
         }
-        window.location.assign(successUrl);
+        const destination = new URL(successUrl);
+        const networkId = result.data?.agentIdentifier?.trim();
+        if (networkId) {
+          destination.searchParams.set("agentIdentifier", networkId);
+          destination.searchParams.delete("agentId");
+        }
+        const agentName = result.data?.name?.trim();
+        if (agentName && !destination.searchParams.get("agentName")) {
+          destination.searchParams.set("agentName", agentName);
+        }
+        window.location.assign(destination.toString());
         return;
       }
 
