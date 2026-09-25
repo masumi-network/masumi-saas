@@ -8,6 +8,7 @@ import {
   buildNetworkRegistrationPayload,
   buildNetworkSiteContinueUrl,
   buildNetworkSiteSuccessUrl,
+  networkRegisterBodySchema,
   resolveNetworkRegistrationCommerceForTest,
 } from "./index";
 
@@ -96,10 +97,24 @@ describe("buildNetworkRegistrationPayload", () => {
       mint: {
         kyc: "skip",
         destination: "managed",
+        payoutAddress: "addr_test1qxyz",
       },
     });
     expect(payload.payment).toBeUndefined();
     expect(payload.effectiveDestination).toBe("managed");
+    expect(payload.mint.payoutAddress).toBe("addr_test1qxyz");
+  });
+
+  it("defaults mint.kyc to skip when omitted", () => {
+    const { payment: _payment, ...withoutPayment } = base;
+    const parsed = networkRegisterBodySchema.parse({
+      ...withoutPayment,
+      mint: {
+        destination: "managed",
+        payoutAddress: "addr_test1qxyz",
+      },
+    });
+    expect(parsed.mint.kyc).toBe("skip");
   });
 });
 

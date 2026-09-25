@@ -18278,7 +18278,8 @@
                         "enum": [
                           "skip",
                           "kyc"
-                        ]
+                        ],
+                        "default": "skip"
                       },
                       "destination": {
                         "type": "string",
@@ -18301,10 +18302,23 @@
                             ]
                           }
                         ]
+                      },
+                      "payoutAddress": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 250
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          }
+                        ]
                       }
                     },
                     "required": [
-                      "kyc",
                       "destination"
                     ]
                   },

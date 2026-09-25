@@ -68,10 +68,13 @@ export const networkRegisterBodySchema = z.object({
     })
     .optional(),
   mint: z.object({
-    kyc: z.enum(["skip", "kyc"]),
+    /** Omitted by masumi.network register; KYC mint path is deprecated. */
+    kyc: z.enum(["skip", "kyc"]).optional().default("skip"),
     destination: z.enum(["managed", "browser", "external"]),
     /** Cardano receive address for external / browser paths (and optional payout). */
     cardanoAddress: z.string().max(250).optional().or(z.literal("")),
+    /** Cardano payout address for managed registration (where job payments are sent). */
+    payoutAddress: z.string().max(250).optional().or(z.literal("")),
   }),
   cardanoNetwork: z.enum(["Preprod", "Mainnet"]).default("Preprod"),
 });
@@ -999,7 +1002,15 @@ export async function fulfillNetworkRegistrationDraft(params: {
     let payoutAddress = "";
     let registryNftRecipientAddress: string | undefined;
 
-    if (payload.effectiveDestination !== "managed") {
+    if (payload.effectiveDestination === "managed") {
+      const managedPayout = payload.mint.payoutAddress?.trim() ?? "";
+      const payoutError = validatePayoutAddressForNetwork(
+        managedPayout,
+        network,
+      );
+      if (payoutError) throw new Error(payoutError);
+      payoutAddress = managedPayout;
+    } else {
       const dest = payload.mint.cardanoAddress?.trim() ?? "";
       const destError = validatePayoutAddressForNetwork(dest, network);
       if (destError) throw new Error(destError);
