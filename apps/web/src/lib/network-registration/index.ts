@@ -68,8 +68,7 @@ export const networkRegisterBodySchema = z.object({
     })
     .optional(),
   mint: z.object({
-    /** Omitted by masumi.network register; KYC mint path is deprecated. */
-    kyc: z.enum(["skip", "kyc"]).optional().default("skip"),
+    kyc: z.enum(["skip", "kyc"]),
     destination: z.enum(["managed", "browser", "external"]),
     /** Cardano receive address for external / browser paths (and optional payout). */
     cardanoAddress: z.string().max(250).optional().or(z.literal("")),
