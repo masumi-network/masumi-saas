@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import {
   buildNetworkKycVerifyUrl,
-  buildNetworkSiteSuccessUrl,
+  buildNetworkSiteSuccessUrlForSaasAgent,
   fulfillNetworkRegistrationDraft,
 } from "@/lib/network-registration";
 import { resolveNetworkRegisterSession } from "@/lib/network-registration/session";
@@ -67,11 +67,14 @@ export default async function NetworkRegisterContinuePage({
   const { draft, user, activeOrganizationId } = session;
 
   if (draft.agentId && draft.status === "PROCESSING") {
+    const successUrl = await buildNetworkSiteSuccessUrlForSaasAgent(
+      draft.agentId,
+    );
     return (
       <NetworkRegisterShell>
         <NetworkRegisterFinishPoller
           agentId={draft.agentId}
-          successUrl={buildNetworkSiteSuccessUrl(draft.agentId)}
+          successUrl={successUrl}
         />
       </NetworkRegisterShell>
     );

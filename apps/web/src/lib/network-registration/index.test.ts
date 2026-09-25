@@ -152,8 +152,8 @@ describe("buildNetworkSiteSuccessUrl", () => {
 
   it("returns an absolute marketing-site success URL", () => {
     process.env.NETWORK_SITE_URL = "http://localhost:3001";
-    expect(buildNetworkSiteSuccessUrl("agent-123")).toBe(
-      "http://localhost:3001/register/success?agentId=agent-123",
+    expect(buildNetworkSiteSuccessUrl("policy1.assetname1", "Bot")).toBe(
+      "http://localhost:3001/register/success?agentIdentifier=policy1.assetname1&agentName=Bot",
     );
   });
 });
@@ -167,14 +167,9 @@ describe("buildNetworkSiteContinueUrl", () => {
   it("includes draftId and pollToken for pending registration polling", () => {
     process.env.NETWORK_SITE_URL = "http://localhost:3001";
     expect(
-      buildNetworkSiteContinueUrl(
-        "draft-1",
-        "agent-123",
-        "Research Bot",
-        "poll-token-abc",
-      ),
+      buildNetworkSiteContinueUrl("draft-1", "Research Bot", "poll-token-abc"),
     ).toBe(
-      "http://localhost:3001/register/success?agentId=agent-123&draftId=draft-1&agentName=Research+Bot&pollToken=poll-token-abc",
+      "http://localhost:3001/register/success?draftId=draft-1&agentName=Research+Bot&pollToken=poll-token-abc",
     );
   });
 });
