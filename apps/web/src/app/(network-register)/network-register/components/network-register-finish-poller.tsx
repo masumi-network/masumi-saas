@@ -44,15 +44,16 @@ export function NetworkRegisterFinishPoller({
       if (cancelled) return;
 
       if (result.status === "registered") {
+        const networkId = result.data?.agentIdentifier?.trim();
+        if (!networkId) {
+          return;
+        }
         if (intervalId !== undefined) {
           window.clearInterval(intervalId);
         }
         const destination = new URL(successUrl);
-        const networkId = result.data?.agentIdentifier?.trim();
-        if (networkId) {
-          destination.searchParams.set("agentIdentifier", networkId);
-          destination.searchParams.delete("agentId");
-        }
+        destination.searchParams.set("agentIdentifier", networkId);
+        destination.searchParams.delete("agentId");
         const agentName = result.data?.name?.trim();
         if (agentName && !destination.searchParams.get("agentName")) {
           destination.searchParams.set("agentName", agentName);
