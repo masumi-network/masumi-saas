@@ -19,11 +19,25 @@ const app = createApiApp("/api/public/network/register/complete");
 
 app.use("*", honoCors(CORS_METHODS, NETWORK_REGISTER_CORS_OPTIONS));
 
+const agentSummarySchema = z.object({
+  name: z.string(),
+  description: z.string().nullable(),
+  apiUrl: z.string(),
+  tags: z.array(z.string()),
+});
+
 const successSchema = z.object({
   success: z.literal(true),
   agentId: z.string(),
   status: z.enum(["registered", "pending"]),
   notes: z.array(z.string()),
+  agentIdentifier: z
+    .string()
+    .optional()
+    .describe("Present when status is registered"),
+  agent: agentSummarySchema
+    .optional()
+    .describe("Agent summary when status is registered"),
   successPath: z
     .string()
     .describe("Absolute URL on the masumi.network marketing site"),
@@ -127,6 +141,10 @@ app.openapi(
         status: result.status,
         notes: result.notes,
         successPath: result.successPath,
+        ...(result.agentIdentifier
+          ? { agentIdentifier: result.agentIdentifier }
+          : {}),
+        ...(result.agent ? { agent: result.agent } : {}),
         ...(result.draftId ? { draftId: result.draftId } : {}),
         ...(result.continueUrl ? { continueUrl: result.continueUrl } : {}),
         ...(result.pollToken ? { pollToken: result.pollToken } : {}),

@@ -18377,6 +18377,38 @@
                         "type": "string"
                       }
                     },
+                    "agentIdentifier": {
+                      "type": "string",
+                      "description": "Present when status is registered"
+                    },
+                    "agent": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "apiUrl": {
+                          "type": "string"
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "description",
+                        "apiUrl",
+                        "tags"
+                      ],
+                      "description": "Agent summary when status is registered"
+                    },
                     "successPath": {
                       "type": "string",
                       "description": "Absolute URL on the masumi.network marketing site"
@@ -18751,16 +18783,49 @@
                         "agentId": {
                           "type": "string"
                         },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "description": "On-chain Masumi network agent identifier"
+                        },
                         "successPath": {
                           "type": "string",
                           "description": "Absolute URL on the masumi.network marketing site"
+                        },
+                        "agent": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "apiUrl": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "description",
+                            "apiUrl",
+                            "tags"
+                          ]
                         }
                       },
                       "required": [
                         "success",
                         "status",
                         "agentId",
-                        "successPath"
+                        "agentIdentifier",
+                        "successPath",
+                        "agent"
                       ]
                     }
                   ]
