@@ -18278,7 +18278,8 @@
                         "enum": [
                           "skip",
                           "kyc"
-                        ]
+                        ],
+                        "default": "skip"
                       },
                       "destination": {
                         "type": "string",
@@ -18318,7 +18319,6 @@
                       }
                     },
                     "required": [
-                      "kyc",
                       "destination"
                     ]
                   },
