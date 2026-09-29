@@ -22,6 +22,7 @@ import {
   isWalletAddressCompatibleWithNetwork,
   resolveRegistrationFundingWallet,
 } from "../payment-node/registration-wallets";
+import { findActiveRegistryInboxBySlug } from "./registry-slug-lookup";
 
 const PAYMENT_SOURCE_PAGE_SIZE = 100;
 const MAX_PAYMENT_SOURCE_PAGES = 10;
@@ -175,7 +176,7 @@ function isLocalPendingReservation(reference: InboxAgentReference): boolean {
   return reference.paymentNodeId.startsWith("pending:");
 }
 
-async function listPaymentSources(
+async function listPaymentSourcesWithoutWallets(
   client: PaymentNodeClient,
 ): Promise<PaymentSourceInfo[]> {
   const sources: PaymentSourceInfo[] = [];
@@ -199,7 +200,16 @@ async function listPaymentSources(
     cursorId = nextCursor;
   }
 
-  return hydratePaymentSources(client, sources);
+  return sources;
+}
+
+async function listPaymentSources(
+  client: PaymentNodeClient,
+): Promise<PaymentSourceInfo[]> {
+  return hydratePaymentSources(
+    client,
+    await listPaymentSourcesWithoutWallets(client),
+  );
 }
 
 export async function listPaymentSourcesForNetwork(
@@ -583,6 +593,7 @@ export async function refreshInboxAgentReference(params: {
     const remote = await params.client.getRegistryInboxById({
       id: params.reference.paymentNodeId,
       network: params.network,
+      filterSmartContractAddress: params.reference.smartContractAddress,
     });
 
     if (!remote) {
@@ -610,35 +621,6 @@ export async function refreshInboxAgentReference(params: {
     );
     return fallbackEntry;
   }
-}
-
-async function getRegistryInboxByExactSlug(params: {
-  client: PaymentNodeClient;
-  network: PaymentNodeNetwork;
-  slug: string;
-}): Promise<RegistryInboxEntry | null> {
-  const MAX_PAGES = 20;
-  let cursorId: string | undefined;
-
-  for (let page = 0; page < MAX_PAGES; page += 1) {
-    const { Assets } = await params.client.getRegistryInbox({
-      network: params.network,
-      cursorId,
-      limit: 100,
-      searchQuery: params.slug,
-    });
-
-    const match =
-      Assets.find((asset) => asset.agentSlug === params.slug) ?? null;
-    if (match) return match;
-    if (Assets.length === 0) return null;
-
-    const nextCursor = Assets.at(-1)?.id;
-    if (!nextCursor || nextCursor === cursorId) return null;
-    cursorId = nextCursor;
-  }
-
-  return null;
 }
 
 async function findActiveLocalInboxAgentSlugConflict(params: {
@@ -704,6 +686,7 @@ export async function findInboxAgentSlugConflict(params: {
       const remote = await params.client.getRegistryInboxById({
         id: reference.paymentNodeId,
         network: params.network,
+        filterSmartContractAddress: reference.smartContractAddress,
       });
 
       if (remote) {
@@ -744,13 +727,21 @@ export async function findRegistryInboxAgentSlugConflict(params: {
   slug: string;
   client: PaymentNodeClient;
 }): Promise<InboxAgentSlugConflict | null> {
-  const remote = await getRegistryInboxByExactSlug({
+  // Only contract addresses are needed, so skip the wallet hydration.
+  const paymentSources = (
+    await listPaymentSourcesWithoutWallets(params.client)
+  ).filter((source) => source.network === params.network);
+  const remote = await findActiveRegistryInboxBySlug({
     client: params.client,
     network: params.network,
     slug: params.slug,
+    smartContractAddresses: paymentSources.map(
+      (source) => source.smartContractAddress,
+    ),
+    isActive: (entry) => !isReusableState(entry.state as RegistrationState),
   });
 
-  if (!remote || isReusableState(remote.state as RegistrationState)) {
+  if (!remote) {
     return null;
   }
 
@@ -990,6 +981,7 @@ async function getOwnedInboxAgentFromReference(params: {
   const remote = await params.client.getRegistryInboxById({
     id: params.reference.paymentNodeId,
     network: params.network,
+    filterSmartContractAddress: params.reference.smartContractAddress,
   });
 
   if (!remote) {
