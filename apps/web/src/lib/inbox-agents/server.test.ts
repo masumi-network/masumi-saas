@@ -1045,9 +1045,119 @@ describe("findInboxAgentSlugConflict", () => {
 });
 
 describe("findRegistryInboxAgentSlugConflict", () => {
+  const V1_CONTRACT = "addr_test1v1contract";
+  const V2_CONTRACT = "addr_test1v2contract";
+  const slugLookupClient = () =>
+    ({
+      getRegistryInbox: getRegistryInboxMock,
+      getPaymentSources: getPaymentSourcesMock,
+      getWalletList: getWalletListMock,
+    }) as never;
+
   beforeEach(() => {
     vi.clearAllMocks();
     getRegistryInboxMock.mockResolvedValue({ Assets: [] });
+    getWalletListMock.mockResolvedValue({ Wallets: [] });
+    getPaymentSourcesMock.mockResolvedValue({
+      PaymentSources: [
+        {
+          id: "source-v1",
+          network: "Preprod",
+          smartContractAddress: V1_CONTRACT,
+          SellingWallets: [],
+          PurchasingWallets: [],
+        },
+        {
+          id: "source-v2",
+          network: "Preprod",
+          smartContractAddress: V2_CONTRACT,
+          SellingWallets: [],
+          PurchasingWallets: [],
+        },
+        {
+          id: "source-mainnet",
+          network: "Mainnet",
+          smartContractAddress: "addr1mainnetcontract",
+          SellingWallets: [],
+          PurchasingWallets: [],
+        },
+      ],
+    });
+  });
+
+  it("finds an active slug that exists only on the V2 contract", async () => {
+    getRegistryInboxMock.mockImplementation(
+      async ({ filterSmartContractAddress }) =>
+        filterSmartContractAddress === V2_CONTRACT
+          ? {
+              Assets: [
+                makeInboxEntry({
+                  id: "remote-v2",
+                  agentSlug: "support-inbox",
+                  state: "RegistrationConfirmed",
+                  agentIdentifier: "policy.v2",
+                }),
+              ],
+            }
+          : { Assets: [] },
+    );
+
+    const { findRegistryInboxAgentSlugConflict } = await import("./server");
+    const result = await findRegistryInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: slugLookupClient(),
+    });
+
+    expect(result).toStrictEqual({
+      source: "registry",
+      state: "RegistrationConfirmed",
+      paymentNodeId: "remote-v2",
+      agentIdentifier: "policy.v2",
+    });
+    expect(getRegistryInboxMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        network: "Preprod",
+        filterSmartContractAddress: V2_CONTRACT,
+        searchQuery: "support-inbox",
+      }),
+    );
+    expect(getRegistryInboxMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        filterSmartContractAddress: "addr1mainnetcontract",
+      }),
+    );
+  });
+
+  it("does not let a failed V1 entry hide an active V2 entry", async () => {
+    getRegistryInboxMock.mockImplementation(
+      async ({ filterSmartContractAddress }) => ({
+        Assets: [
+          // The payment node treats an unfiltered list as V1.
+          filterSmartContractAddress === V1_CONTRACT ||
+          filterSmartContractAddress === undefined
+            ? makeInboxEntry({
+                id: "remote-v1-failed",
+                agentSlug: "support-inbox",
+                state: "RegistrationFailed",
+              })
+            : makeInboxEntry({
+                id: "remote-v2",
+                agentSlug: "support-inbox",
+                state: "RegistrationRequested",
+              }),
+        ],
+      }),
+    );
+
+    const { findRegistryInboxAgentSlugConflict } = await import("./server");
+    const result = await findRegistryInboxAgentSlugConflict({
+      network: "Preprod",
+      slug: "support-inbox",
+      client: slugLookupClient(),
+    });
+
+    expect(result?.paymentNodeId).toBe("remote-v2");
   });
 
   it("returns a registry conflict when the remote slug exists and is not deregistered", async () => {
@@ -1066,9 +1176,7 @@ describe("findRegistryInboxAgentSlugConflict", () => {
     const result = await findRegistryInboxAgentSlugConflict({
       network: "Preprod",
       slug: "support-inbox",
-      client: {
-        getRegistryInbox: getRegistryInboxMock,
-      } as never,
+      client: slugLookupClient(),
     });
 
     expect(result).toStrictEqual({
@@ -1095,9 +1203,7 @@ describe("findRegistryInboxAgentSlugConflict", () => {
     const result = await findRegistryInboxAgentSlugConflict({
       network: "Preprod",
       slug: "support-inbox",
-      client: {
-        getRegistryInbox: getRegistryInboxMock,
-      } as never,
+      client: slugLookupClient(),
     });
 
     expect(result).toBeNull();
@@ -1120,9 +1226,7 @@ describe("findRegistryInboxAgentSlugConflict", () => {
     const result = await findRegistryInboxAgentSlugConflict({
       network: "Preprod",
       slug: "support-inbox",
-      client: {
-        getRegistryInbox: getRegistryInboxMock,
-      } as never,
+      client: slugLookupClient(),
     });
 
     expect(result).toBeNull();

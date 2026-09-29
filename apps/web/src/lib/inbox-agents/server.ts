@@ -22,6 +22,7 @@ import {
   isWalletAddressCompatibleWithNetwork,
   resolveRegistrationFundingWallet,
 } from "../payment-node/registration-wallets";
+import { findActiveRegistryInboxBySlug } from "./registry-slug-lookup";
 
 const PAYMENT_SOURCE_PAGE_SIZE = 100;
 const MAX_PAYMENT_SOURCE_PAGES = 10;
@@ -613,35 +614,6 @@ export async function refreshInboxAgentReference(params: {
   }
 }
 
-async function getRegistryInboxByExactSlug(params: {
-  client: PaymentNodeClient;
-  network: PaymentNodeNetwork;
-  slug: string;
-}): Promise<RegistryInboxEntry | null> {
-  const MAX_PAGES = 20;
-  let cursorId: string | undefined;
-
-  for (let page = 0; page < MAX_PAGES; page += 1) {
-    const { Assets } = await params.client.getRegistryInbox({
-      network: params.network,
-      cursorId,
-      limit: 100,
-      searchQuery: params.slug,
-    });
-
-    const match =
-      Assets.find((asset) => asset.agentSlug === params.slug) ?? null;
-    if (match) return match;
-    if (Assets.length === 0) return null;
-
-    const nextCursor = Assets.at(-1)?.id;
-    if (!nextCursor || nextCursor === cursorId) return null;
-    cursorId = nextCursor;
-  }
-
-  return null;
-}
-
 async function findActiveLocalInboxAgentSlugConflict(params: {
   network: PaymentNodeNetwork;
   slug: string;
@@ -746,13 +718,21 @@ export async function findRegistryInboxAgentSlugConflict(params: {
   slug: string;
   client: PaymentNodeClient;
 }): Promise<InboxAgentSlugConflict | null> {
-  const remote = await getRegistryInboxByExactSlug({
+  const paymentSources = await listPaymentSourcesForNetwork(
+    params.client,
+    params.network,
+  );
+  const remote = await findActiveRegistryInboxBySlug({
     client: params.client,
     network: params.network,
     slug: params.slug,
+    smartContractAddresses: paymentSources.map(
+      (source) => source.smartContractAddress,
+    ),
+    isActive: (entry) => !isReusableState(entry.state as RegistrationState),
   });
 
-  if (!remote || isReusableState(remote.state as RegistrationState)) {
+  if (!remote) {
     return null;
   }
 
