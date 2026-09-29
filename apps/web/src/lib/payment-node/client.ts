@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { createPaymentSchemaOutput } from "@/lib/x402/schemas";
 
+import { findRegistryInboxById } from "./registry-inbox-lookup";
 import type {
   AddWalletToSourceInput,
   AddWalletToSourceOutput,
@@ -438,23 +439,12 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
     async getRegistryInboxById(params: {
       id: string;
       network: PaymentNodeNetwork;
+      filterSmartContractAddress?: string | null;
     }): Promise<RegistryInboxEntry | null> {
-      const MAX_PAGES = 20;
-      let cursorId: string | undefined;
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const { Assets } = await this.getRegistryInbox({
-          network: params.network,
-          cursorId,
-          limit: 100,
-        });
-        const match = Assets.find((asset) => asset.id === params.id);
-        if (match) return match;
-        if (Assets.length === 0) return null;
-        const nextCursor = Assets[Assets.length - 1]!.id;
-        if (nextCursor === cursorId) return null;
-        cursorId = nextCursor;
-      }
-      return null;
+      return findRegistryInboxById(
+        (listParams) => this.getRegistryInbox(listParams),
+        params,
+      );
     },
 
     /** Get registry by agent identifier (pay-authenticated). */
