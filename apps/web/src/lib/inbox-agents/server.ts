@@ -176,7 +176,7 @@ function isLocalPendingReservation(reference: InboxAgentReference): boolean {
   return reference.paymentNodeId.startsWith("pending:");
 }
 
-async function listPaymentSources(
+async function listPaymentSourcesWithoutWallets(
   client: PaymentNodeClient,
 ): Promise<PaymentSourceInfo[]> {
   const sources: PaymentSourceInfo[] = [];
@@ -200,7 +200,16 @@ async function listPaymentSources(
     cursorId = nextCursor;
   }
 
-  return hydratePaymentSources(client, sources);
+  return sources;
+}
+
+async function listPaymentSources(
+  client: PaymentNodeClient,
+): Promise<PaymentSourceInfo[]> {
+  return hydratePaymentSources(
+    client,
+    await listPaymentSourcesWithoutWallets(client),
+  );
 }
 
 export async function listPaymentSourcesForNetwork(
@@ -718,10 +727,10 @@ export async function findRegistryInboxAgentSlugConflict(params: {
   slug: string;
   client: PaymentNodeClient;
 }): Promise<InboxAgentSlugConflict | null> {
-  const paymentSources = await listPaymentSourcesForNetwork(
-    params.client,
-    params.network,
-  );
+  // Only contract addresses are needed, so skip the wallet hydration.
+  const paymentSources = (
+    await listPaymentSourcesWithoutWallets(params.client)
+  ).filter((source) => source.network === params.network);
   const remote = await findActiveRegistryInboxBySlug({
     client: params.client,
     network: params.network,

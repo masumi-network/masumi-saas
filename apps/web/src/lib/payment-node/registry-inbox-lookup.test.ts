@@ -33,7 +33,7 @@ describe("findRegistryInboxById", () => {
     });
   });
 
-  it("falls back to the unfiltered list when the scoped scan misses", async () => {
+  it("does not fall back to the unfiltered V1 list when the scoped scan misses", async () => {
     const list = vi.fn(async ({ filterSmartContractAddress, cursorId }) =>
       filterSmartContractAddress === undefined && !cursorId
         ? { Assets: [entry("v1-inbox")] }
@@ -46,8 +46,32 @@ describe("findRegistryInboxById", () => {
       filterSmartContractAddress: V2_CONTRACT,
     });
 
-    expect(result?.id).toBe("v1-inbox");
+    expect(result).toBeNull();
+    expect(list).toHaveBeenCalledTimes(1);
+  });
+
+  it("finds a scoped V2 entry on a later page", async () => {
+    const list = vi.fn(async ({ filterSmartContractAddress, cursorId }) => {
+      if (filterSmartContractAddress !== V2_CONTRACT) return { Assets: [] };
+      return cursorId === "page-1-last"
+        ? { Assets: [entry("page-1-last"), entry("v2-inbox")] }
+        : { Assets: [entry("other"), entry("page-1-last")] };
+    });
+
+    const result = await findRegistryInboxById(list, {
+      id: "v2-inbox",
+      network: "Preprod",
+      filterSmartContractAddress: V2_CONTRACT,
+    });
+
+    expect(result?.id).toBe("v2-inbox");
     expect(list).toHaveBeenCalledTimes(2);
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cursorId: "page-1-last",
+        filterSmartContractAddress: V2_CONTRACT,
+      }),
+    );
   });
 
   it("scans once and returns null when no contract is given and nothing matches", async () => {
