@@ -583,6 +583,7 @@ export async function refreshInboxAgentReference(params: {
     const remote = await params.client.getRegistryInboxById({
       id: params.reference.paymentNodeId,
       network: params.network,
+      filterSmartContractAddress: params.reference.smartContractAddress,
     });
 
     if (!remote) {
@@ -704,6 +705,7 @@ export async function findInboxAgentSlugConflict(params: {
       const remote = await params.client.getRegistryInboxById({
         id: reference.paymentNodeId,
         network: params.network,
+        filterSmartContractAddress: reference.smartContractAddress,
       });
 
       if (remote) {
@@ -990,6 +992,7 @@ async function getOwnedInboxAgentFromReference(params: {
   const remote = await params.client.getRegistryInboxById({
     id: params.reference.paymentNodeId,
     network: params.network,
+    filterSmartContractAddress: params.reference.smartContractAddress,
   });
 
   if (!remote) {

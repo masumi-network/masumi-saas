@@ -535,6 +535,7 @@ describe("listOwnedInboxAgentsForUser", () => {
     expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
       id: "first",
       network: "Preprod",
+      filterSmartContractAddress: "addr_test1contract",
     });
     expect(getRegistryInboxByIdMock).toHaveBeenCalledTimes(1);
     expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
@@ -818,6 +819,7 @@ describe("findInboxAgentSlugConflict", () => {
     expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
       id: "pending-id",
       network: "Preprod",
+      filterSmartContractAddress: "addr_test1contract",
     });
     expect(inboxAgentReferenceUpdateMock).toHaveBeenCalledWith({
       where: { id: "pending-id" },
@@ -938,6 +940,7 @@ describe("findInboxAgentSlugConflict", () => {
     expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
       id: "pending-missing",
       network: "Preprod",
+      filterSmartContractAddress: "addr_test1contract",
     });
     expect(inboxAgentReferenceUpdateMock).toHaveBeenCalledWith({
       where: { id: "pending-missing" },
@@ -1006,6 +1009,7 @@ describe("findInboxAgentSlugConflict", () => {
     expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
       id: "old-id",
       network: "Preprod",
+      filterSmartContractAddress: "addr_test1contract",
     });
     expect(inboxAgentReferenceUpdateMock).toHaveBeenCalledWith({
       where: { id: "old-id" },
@@ -1180,6 +1184,7 @@ describe("getOwnedInboxAgentForUser", () => {
     expect(getRegistryInboxByIdMock).toHaveBeenCalledWith({
       id: "stale-1",
       network: "Preprod",
+      filterSmartContractAddress: "addr_test1contract",
     });
     expect(createPaymentNodeClientMock).toHaveBeenCalledWith(
       "https://payment.example.com/api/v1",
