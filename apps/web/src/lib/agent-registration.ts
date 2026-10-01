@@ -1280,7 +1280,7 @@ export async function completeOnChainRegistration(
     const x402ResourcesUrl = x402Registry
       ? getPublicX402ManifestUrl(agent.id)
       : undefined;
-    if (x402Registry && x402ResourcesUrl.length > 250) {
+    if (x402Registry && x402ResourcesUrl && x402ResourcesUrl.length > 250) {
       throw new Error(
         "x402 manifest URL exceeds registry length limit; set a shorter NEXT_PUBLIC_APP_URL.",
       );
