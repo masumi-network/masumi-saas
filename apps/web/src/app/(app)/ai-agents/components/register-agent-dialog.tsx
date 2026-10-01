@@ -135,6 +135,72 @@ type RegisterAgentFormType = AgentFormFields & {
   payoutAddress: string;
 };
 
+function trimmedField(value: string | undefined): string {
+  return (value ?? "").trim();
+}
+
+function baselinePricingTypeForKind(kind: RegistrationKind): PricingMode {
+  return kind === "X402_HTTP" ? "Free" : "Fixed";
+}
+
+function registerFormHasMeaningfulDraft(
+  values: RegisterAgentFormType,
+  tags: string[],
+  tagInput: string,
+  x402Options: X402OptionDraft[],
+): boolean {
+  if (tags.length > 0 || tagInput.trim().length > 0) return true;
+  if (x402Options.length > 0) return true;
+
+  if (trimmedField(values.name)) return true;
+  if (trimmedField(values.description)) return true;
+
+  if (values.registrationKind === "X402_HTTP") {
+    if (trimmedField(values.x402ResourceUrl)) return true;
+  } else if (trimmedField(values.apiUrl)) return true;
+
+  if (
+    values.pricingType !== baselinePricingTypeForKind(values.registrationKind)
+  ) {
+    return true;
+  }
+  if (trimmedField(values.payoutAddress)) return true;
+
+  const prices = values.prices ?? [];
+  if (prices.length > 1) return true;
+  if (prices.some((price) => trimmedField(price.amount))) return true;
+
+  if (trimmedField(values.termsOfUseUrl)) return true;
+  if (trimmedField(values.privacyPolicyUrl)) return true;
+  if (trimmedField(values.otherUrl)) return true;
+  if (trimmedField(values.capabilityName)) return true;
+  if (trimmedField(values.capabilityVersion)) return true;
+
+  const outputs = values.exampleOutputs ?? [];
+  if (
+    outputs.some(
+      (output) =>
+        trimmedField(output.name) ||
+        trimmedField(output.url) ||
+        trimmedField(output.mimeType),
+    )
+  ) {
+    return true;
+  }
+
+  if (values.icon && values.icon !== "bot") return true;
+
+  if (values.runtimeProvider === "LANGDOCK") {
+    if (values.integrationConnectionId === NEW_LANGDOCK_CONNECTION) {
+      if (trimmedField(values.langdockApiKey)) return true;
+      if (trimmedField(values.langdockAgentId)) return true;
+      if (trimmedField(values.langdockBaseUrl)) return true;
+    }
+  }
+
+  return false;
+}
+
 interface RegisterAgentDialogProps {
   open: boolean;
   onClose: () => void;
@@ -1083,10 +1149,28 @@ export function RegisterAgentDialog({
 
   const registrationHasDraft = useCallback((): boolean => {
     if (step === "review") return true;
-    if (tags.length > 0 || tagInput.trim().length > 0) return true;
-    if (x402Options.length > 0) return true;
-    return form.formState.isDirty;
-  }, [step, tags, tagInput, x402Options, form.formState.isDirty]);
+    if (
+      registerFormHasMeaningfulDraft(
+        form.getValues(),
+        tags,
+        tagInput,
+        x402Options,
+      )
+    ) {
+      return true;
+    }
+    if (form.getValues("runtimeProvider") === "LANGDOCK") {
+      const dirty = form.formState.dirtyFields;
+      if (
+        dirty.langdockApiKey ||
+        dirty.langdockAgentId ||
+        dirty.langdockBaseUrl
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }, [step, form, tags, tagInput, x402Options, form.formState.dirtyFields]);
 
   const handleRegistrationDialogOpenChange = (newOpen: boolean) => {
     if (newOpen) {
