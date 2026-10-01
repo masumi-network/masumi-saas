@@ -472,9 +472,6 @@ export function RegisterAgentDialog({
       }
 
       const payoutAddress = normalizePayoutAddress(data.payoutAddress ?? "");
-      if (data.registrationKind === "X402_HTTP") {
-        return;
-      }
       if (data.pricingType !== "Free") {
         if (!payoutAddress) {
           ctx.addIssue({
