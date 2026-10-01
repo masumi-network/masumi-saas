@@ -8,11 +8,7 @@ import {
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
 import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
-import {
-  errBody,
-  security,
-  stdResponses,
-} from "@/lib/swagger/saas-app-openapi";
+import { security, stdResponses } from "@/lib/swagger/saas-app-openapi";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
@@ -59,10 +55,6 @@ app.openapi(
         content: {
           "application/json": { schema: probeSuccessSchema },
         },
-      },
-      400: {
-        description: "Probe failed or incompatible",
-        content: { "application/json": { schema: errBody } },
       },
       ...stdResponses,
     },
