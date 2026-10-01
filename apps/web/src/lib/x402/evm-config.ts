@@ -1,3 +1,5 @@
+import type { PaymentNodeNetwork } from "@/lib/payment-node";
+
 export type EvmStablecoinAddresses = {
   usdc?: string;
   usdt?: string;
@@ -215,4 +217,11 @@ export const EVM_NATIVE_DECIMALS = 18;
 /** Native-gas symbol for a chain, or null when the chain is not known. */
 export function getEvmNativeCurrencySymbol(caip2Id: string): string | null {
   return EVM_NATIVE_SYMBOL_BY_CAIP2[caip2Id] ?? null;
+}
+
+/** Registry x402 HTTP pairing: Cardano env → default EVM CAIP-2 (mirrors payment-source-x402). */
+export function evmNetworkForCardanoPaymentNetwork(
+  network: PaymentNodeNetwork,
+): string {
+  return network === "Mainnet" ? "eip155:8453" : "eip155:84532";
 }

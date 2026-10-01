@@ -136,13 +136,13 @@ function DialogDescription({
 }
 
 /** Scrollable dialog main area; direct children stagger fade-in-up on open. */
-function DialogBody({
-  className,
-  stagger = true,
-  ...props
-}: React.ComponentProps<"div"> & { stagger?: boolean }) {
+const DialogBody = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<"div"> & { stagger?: boolean }
+>(function DialogBody({ className, stagger = true, ...props }, ref) {
   return (
     <div
+      ref={ref}
       data-slot="dialog-body"
       className={cn(
         "min-h-0 flex-1 space-y-6 overflow-y-auto p-6",
@@ -152,7 +152,7 @@ function DialogBody({
       {...props}
     />
   );
-}
+});
 
 export {
   Dialog,

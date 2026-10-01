@@ -182,11 +182,13 @@ export type RegistryInboxEntry = z.infer<typeof registryInboxEntrySchema>;
 
 export const registerAgentInputSchema = z.object({
   network: paymentNodeNetworkSchema,
+  type: registryEntryTypeSchema.optional(),
   sellingWalletVkey: z.string(),
   recipientWalletAddress: z.string().optional(),
   sendFundingLovelace: z.string().optional(),
   name: z.string(),
-  apiBaseUrl: z.string(),
+  apiBaseUrl: z.string().optional(),
+  x402ResourcesUrl: z.string().url().max(250).optional(),
   description: z.string(),
   image: z.string().max(250).optional(),
   Tags: z.array(z.string()),

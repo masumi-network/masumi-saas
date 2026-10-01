@@ -45,6 +45,7 @@ import {
   startRegistrationSuccessSchema,
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
+import { prepareX402HttpRegistration } from "@/lib/x402/prepare-http-registration";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
@@ -268,6 +269,8 @@ app.openapi(
       name,
       description,
       apiUrl,
+      registrationKind,
+      x402ResourceUrl,
       runtimeProvider,
       integrationConnectionId,
       langdockApiKey,
@@ -309,13 +312,47 @@ app.openapi(
         network,
       });
 
-      const selectedRuntimeProvider = runtimeProvider ?? "DIRECT_MIP";
+      const isX402HttpRegistration = registrationKind === "X402_HTTP";
+      let x402Manifest: RegisterAgentParams["x402Manifest"];
+      let x402CanonicalResourceUrl: string | undefined;
+      let resolvedSupportedPaymentSources = supportedPaymentSources;
+
+      if (isX402HttpRegistration) {
+        const resource = x402ResourceUrl?.trim() ?? "";
+        if (!resource) {
+          throw new ApiError(400, "x402 resource URL is required.");
+        }
+        try {
+          await assertAllowedAgentApiUrl(resource);
+        } catch (error) {
+          if (error instanceof Error) {
+            throw new ApiError(400, error.message);
+          }
+          throw new ApiError(400, "Invalid x402 resource URL");
+        }
+        const prepared = await prepareX402HttpRegistration({
+          resourceUrl: resource,
+          network,
+        });
+        if (!prepared.ok) {
+          throw new ApiError(400, prepared.error);
+        }
+        x402Manifest = prepared.data.x402Manifest;
+        x402CanonicalResourceUrl = prepared.data.resourceUrl;
+        resolvedSupportedPaymentSources = prepared.data.supportedPaymentSources;
+      }
+
+      const selectedRuntimeProvider = isX402HttpRegistration
+        ? "DIRECT_MIP"
+        : (runtimeProvider ?? "DIRECT_MIP");
       let resolvedApiUrl = apiUrl?.trim() ?? "";
       let resolvedIntegrationConnectionId: string | null = null;
       let providerConfig: Record<string, unknown> | null = null;
       let agentId: string | undefined;
 
-      if (selectedRuntimeProvider === "DIRECT_MIP") {
+      if (isX402HttpRegistration) {
+        resolvedApiUrl = x402CanonicalResourceUrl ?? "";
+      } else if (selectedRuntimeProvider === "DIRECT_MIP") {
         if (!resolvedApiUrl) {
           throw new ApiError(400, "API URL is required.");
         }
@@ -410,7 +447,9 @@ app.openapi(
 
       let agentPricing: ReturnType<typeof buildAgentPricing>;
       try {
-        agentPricing = buildAgentPricing(network, pricing ?? undefined);
+        agentPricing = isX402HttpRegistration
+          ? { pricingType: "Free" as const }
+          : buildAgentPricing(network, pricing ?? undefined);
       } catch (error) {
         // An unparseable fixed price is a client input error, not a 500.
         throw new ApiError(
@@ -419,32 +458,34 @@ app.openapi(
         );
       }
 
-      if (
-        agentPricing.pricingType === "Free" &&
-        supportedPaymentSources &&
-        supportedPaymentSources.length > 0
-      ) {
-        throw new ApiError(
-          400,
-          "Free agents cannot include x402 payment options.",
-        );
-      }
+      if (!isX402HttpRegistration) {
+        if (
+          agentPricing.pricingType === "Free" &&
+          resolvedSupportedPaymentSources &&
+          resolvedSupportedPaymentSources.length > 0
+        ) {
+          throw new ApiError(
+            400,
+            "Free agents cannot include x402 payment options.",
+          );
+        }
 
-      if (
-        agentPricing.pricingType === "Dynamic" &&
-        supportedPaymentSources &&
-        supportedPaymentSources.length > 0
-      ) {
-        throw new ApiError(
-          400,
-          "Dynamic pricing agents cannot include x402 payment options.",
-        );
+        if (
+          agentPricing.pricingType === "Dynamic" &&
+          resolvedSupportedPaymentSources &&
+          resolvedSupportedPaymentSources.length > 0
+        ) {
+          throw new ApiError(
+            400,
+            "Dynamic pricing agents cannot include x402 payment options.",
+          );
+        }
       }
 
       const paymentSourcesPreflight =
         await validateAgentRegistrationPaymentSourcesPreflight(
           network,
-          supportedPaymentSources,
+          resolvedSupportedPaymentSources,
           agentPricing,
         );
       if (!paymentSourcesPreflight.ok) {
@@ -496,8 +537,14 @@ app.openapi(
         termsOfUseUrl: termsOfUseUrl?.trim() || null,
         privacyPolicyUrl: privacyPolicyUrl?.trim() || null,
         otherUrl: otherUrl?.trim() || null,
-        supportedPaymentSources,
+        supportedPaymentSources: resolvedSupportedPaymentSources,
         payoutAddress: payoutAddress?.trim() ?? "",
+        ...(isX402HttpRegistration && x402Manifest
+          ? {
+              registryEntryType: "X402" as const,
+              x402Manifest,
+            }
+          : {}),
       };
 
       const result = await startAgentRegistration(

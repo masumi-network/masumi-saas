@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogBody,
@@ -60,11 +61,20 @@ export function DeleteAgentDialog({
             {t("deleteConfirmDescription", { name: agentName })}
           </DialogDescription>
           <div className="space-y-2">
-            <Label htmlFor="delete-confirm-input">
+            <Label
+              htmlFor="delete-confirm-input"
+              className="flex flex-wrap items-center gap-x-1 gap-y-1 leading-snug"
+            >
               {t.rich("deleteConfirmTypeToConfirm", {
                 name: agentName,
                 bold: (chunks) => (
-                  <span className="font-semibold">{chunks}</span>
+                  <span className="inline-flex items-center gap-0.5 font-semibold">
+                    <span className="font-mono">{chunks}</span>
+                    <CopyButton
+                      value={agentName}
+                      className="h-7 w-7 shrink-0"
+                    />
+                  </span>
                 ),
               })}
             </Label>

@@ -1,3 +1,4 @@
+import { shortenAddress } from "@/lib/utils";
 import {
   getDefaultStablecoinForChain,
   getEvmStablecoinsForChain,
@@ -29,14 +30,6 @@ export function getEvmTokenPresetsForChain(
   const presets: EvmTokenPreset[] = [];
   const seen = new Set<string>();
 
-  if (defaultAsset && EVM_ADDRESS.test(defaultAsset)) {
-    pushPreset(presets, seen, {
-      id: "default",
-      label: "Chain default",
-      address: defaultAsset,
-    });
-  }
-
   const known = getEvmStablecoinsForChain(caip2Id);
   if (known.usdc) {
     pushPreset(presets, seen, {
@@ -53,7 +46,40 @@ export function getEvmTokenPresetsForChain(
     });
   }
 
+  if (defaultAsset && EVM_ADDRESS.test(defaultAsset)) {
+    pushPreset(presets, seen, {
+      id: "default",
+      label: "Chain default",
+      address: defaultAsset,
+    });
+  }
+
   return presets;
+}
+
+/** Human-readable ERC-20 label for tables and summaries. */
+export function resolveEvmAssetDisplayLabel(
+  caip2Id: string,
+  asset: string,
+  defaultAsset?: string | null,
+): string {
+  const normalized = asset.trim().toLowerCase();
+  if (!EVM_ADDRESS.test(asset.trim())) {
+    return shortenAddress(asset, 6);
+  }
+
+  const known = getEvmStablecoinsForChain(caip2Id);
+  if (known.usdc?.toLowerCase() === normalized) return "USDC";
+  if (known.usdt?.toLowerCase() === normalized) return "USDT";
+
+  const preset = getEvmTokenPresetsForChain(caip2Id, defaultAsset).find(
+    (item) => item.address.toLowerCase() === normalized,
+  );
+  if (preset?.label) {
+    return preset.label;
+  }
+
+  return shortenAddress(asset, 6);
 }
 
 export { getDefaultStablecoinForChain };
