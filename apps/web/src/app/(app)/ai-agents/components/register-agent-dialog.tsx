@@ -14,7 +14,12 @@ import {
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import {
+  useFieldArray,
+  useForm,
+  useFormState,
+  useWatch,
+} from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -377,6 +382,7 @@ export function RegisterAgentDialog({
     useState(false);
   const registerDialogBodyRef = useRef<HTMLDivElement>(null);
   const x402ProbeGenerationRef = useRef(0);
+  const lastAutoProbeKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -401,6 +407,7 @@ export function RegisterAgentDialog({
   useEffect(() => {
     if (open) {
       x402ProbeGenerationRef.current += 1;
+      lastAutoProbeKeyRef.current = null;
       closedViaConfirmRef.current = false;
       userClosedViaConfirmRef.current = false;
       setCloseConfirmReason(null);
@@ -593,6 +600,10 @@ export function RegisterAgentDialog({
     },
   });
 
+  const { dirtyFields: registerFormDirtyFields } = useFormState({
+    control: form.control,
+  });
+
   const pricingType = useWatch({
     control: form.control,
     name: "pricingType",
@@ -707,6 +718,7 @@ export function RegisterAgentDialog({
 
   const resetSuccessfulSubmitState = () => {
     x402ProbeGenerationRef.current += 1;
+    lastAutoProbeKeyRef.current = null;
     form.reset({
       registrationKind: readStoredRegistrationKind(),
       x402ResourceUrl: "",
@@ -745,6 +757,7 @@ export function RegisterAgentDialog({
   const applyPaymentNetworkChange = useCallback(
     (next: PaymentNodeNetwork) => {
       setNetwork(next);
+      lastAutoProbeKeyRef.current = null;
       setX402ProbeRow(null);
       setX402Probe({ status: "idle" });
     },
@@ -831,12 +844,11 @@ export function RegisterAgentDialog({
     const resourceUrl = debouncedX402ResourceUrl.trim();
 
     if (!liveResourceUrl) {
-      if (x402Probe.status !== "idle") {
-        x402ProbeGenerationRef.current += 1;
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- Clear stale probe when URL is empty.
-        setX402Probe({ status: "idle" });
-        setX402ProbeRow(null);
-      }
+      lastAutoProbeKeyRef.current = null;
+      x402ProbeGenerationRef.current += 1;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Clear stale probe when URL is empty.
+      setX402Probe({ status: "idle" });
+      setX402ProbeRow(null);
       return;
     }
 
@@ -848,6 +860,12 @@ export function RegisterAgentDialog({
       return;
     }
 
+    const probeKey = buildX402ResourceProbeKey(network, resourceUrl);
+    if (lastAutoProbeKeyRef.current === probeKey) {
+      return;
+    }
+    lastAutoProbeKeyRef.current = probeKey;
+
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Debounced live 402 probe on URL input.
     void runX402ResourceProbe(resourceUrl);
   }, [
@@ -855,8 +873,8 @@ export function RegisterAgentDialog({
     watchedX402ResourceUrl,
     open,
     registrationKind,
+    network,
     runX402ResourceProbe,
-    x402Probe.status,
   ]);
 
   const autofillX402Metadata = async () => {
@@ -1160,17 +1178,16 @@ export function RegisterAgentDialog({
       return true;
     }
     if (form.getValues("runtimeProvider") === "LANGDOCK") {
-      const dirty = form.formState.dirtyFields;
       if (
-        dirty.langdockApiKey ||
-        dirty.langdockAgentId ||
-        dirty.langdockBaseUrl
+        registerFormDirtyFields.langdockApiKey ||
+        registerFormDirtyFields.langdockAgentId ||
+        registerFormDirtyFields.langdockBaseUrl
       ) {
         return true;
       }
     }
     return false;
-  }, [step, form, tags, tagInput, x402Options, form.formState.dirtyFields]);
+  }, [step, form, tags, tagInput, x402Options, registerFormDirtyFields]);
 
   const handleRegistrationDialogOpenChange = (newOpen: boolean) => {
     if (newOpen) {
@@ -1300,6 +1317,7 @@ export function RegisterAgentDialog({
                                         form.clearErrors("prices");
                                         form.clearErrors("payoutAddress");
                                       }
+                                      lastAutoProbeKeyRef.current = null;
                                       setX402ProbeRow(null);
                                       setX402Probe({ status: "idle" });
                                     }}
@@ -1348,6 +1366,8 @@ export function RegisterAgentDialog({
                                     className="h-11 pr-10 font-mono text-sm"
                                     onChange={(event) => {
                                       field.onChange(event);
+                                      x402ProbeGenerationRef.current += 1;
+                                      lastAutoProbeKeyRef.current = null;
                                       setX402ProbeRow(null);
                                     }}
                                   />
