@@ -2,6 +2,7 @@
 
 import { isCardanoAddressForNetwork } from "@masumi/payment-source-x402/payment-source";
 import {
+  ArrowLeft,
   ArrowRight,
   ChevronDown,
   CircleHelp,
@@ -29,10 +30,12 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogBody,
-  DialogContent,
+  DialogContentPanel,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
+  DialogPortal,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -274,13 +277,15 @@ export function RegisterAgentDialog({
   const [isLoading, setIsLoading] = useState(false);
   const closedViaConfirmRef = useRef(false);
   const userClosedViaConfirmRef = useRef(false);
-  const showCloseConfirmRef = useRef(false);
+  const closeConfirmOpenRef = useRef(false);
   const submitIdRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [closeConfirmReason, setCloseConfirmReason] = useState<
+    "loading" | "unsaved" | null
+  >(null);
   const [connections, setConnections] = useState<IntegrationConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [testingLangdock, setTestingLangdock] = useState(false);
@@ -305,6 +310,7 @@ export function RegisterAgentDialog({
   const [additionalFieldsExpanded, setAdditionalFieldsExpanded] =
     useState(false);
   const registerDialogBodyRef = useRef<HTMLDivElement>(null);
+  const x402ProbeGenerationRef = useRef(0);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -322,14 +328,16 @@ export function RegisterAgentDialog({
   }, [additionalFieldsExpanded, open, step]);
 
   useEffect(() => {
-    showCloseConfirmRef.current = showCloseConfirm;
-  }, [showCloseConfirm]);
+    closeConfirmOpenRef.current = closeConfirmReason !== null;
+  }, [closeConfirmReason]);
 
   // On open: reset close flags and invalidate any in-flight submit from a previous session so its response is ignored.
   useEffect(() => {
     if (open) {
+      x402ProbeGenerationRef.current += 1;
       closedViaConfirmRef.current = false;
       userClosedViaConfirmRef.current = false;
+      setCloseConfirmReason(null);
       submitIdRef.current += 1;
       setStep("form");
       setReviewValues(null);
@@ -632,6 +640,7 @@ export function RegisterAgentDialog({
   };
 
   const resetSuccessfulSubmitState = () => {
+    x402ProbeGenerationRef.current += 1;
     form.reset({
       registrationKind: readStoredRegistrationKind(),
       x402ResourceUrl: "",
@@ -697,6 +706,10 @@ export function RegisterAgentDialog({
     async (resourceUrl: string): Promise<X402ProbeViewState> => {
       const trimmed = resourceUrl.trim();
       const key = buildX402ResourceProbeKey(network, trimmed);
+      const probeGeneration = ++x402ProbeGenerationRef.current;
+      const isCurrentProbe = () =>
+        probeGeneration === x402ProbeGenerationRef.current;
+
       setX402Probe({ status: "checking", key });
       setX402ProbeRow(null);
 
@@ -711,6 +724,9 @@ export function RegisterAgentDialog({
           error?: string;
           row?: X402ProbeRowSnapshot;
         };
+        if (!isCurrentProbe()) {
+          return { status: "idle" };
+        }
         if (!res.ok) {
           const next: X402ProbeViewState = {
             status: "invalid",
@@ -726,6 +742,9 @@ export function RegisterAgentDialog({
         setX402ProbeRow(json.row ?? { resource: trimmed });
         return next;
       } catch {
+        if (!isCurrentProbe()) {
+          return { status: "idle" };
+        }
         const next: X402ProbeViewState = {
           status: "invalid",
           key,
@@ -742,14 +761,37 @@ export function RegisterAgentDialog({
   useEffect(() => {
     if (!open || registrationKind !== "X402_HTTP") return;
 
+    const liveResourceUrl = (watchedX402ResourceUrl ?? "").trim();
     const resourceUrl = debouncedX402ResourceUrl.trim();
-    if (!resourceUrl || !isProbeableResourceUrl(resourceUrl)) {
+
+    if (!liveResourceUrl) {
+      if (x402Probe.status !== "idle") {
+        x402ProbeGenerationRef.current += 1;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Clear stale probe when URL is empty.
+        setX402Probe({ status: "idle" });
+        setX402ProbeRow(null);
+      }
+      return;
+    }
+
+    if (
+      resourceUrl !== liveResourceUrl ||
+      !resourceUrl ||
+      !isProbeableResourceUrl(resourceUrl)
+    ) {
       return;
     }
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Debounced live 402 probe on URL input.
     void runX402ResourceProbe(resourceUrl);
-  }, [debouncedX402ResourceUrl, open, registrationKind, runX402ResourceProbe]);
+  }, [
+    debouncedX402ResourceUrl,
+    watchedX402ResourceUrl,
+    open,
+    registrationKind,
+    runX402ResourceProbe,
+    x402Probe.status,
+  ]);
 
   const autofillX402Metadata = async () => {
     if (
@@ -784,7 +826,7 @@ export function RegisterAgentDialog({
     toast.info(t("registrationStarted"));
     resetSuccessfulSubmitState();
     setIsLoading(false);
-    setShowCloseConfirm(false);
+    setCloseConfirmReason(null);
     onSuccessRef.current();
     onCloseRef.current();
   };
@@ -857,7 +899,7 @@ export function RegisterAgentDialog({
     void form.handleSubmit((data) => {
       if (!assertRegistrationPreflight(data)) return;
       setReviewValues(data);
-      queueMicrotask(() => setStep("review"));
+      setStep("review");
     })();
   };
 
@@ -1001,7 +1043,7 @@ export function RegisterAgentDialog({
           toast.info(t("registrationStarted"));
           onSuccessRef.current();
           setIsLoading(false);
-          setShowCloseConfirm(false);
+          setCloseConfirmReason(null);
           userClosedViaConfirmRef.current = false;
           return;
         }
@@ -1010,11 +1052,11 @@ export function RegisterAgentDialog({
           toast.info(t("registrationStarted"));
           onSuccessRef.current();
           setIsLoading(false);
-          setShowCloseConfirm(false);
+          setCloseConfirmReason(null);
           userClosedViaConfirmRef.current = false;
           return;
         }
-        if (showCloseConfirmRef.current) {
+        if (closeConfirmOpenRef.current) {
           // Call directly: Radix onOpenChange may not fire when closing via controlled state.
           finalizeSuccessfulSubmit();
           return;
@@ -1034,17 +1076,29 @@ export function RegisterAgentDialog({
 
   const performClose = () => {
     setIsLoading(false);
+    setCloseConfirmReason(null);
     resetSuccessfulSubmitState();
     onClose();
   };
 
-  const handleOnOpenChange = (newOpen: boolean) => {
+  const registrationHasDraft = useCallback((): boolean => {
+    if (step === "review") return true;
+    if (tags.length > 0 || tagInput.trim().length > 0) return true;
+    if (x402Options.length > 0) return true;
+    return form.formState.isDirty;
+  }, [step, tags, tagInput, x402Options, form.formState.isDirty]);
+
+  const handleRegistrationDialogOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       closedViaConfirmRef.current = false;
-      setShowCloseConfirm(false);
+      setCloseConfirmReason(null);
     } else {
       if (isLoading) {
-        setShowCloseConfirm(true);
+        setCloseConfirmReason("loading");
+        return;
+      }
+      if (registrationHasDraft()) {
+        setCloseConfirmReason("unsaved");
         return;
       }
       performClose();
@@ -1070,76 +1124,39 @@ export function RegisterAgentDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOnOpenChange}>
-        <DialogContent
-          className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
-          closeButtonClassName="top-8 right-4 -translate-y-1/2"
-        >
-          <div
-            className={cn(
-              "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
-              dialogHeaderEnterClass,
-            )}
-          >
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold tracking-tight">
-                {step === "review" ? t("reviewTitle") : t("title")}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground pt-1">
-                {step === "review"
-                  ? t("reviewDescription")
-                  : t("formDescription")}
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-
-          <Form {...form}>
-            <form
-              className="flex flex-1 flex-col min-h-0 overflow-hidden"
-              onSubmit={(event) => {
-                event.preventDefault();
-              }}
+      <Dialog open={open} onOpenChange={handleRegistrationDialogOpenChange}>
+        <DialogPortal>
+          <DialogOverlay />
+          {step === "form" ? (
+            <DialogContentPanel
+              key="register-agent-form"
+              className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
+              closeButtonClassName="top-8 right-4 -translate-y-1/2"
             >
-              <DialogBody ref={registerDialogBodyRef} className="space-y-8">
-                {step === "review" && reviewValues ? (
-                  <RegisterAgentReviewSection
-                    values={reviewValues}
-                    tags={tags}
-                    cardanoNetwork={network}
-                    evmCaip2Network={selectedX402Caip2}
-                    x402ProbeRow={x402ProbeRow}
-                    x402Options={x402Options}
-                    t={{
-                      reviewSectionAgent: t("reviewSectionAgent"),
-                      reviewSectionPayment: t("reviewSectionPayment"),
-                      registrationKind: t("registrationKind"),
-                      reviewRegistrationKindStandard: t(
-                        "registrationKindStandardTitle",
-                      ),
-                      reviewRegistrationKindX402: t(
-                        "registrationKindX402Title",
-                      ),
-                      reviewCardanoNetwork: t("reviewCardanoNetwork"),
-                      reviewX402EvmNetwork: t("reviewX402EvmNetwork"),
-                      name: t("name"),
-                      description: t("description"),
-                      x402ResourceUrl: t("x402ResourceUrl"),
-                      apiUrl: t("apiUrl"),
-                      runtimeProvider: t("runtimeProvider"),
-                      runtimeDirectTitle: t("runtimeDirectTitle"),
-                      runtimeLangdockTitle: t("runtimeLangdockTitle"),
-                      langdockAgentId: t("langdockAgentId"),
-                      tags: t("tags"),
-                      pricingModel: t("pricingModel"),
-                      pricingFreeTitle: t("pricingFreeTitle"),
-                      pricingDynamicTitle: t("pricingDynamicTitle"),
-                      payoutAddress: t("payoutAddress"),
-                      x402Title: t("x402Title"),
-                    }}
-                  />
-                ) : null}
-                {step === "form" ? (
-                  <>
+              <div
+                className={cn(
+                  "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+                  dialogHeaderEnterClass,
+                )}
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-semibold tracking-tight">
+                    {t("title")}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground pt-1">
+                    {t("formDescription")}
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+
+              <Form {...form}>
+                <form
+                  className="flex flex-1 flex-col min-h-0 overflow-hidden"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                  }}
+                >
+                  <DialogBody ref={registerDialogBodyRef} className="space-y-8">
                     <FormField
                       control={form.control}
                       name="registrationKind"
@@ -1812,47 +1829,119 @@ export function RegisterAgentDialog({
                         </div>
                       </div>
                     </div>
-                  </>
-                ) : null}
+                  </DialogBody>
+
+                  <DialogFooter className="shrink-0 w-full justify-between border-t bg-background px-6 py-4">
+                    <div className="flex shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          handleRegistrationDialogOpenChange(false)
+                        }
+                        disabled={isLoading}
+                      >
+                        {t("cancel")}
+                      </Button>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        disabled={isLoading}
+                        className="group gap-2"
+                        onClick={goToReview}
+                      >
+                        {t("continue")}
+                        <span className="relative inline-flex size-4 shrink-0 items-center justify-center">
+                          <ArrowRight
+                            aria-hidden
+                            className="h-4 w-4 transition-all duration-200 ease-out motion-reduce:transition-none opacity-100 group-hover:translate-x-0.5 group-active:translate-x-1 motion-reduce:group-hover:translate-x-0 motion-reduce:group-active:translate-x-0"
+                          />
+                        </span>
+                      </Button>
+                    </div>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContentPanel>
+          ) : reviewValues ? (
+            <DialogContentPanel
+              key="register-agent-review"
+              className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
+              closeButtonClassName="top-8 right-4 -translate-y-1/2"
+            >
+              <div
+                className={cn(
+                  "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+                  dialogHeaderEnterClass,
+                )}
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-semibold tracking-tight">
+                    {t("reviewTitle")}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground pt-1">
+                    {t("reviewDescription")}
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+
+              <DialogBody className="space-y-8">
+                <RegisterAgentReviewSection
+                  values={reviewValues}
+                  tags={tags}
+                  cardanoNetwork={network}
+                  evmCaip2Network={selectedX402Caip2}
+                  x402ProbeRow={x402ProbeRow}
+                  x402Options={x402Options}
+                  t={{
+                    reviewSectionAgent: t("reviewSectionAgent"),
+                    reviewSectionPayment: t("reviewSectionPayment"),
+                    registrationKind: t("registrationKind"),
+                    reviewRegistrationKindStandard: t(
+                      "registrationKindStandardTitle",
+                    ),
+                    reviewRegistrationKindX402: t("registrationKindX402Title"),
+                    reviewCardanoNetwork: t("reviewCardanoNetwork"),
+                    reviewX402EvmNetwork: t("reviewX402EvmNetwork"),
+                    name: t("name"),
+                    description: t("description"),
+                    x402ResourceUrl: t("x402ResourceUrl"),
+                    apiUrl: t("apiUrl"),
+                    runtimeProvider: t("runtimeProvider"),
+                    runtimeDirectTitle: t("runtimeDirectTitle"),
+                    runtimeLangdockTitle: t("runtimeLangdockTitle"),
+                    langdockAgentId: t("langdockAgentId"),
+                    tags: t("tags"),
+                    pricingModel: t("pricingModel"),
+                    pricingFreeTitle: t("pricingFreeTitle"),
+                    pricingDynamicTitle: t("pricingDynamicTitle"),
+                    payoutAddress: t("payoutAddress"),
+                    x402Title: t("x402Title"),
+                  }}
+                />
               </DialogBody>
 
-              <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
-                {step === "form" ? (
+              <DialogFooter className="shrink-0 w-full justify-between border-t bg-background px-6 py-4">
+                <div className="flex shrink-0">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => handleOnOpenChange(false)}
-                    disabled={isLoading}
-                  >
-                    {t("cancel")}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
+                    className="group gap-2"
                     onClick={handleBackFromReview}
                     disabled={isLoading}
                   >
-                    {t("reviewBack")}
-                  </Button>
-                )}
-                {step === "form" ? (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    disabled={isLoading}
-                    className="group gap-2"
-                    onClick={goToReview}
-                  >
-                    {t("continue")}
                     <span className="relative inline-flex size-4 shrink-0 items-center justify-center">
-                      <ArrowRight
+                      <ArrowLeft
                         aria-hidden
-                        className="h-4 w-4 transition-all duration-200 ease-out motion-reduce:transition-none opacity-100 group-hover:translate-x-0.5 group-active:translate-x-1 motion-reduce:group-hover:translate-x-0 motion-reduce:group-active:translate-x-0"
+                        className="h-4 w-4 transition-all duration-200 ease-out motion-reduce:transition-none opacity-100 group-hover:-translate-x-0.5 group-active:-translate-x-1 motion-reduce:group-hover:translate-x-0 motion-reduce:group-active:translate-x-0"
                       />
                     </span>
+                    {t("reviewBack")}
                   </Button>
-                ) : (
+                </div>
+                <div className="flex shrink-0 gap-2">
                   <Button
                     type="button"
                     variant="primary"
@@ -1884,29 +1973,43 @@ export function RegisterAgentDialog({
                       />
                     </span>
                   </Button>
-                )}
+                </div>
               </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
+            </DialogContentPanel>
+          ) : null}
+        </DialogPortal>
       </Dialog>
       <ConfirmDialog
-        open={showCloseConfirm}
+        open={closeConfirmReason !== null}
         onOpenChange={(open) => {
-          setShowCloseConfirm(open);
           if (open) {
             closedViaConfirmRef.current = false;
+          } else {
+            setCloseConfirmReason(null);
           }
         }}
         onConfirm={() => {
-          closedViaConfirmRef.current = true;
-          userClosedViaConfirmRef.current = true;
+          if (closeConfirmReason === "loading") {
+            closedViaConfirmRef.current = true;
+            userClosedViaConfirmRef.current = true;
+          }
           performClose();
-          setShowCloseConfirm(false);
         }}
-        title={t("closeConfirmTitle")}
-        description={t("closeConfirmDescription")}
-        confirmText={t("closeAnyway")}
+        title={
+          closeConfirmReason === "loading"
+            ? t("closeConfirmTitle")
+            : t("discardConfirmTitle")
+        }
+        description={
+          closeConfirmReason === "loading"
+            ? t("closeConfirmDescription")
+            : t("discardConfirmDescription")
+        }
+        confirmText={
+          closeConfirmReason === "loading"
+            ? t("closeAnyway")
+            : t("discardConfirm")
+        }
         cancelText={t("cancel")}
       />
       <ConfirmDialog
