@@ -69,18 +69,27 @@ const KNOWN_PAYMENT_TOKENS: TokenConfig[] = [
   ...STABLECOINS_BY_NETWORK.Mainnet,
 ];
 
+function matchKnownToken(token: TokenConfig, normalized: string): boolean {
+  return (
+    token.unit === normalized ||
+    token.policyId === normalized ||
+    token.symbol === normalized ||
+    token.aliases?.includes(normalized) === true
+  );
+}
+
 export function getKnownTokenByUnit(unit: string): TokenConfig | null {
   const normalized = unit.trim();
   if (!normalized) return null;
 
+  const aliasMatch = KNOWN_PAYMENT_TOKENS.find((token) =>
+    token.aliases?.includes(normalized),
+  );
+  if (aliasMatch) return aliasMatch;
+
   return (
-    KNOWN_PAYMENT_TOKENS.find(
-      (token) =>
-        token.unit === normalized ||
-        token.policyId === normalized ||
-        token.symbol === normalized ||
-        token.aliases?.includes(normalized),
-    ) ?? null
+    KNOWN_PAYMENT_TOKENS.find((token) => matchKnownToken(token, normalized)) ??
+    null
   );
 }
 
@@ -95,13 +104,10 @@ export function getKnownStableTokenByUnit(
     ? STABLECOINS_BY_NETWORK[network]
     : KNOWN_PAYMENT_TOKENS;
 
-  return (
-    candidates.find(
-      (token) =>
-        token.unit === normalized ||
-        token.policyId === normalized ||
-        token.symbol === normalized ||
-        token.aliases?.includes(normalized),
-    ) ?? null
+  const aliasMatch = candidates.find((token) =>
+    token.aliases?.includes(normalized),
   );
+  if (aliasMatch) return aliasMatch;
+
+  return candidates.find((token) => matchKnownToken(token, normalized)) ?? null;
 }
