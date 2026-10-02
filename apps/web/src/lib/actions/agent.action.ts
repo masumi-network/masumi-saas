@@ -16,6 +16,7 @@ import {
   verificationFeatureCopy,
 } from "@/lib/config/verification.config";
 import { doRuntimeDebugLog } from "@/lib/debug/do-runtime-log";
+import { isPermanentNetworkRegistrationError } from "@/lib/network-registration/permanent-registration-error";
 import { type PaymentNodeNetwork } from "@/lib/payment-node";
 import { resolveRegistryLookupFilter } from "@/lib/payment-node/registry-lookup";
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
@@ -140,16 +141,13 @@ export async function completeRegistrationIfReadyAction(
     if (result.status === "pending") {
       return { status: "pending" };
     }
-    return { status: "error", error: result.error };
+    if (isPermanentNetworkRegistrationError(result.error)) {
+      return { status: "error", error: result.error };
+    }
+    return { status: "pending" };
   } catch (error) {
     console.error("completeRegistrationIfReadyAction:", error);
-    return {
-      status: "error",
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to complete registration",
-    };
+    return { status: "pending" };
   }
 }
 
