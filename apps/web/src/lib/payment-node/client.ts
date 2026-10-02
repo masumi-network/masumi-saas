@@ -76,6 +76,7 @@ import {
   submitPaymentResultInputSchema,
   updateApiKeyInputSchema,
   walletStatusSchema,
+  x402AgentPaymentActivityOutputSchema,
 } from "./schemas";
 import {
   paymentNodeX402NetworkListSchema,
@@ -981,6 +982,32 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
           },
         },
         paymentIncomeOutputSchema,
+      );
+    },
+
+    /** x402 payment attempts for one registry agent (READ, agent-scoped). */
+    async getX402AgentPaymentActivity(params: {
+      network: PaymentNodeNetwork;
+      agentIdentifier: string;
+      startDate?: string | null;
+      endDate?: string | null;
+      take?: number;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/payment/x402-activity`,
+        {
+          method: "POST",
+          body: {
+            network: params.network,
+            agentIdentifier: params.agentIdentifier,
+            startDate: params.startDate ?? null,
+            endDate: params.endDate ?? null,
+            take: params.take ?? 50,
+          },
+        },
+        x402AgentPaymentActivityOutputSchema,
       );
     },
 

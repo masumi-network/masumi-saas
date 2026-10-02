@@ -224,6 +224,29 @@ export const paymentIncomeOutputSchema = z.object({
 });
 export type PaymentIncomeOutput = z.infer<typeof paymentIncomeOutputSchema>;
 
+const x402AgentActivityAttemptSchema = z.object({
+  id: z.string(),
+  createdAt: z.coerce.date(),
+  direction: z.string(),
+  status: z.string(),
+  caip2Network: z.string(),
+  asset: z.string(),
+  amount: z.string(),
+  payTo: z.string().nullable(),
+  txHash: z.string().nullable(),
+  settlementSuccess: z.boolean().nullable(),
+});
+
+export const x402AgentPaymentActivityOutputSchema = z.object({
+  agentIdentifier: z.string(),
+  periodStart: z.coerce.date(),
+  periodEnd: z.coerce.date(),
+  Attempts: z.array(x402AgentActivityAttemptSchema),
+});
+export type X402AgentPaymentActivityOutput = z.infer<
+  typeof x402AgentPaymentActivityOutputSchema
+>;
+
 // ─── API key ───────────────────────────────────────────────────────────────
 
 export const createApiKeyInputSchema = z.object({

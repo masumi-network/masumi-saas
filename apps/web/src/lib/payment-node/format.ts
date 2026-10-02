@@ -8,6 +8,15 @@ export function toNetwork(n: string | null): Network {
   return n === "Mainnet" || n === "Preprod" ? n : "Preprod";
 }
 
+/** CAIP-19-style unit key for x402 amounts (matches payment node earnings). */
+export function x402DisplayUnit(caip2Network: string, asset: string): string {
+  const normalizedAsset = asset.trim().toLowerCase();
+  if (/^eip155:\d+$/.test(caip2Network)) {
+    return `${caip2Network}/erc20:${normalizedAsset}`;
+  }
+  return `${caip2Network}:${normalizedAsset}`;
+}
+
 function formatDecimal(
   value: number,
   minimumFractionDigits: number,

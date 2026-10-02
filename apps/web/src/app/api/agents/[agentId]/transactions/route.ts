@@ -3,10 +3,12 @@ import { createRoute } from "@hono/zod-openapi";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { resolveAgentPaymentRail } from "@/lib/earnings/agent-income";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
+import { mapX402AgentPaymentActivityToTransactions } from "@/lib/payment-node/map-x402-agent-transactions";
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
@@ -116,7 +118,26 @@ app.openapi(
         );
       }
 
-      const network = toNetwork(agent.networkIdentifier);
+      const network = toNetwork(
+        agent.agentReference?.networkIdentifier ?? agent.networkIdentifier,
+      );
+
+      if (resolveAgentPaymentRail(agent) === "x402") {
+        const endExclusive = new Date();
+        endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+        const start = new Date();
+        start.setFullYear(2020, 0, 1);
+        const activity = await client.getX402AgentPaymentActivity({
+          network,
+          agentIdentifier: agent.agentIdentifier,
+          startDate: start.toISOString().slice(0, 10),
+          endDate: endExclusive.toISOString().slice(0, 10),
+          take: 50,
+        });
+        const transactions =
+          mapX402AgentPaymentActivityToTransactions(activity);
+        return c.json({ success: true as const, data: { transactions } }, 200);
+      }
 
       const smartContractAddress =
         await getSmartContractAddressForConfiguredSource(
