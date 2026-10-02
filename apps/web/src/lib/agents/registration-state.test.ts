@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   canDeregisterAgent,
   canRequestAgentVerification,
+  classifyRegistrationPollAfterSync,
   isAgentLiveOnRegistry,
   isRegistrationSyncPending,
   isRegistrationUiPending,
@@ -61,6 +62,59 @@ describe("resolveRegistrationStateAfterSync", () => {
         registryState: "UpdateRequested",
       }),
     ).toBe("UpdateRequested");
+  });
+
+  it("keeps optimistic DeregistrationRequested when node still RegistrationConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "DeregistrationRequested",
+        registryState: "RegistrationConfirmed",
+      }),
+    ).toBe("DeregistrationRequested");
+  });
+
+  it("keeps optimistic DeregistrationInitiated when node still UpdateConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "DeregistrationInitiated",
+        registryState: "UpdateConfirmed",
+      }),
+    ).toBe("DeregistrationInitiated");
+  });
+});
+
+describe("classifyRegistrationPollAfterSync", () => {
+  it("maps terminal registration and deregistration outcomes", () => {
+    expect(classifyRegistrationPollAfterSync("RegistrationConfirmed")).toBe(
+      "registration_complete",
+    );
+    expect(classifyRegistrationPollAfterSync("DeregistrationConfirmed")).toBe(
+      "deregistration_complete",
+    );
+    expect(classifyRegistrationPollAfterSync("RegistrationFailed")).toBe(
+      "registration_failed",
+    );
+    expect(classifyRegistrationPollAfterSync("DeregistrationFailed")).toBe(
+      "deregistration_failed",
+    );
+  });
+
+  it("syncs only while deregistration is in flight", () => {
+    expect(classifyRegistrationPollAfterSync("DeregistrationRequested")).toBe(
+      "still_pending",
+    );
+    expect(classifyRegistrationPollAfterSync("DeregistrationInitiated")).toBe(
+      "still_pending",
+    );
+  });
+
+  it("continues registration completion for in-flight registration", () => {
+    expect(classifyRegistrationPollAfterSync("RegistrationRequested")).toBe(
+      "continue_registration",
+    );
+    expect(classifyRegistrationPollAfterSync("UpdateRequested")).toBe(
+      "continue_registration",
+    );
   });
 });
 

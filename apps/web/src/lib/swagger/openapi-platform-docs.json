@@ -12343,6 +12343,31 @@
           },
           {
             "schema": {
+              "type": "string",
+              "enum": [
+                "standard",
+                "x402"
+              ]
+            },
+            "required": false,
+            "name": "agentType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "free",
+                "fixed",
+                "dynamic"
+              ]
+            },
+            "required": false,
+            "name": "pricingType",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": false,

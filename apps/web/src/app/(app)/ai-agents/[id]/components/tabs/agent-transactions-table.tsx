@@ -14,6 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useFormatDate } from "@/hooks/use-format-date";
+import { getEvmChainByCaip2Id } from "@/lib/x402/evm-config";
+
+import { TransactionNetworkCell } from "./transaction-network-cell";
 
 type TimestampFormatter = (date: Date) => string;
 
@@ -74,6 +77,9 @@ function filterTransactions(
         t.status?.toLowerCase().includes(q) ||
         t.type?.toLowerCase().includes(q) ||
         t.network?.toLowerCase().includes(q) ||
+        (getEvmChainByCaip2Id(t.network.trim())?.displayName ?? "")
+          .toLowerCase()
+          .includes(q) ||
         t.amount?.toLowerCase().includes(q),
     );
   }
@@ -178,7 +184,9 @@ export function AgentTransactionsTable({
                     : "—"}
                 </TableCell>
                 <TableCell>{tx.amount}</TableCell>
-                <TableCell>{tx.network}</TableCell>
+                <TableCell>
+                  <TransactionNetworkCell network={tx.network} />
+                </TableCell>
                 <TableCell>{formatStatus(tx.status)}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {tx.status === "ResultSubmitted"

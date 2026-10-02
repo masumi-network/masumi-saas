@@ -5,6 +5,8 @@ import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   fetchNormalizedAgentPaymentIncome,
   hasAgentEarningsData,
+  resolveAgentAnalyticsPeriod,
+  resolveAgentPaymentRail,
 } from "@/lib/earnings/agent-income";
 import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
 import { toNetwork } from "@/lib/payment-node/format";
@@ -37,28 +39,19 @@ function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
   startDate: string;
   endDate: string;
 } {
-  const end = new Date();
-  const start = new Date();
-  switch (period) {
-    case "1d":
-      start.setDate(start.getDate() - 1);
-      break;
-    case "7d":
-      start.setDate(start.getDate() - 7);
-      break;
-    case "30d":
-      start.setDate(start.getDate() - 30);
-      break;
-    case "all":
-      start.setFullYear(2020, 0, 1);
-      break;
-    default:
-      start.setDate(start.getDate() - 7);
+  if (period === "1d") {
+    const { endDate: today } = resolveAgentAnalyticsPeriod({
+      range: "7d",
+      timeZone: "Etc/UTC",
+    });
+    return { startDate: today, endDate: today };
   }
-  return {
-    startDate: start.toISOString().slice(0, 10),
-    endDate: end.toISOString().slice(0, 10),
-  };
+
+  const { startDate, endDate } = resolveAgentAnalyticsPeriod({
+    range: period,
+    timeZone: "Etc/UTC",
+  });
+  return { startDate, endDate };
 }
 
 app.openapi(
@@ -152,6 +145,7 @@ app.openapi(
         startDate,
         endDate,
         timeZone: "Etc/UTC",
+        paymentRail: resolveAgentPaymentRail(agent),
       });
 
       return c.json(
