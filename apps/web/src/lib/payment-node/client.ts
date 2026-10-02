@@ -963,6 +963,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       startDate?: string | null; // ISO date 2024-01-01
       endDate?: string | null;
       timeZone?: string;
+      paymentRail?: "cardano" | "x402";
     }): Promise<PaymentIncomeOutput> {
       return requestParse(
         base,
@@ -976,6 +977,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
             startDate: params.startDate ?? null,
             endDate: params.endDate ?? null,
             timeZone: params.timeZone ?? "Etc/UTC",
+            paymentRail: params.paymentRail ?? "cardano",
           },
         },
         paymentIncomeOutputSchema,

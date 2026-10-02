@@ -20,6 +20,8 @@ interface NetworkMismatchDialogProps {
   currentNetwork: PaymentNodeNetwork;
   onSwitch: () => void;
   onBack: () => void;
+  /** Radix fires onOpenChange(false) whenever `open` becomes false, not only on dismiss. */
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function NetworkMismatchDialog({
@@ -28,11 +30,23 @@ export function NetworkMismatchDialog({
   currentNetwork,
   onSwitch,
   onBack,
+  onOpenChange,
 }: NetworkMismatchDialogProps) {
   const t = useTranslations("App.Agents.Details.networkMismatch");
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onBack()}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (onOpenChange) {
+          onOpenChange(isOpen);
+          return;
+        }
+        if (!isOpen) {
+          onBack();
+        }
+      }}
+    >
       <DialogContent
         className="sm:max-w-md max-h-[90vh] p-0 flex flex-col gap-0 overflow-hidden"
         closeButtonClassName="top-8 right-4 -translate-y-1/2"

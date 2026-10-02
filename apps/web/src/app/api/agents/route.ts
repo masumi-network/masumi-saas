@@ -11,6 +11,12 @@ import {
   startAgentRegistration,
   validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
+import {
+  type AgentPricingTypeFilter,
+  type AgentRegistrationKindFilter,
+  matchesAgentTypeFilter,
+  matchesPricingTypeFilter,
+} from "@/lib/agents/agent-list-filter-match";
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -145,6 +151,8 @@ app.openapi(
       take,
       registrationState,
       registrationStateIn,
+      agentType,
+      pricingType,
       search,
       network: networkQuery,
     } = c.req.valid("query");
@@ -187,6 +195,14 @@ app.openapi(
             registrationState: normalizedRegistrationState,
             registrationStateIn: normalizedRegistrationStateIn,
           }) &&
+          matchesAgentTypeFilter(
+            agent,
+            agentType as AgentRegistrationKindFilter | undefined,
+          ) &&
+          matchesPricingTypeFilter(
+            agent,
+            pricingType as AgentPricingTypeFilter | undefined,
+          ) &&
           matchesAgentSearch(agent, search),
       );
 

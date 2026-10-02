@@ -60,8 +60,8 @@ export async function getPendingOnChainVerificationAgentIdsAction(): Promise<
   }
 }
 
-/** Returns agent IDs for the current user that still need on-chain registration work
- *  (stuck after tab close). Used to recover polling on next app load. */
+/** Returns agent IDs for the current user with in-flight registry work
+ *  (registration or deregistration). Used to recover polling on next app load. */
 export async function getPendingRegistrationAgentIdsAction(): Promise<
   string[]
 > {
@@ -81,9 +81,12 @@ export async function getPendingRegistrationAgentIdsAction(): Promise<
     ]);
     return [...preprodAgents, ...mainnetAgents]
       .filter((agent) =>
-        ["RegistrationRequested", "RegistrationInitiated"].includes(
-          agent.registrationState,
-        ),
+        [
+          "RegistrationRequested",
+          "RegistrationInitiated",
+          "DeregistrationRequested",
+          "DeregistrationInitiated",
+        ].includes(agent.registrationState),
       )
       .map((agent) => agent.id);
   } catch {

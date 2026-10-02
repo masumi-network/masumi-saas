@@ -8,6 +8,12 @@ export const REGISTRY_UPDATE_PENDING_STATES = [
   "UpdateInitiated",
 ] as const satisfies readonly RegistrationState[];
 
+/** SaaS optimistic deregistration while payment-node row may lag briefly. */
+export const REGISTRY_DEREGISTRATION_PENDING_STATES = [
+  "DeregistrationRequested",
+  "DeregistrationInitiated",
+] as const satisfies readonly RegistrationState[];
+
 /** States polled from payment-node until they reach a terminal value. */
 export const REGISTRATION_SYNC_STATES = [
   "RegistrationRequested",
@@ -60,6 +66,16 @@ export function resolveRegistrationStateAfterSync(params: {
       params.previousState,
     ) &&
     params.registryState === "RegistrationConfirmed"
+  ) {
+    return params.previousState;
+  }
+
+  if (
+    (REGISTRY_DEREGISTRATION_PENDING_STATES as readonly string[]).includes(
+      params.previousState,
+    ) &&
+    (params.registryState === "RegistrationConfirmed" ||
+      params.registryState === "UpdateConfirmed")
   ) {
     return params.previousState;
   }

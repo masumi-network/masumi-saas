@@ -38,9 +38,19 @@ export const USDCX: TokenConfig = {
   aliases: ["USDCx", "USDC"],
 };
 
+/** Base Sepolia USDC (x402 earnings unit: eip155:84532/erc20:…). */
+export const BASE_SEPOLIA_USDC: TokenConfig = {
+  policyId: "",
+  assetName: "",
+  unit: "eip155:84532/erc20:0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+  symbol: "USDC",
+  decimals: 6,
+  aliases: ["Base Sepolia USDC"],
+};
+
 export const STABLECOINS_BY_NETWORK: Record<PaymentNodeNetwork, TokenConfig[]> =
   {
-    Preprod: [USDM.Preprod],
+    Preprod: [USDM.Preprod, BASE_SEPOLIA_USDC],
     Mainnet: [USDM.Mainnet, USDCX],
   };
 

@@ -5,6 +5,7 @@ import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   fetchNormalizedAgentPaymentIncome,
   hasAgentEarningsData,
+  resolveAgentPaymentRail,
 } from "@/lib/earnings/agent-income";
 import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
 import { toNetwork } from "@/lib/payment-node/format";
@@ -152,6 +153,7 @@ app.openapi(
         startDate,
         endDate,
         timeZone: "Etc/UTC",
+        paymentRail: resolveAgentPaymentRail(agent),
       });
 
       return c.json(

@@ -14,9 +14,12 @@ import z from "zod";
 
 import {
   completeRegistrationIfReadyAction,
+  getAgentAction,
   getPendingOnChainVerificationAgentIdsAction,
   getPendingRegistrationAgentIdsAction,
+  syncAgentRegistrationStatusAction,
 } from "@/lib/actions/agent.action";
+import { isRegistrationUiPending } from "@/lib/agents/registration-state";
 import { agentApiClient } from "@/lib/api/agent.client";
 import { useSession } from "@/lib/auth/auth.client";
 import { useNotifications } from "@/lib/context/notifications-context";
@@ -298,7 +301,17 @@ export function AgentCompletionProvider({
         );
 
         const results = await Promise.allSettled(
-          toPoll.map((agentId) => completeRegistrationIfReadyAction(agentId)),
+          toPoll.map(async (agentId) => {
+            await syncAgentRegistrationStatusAction(agentId);
+            const agentResult = await getAgentAction(agentId);
+            if (
+              agentResult.success &&
+              !isRegistrationUiPending(agentResult.data.registrationState)
+            ) {
+              return { status: "registered" as const };
+            }
+            return completeRegistrationIfReadyAction(agentId);
+          }),
         );
 
         const toRemove: {

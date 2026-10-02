@@ -190,6 +190,7 @@ describe("/api/earnings/agent GET", () => {
       startDate: "2026-03-17",
       endDate: "2026-04-15",
       timeZone: "Etc/UTC",
+      paymentRail: "cardano",
     });
     expect(getUserOwnedAgentForEarningsMock).toHaveBeenCalledWith({
       userId: "user-1",

@@ -62,6 +62,24 @@ describe("resolveRegistrationStateAfterSync", () => {
       }),
     ).toBe("UpdateRequested");
   });
+
+  it("keeps optimistic DeregistrationRequested when node still RegistrationConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "DeregistrationRequested",
+        registryState: "RegistrationConfirmed",
+      }),
+    ).toBe("DeregistrationRequested");
+  });
+
+  it("keeps optimistic DeregistrationInitiated when node still UpdateConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "DeregistrationInitiated",
+        registryState: "UpdateConfirmed",
+      }),
+    ).toBe("DeregistrationInitiated");
+  });
 });
 
 describe("pending helpers", () => {

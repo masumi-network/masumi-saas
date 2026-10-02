@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
 import { useFormatDate } from "@/hooks/use-format-date";
+import { syncAgentRegistrationStatusAction } from "@/lib/actions/agent.action";
 import {
   canDeregisterAgent,
   isAgentLiveOnRegistry,
@@ -35,6 +36,7 @@ import {
   isRegistrationUiPending,
 } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
+import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import { usePaymentNodeSupportedX402Networks } from "@/lib/hooks/use-x402-networks";
 import { shortenAddress } from "@/lib/utils";
 
@@ -67,6 +69,7 @@ export function AgentsTable({
   const tDetails = useTranslations("App.Agents.Details");
   const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const { formatRelativeDate } = useFormatDate();
+  const { addPendingRegistration } = useAgentCompletion();
   const { networks: x402Networks } = usePaymentNodeSupportedX402Networks({
     silentErrors: true,
     allEnvironments: true,
@@ -146,6 +149,8 @@ export function AgentsTable({
         );
         if (result.success) {
           toast.success(tDetails("deregisterSuccess"));
+          addPendingRegistration(selectedAgentToDeregister.id);
+          await syncAgentRegistrationStatusAction(selectedAgentToDeregister.id);
           onDeleteSuccess(); // refetch list
           setIsDeregisterDialogOpen(false);
           setSelectedAgentToDeregister(null);

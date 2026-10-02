@@ -9,6 +9,7 @@ import {
   fetchNormalizedAgentPaymentIncome,
   hasAgentEarningsData,
   resolveAgentAnalyticsPeriod,
+  resolveAgentPaymentRail,
 } from "@/lib/earnings/agent-income";
 import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
 import { toNetwork } from "@/lib/payment-node/format";
@@ -157,6 +158,7 @@ app.openapi(
         startDate: resolvedPeriod.startDate,
         endDate: resolvedPeriod.endDate,
         timeZone,
+        paymentRail: resolveAgentPaymentRail(agent),
       });
 
       return c.json(
