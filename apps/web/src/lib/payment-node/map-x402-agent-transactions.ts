@@ -17,9 +17,8 @@ export function mapX402AgentPaymentActivityToTransactions(
 ): MappedAgentTransaction[] {
   return activity.Attempts.map((attempt) => {
     const unit = x402DisplayUnit(attempt.caip2Network, attempt.asset);
-    // Agent-scoped x402 activity is seller income (verified hires to payTo).
-    const type: "payment" | "purchase" =
-      attempt.direction === "OutboundPayment" ? "payment" : "purchase";
+    // Agent-scoped x402 activity lists seller-side attempts only (income).
+    const type = "payment" as const;
 
     return {
       id: attempt.id,
