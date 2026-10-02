@@ -305,10 +305,7 @@ export function AgentCompletionProvider({
             await syncAgentRegistrationStatusAction(agentId);
             const agentResult = await getAgentAction(agentId);
             if (!agentResult.success) {
-              return {
-                status: "error" as const,
-                error: tRef.current("registrationFailed"),
-              };
+              return { status: "pending" as const };
             }
             switch (
               classifyRegistrationPollAfterSync(

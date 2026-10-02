@@ -56,9 +56,6 @@ function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
     default:
       start.setDate(start.getDate() - 7);
   }
-  // Payment node treats YYYY-MM-DD endDate as midnight UTC at the start of that day,
-  // so use tomorrow to include all activity through today.
-  end.setUTCDate(end.getUTCDate() + 1);
   return {
     startDate: start.toISOString().slice(0, 10),
     endDate: end.toISOString().slice(0, 10),

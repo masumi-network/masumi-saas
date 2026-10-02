@@ -18,7 +18,7 @@ export function mapX402AgentPaymentActivityToTransactions(
   return activity.Attempts.map((attempt) => {
     const unit = x402DisplayUnit(attempt.caip2Network, attempt.asset);
     const type: "payment" | "purchase" =
-      attempt.direction === "OutboundPayment" ? "payment" : "payment";
+      attempt.direction === "OutboundPayment" ? "purchase" : "payment";
 
     return {
       id: attempt.id,

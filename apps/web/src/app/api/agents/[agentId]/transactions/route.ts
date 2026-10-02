@@ -123,15 +123,14 @@ app.openapi(
       );
 
       if (resolveAgentPaymentRail(agent) === "x402") {
-        const endExclusive = new Date();
-        endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+        const end = new Date();
         const start = new Date();
         start.setFullYear(2020, 0, 1);
         const activity = await client.getX402AgentPaymentActivity({
           network,
           agentIdentifier: agent.agentIdentifier,
           startDate: start.toISOString().slice(0, 10),
-          endDate: endExclusive.toISOString().slice(0, 10),
+          endDate: end.toISOString().slice(0, 10),
           take: 50,
         });
         const transactions =
