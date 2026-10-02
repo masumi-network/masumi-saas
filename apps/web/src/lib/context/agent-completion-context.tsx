@@ -320,11 +320,13 @@ export function AgentCompletionProvider({
                 return {
                   status: "error" as const,
                   error: tRef.current("registrationFailed"),
+                  errorTitleKey: "registrationFailed" as const,
                 };
               case "deregistration_failed":
                 return {
                   status: "error" as const,
                   error: tRef.current("deregistrationFailed"),
+                  errorTitleKey: "deregistrationFailed" as const,
                 };
               case "still_pending":
                 return { status: "pending" as const };
@@ -338,6 +340,7 @@ export function AgentCompletionProvider({
           agentId: string;
           kind: "registered" | "deregistered" | "error";
           errorMessage?: string;
+          errorTitleKey?: string;
         }[] = [];
 
         for (let i = 0; i < toPoll.length; i++) {
@@ -354,6 +357,10 @@ export function AgentCompletionProvider({
               agentId,
               kind: "error",
               errorMessage: result.error,
+              errorTitleKey:
+                "errorTitleKey" in result
+                  ? result.errorTitleKey
+                  : "registrationFailed",
             });
           }
         }
@@ -372,7 +379,7 @@ export function AgentCompletionProvider({
           registrationRetriesKeyRef.current,
         );
 
-        for (const { agentId, kind, errorMessage } of toRemove) {
+        for (const { agentId, kind, errorMessage, errorTitleKey } of toRemove) {
           if (kind === "registered") {
             toast.success(tRef.current("agentRegistrationComplete"));
             addNotificationRef.current({
@@ -403,7 +410,7 @@ export function AgentCompletionProvider({
             toast.error(msg);
             addNotificationRef.current({
               type: "error",
-              titleKey: "registrationFailed",
+              titleKey: errorTitleKey ?? "registrationFailed",
               link: {
                 href: `/ai-agents/${agentId}`,
                 labelKey: "viewAgent",

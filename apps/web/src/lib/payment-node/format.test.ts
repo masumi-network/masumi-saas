@@ -5,7 +5,7 @@ import {
   formatUnitAmount,
   splitIncomeUnitsStablecoinUsdAndAda,
 } from "./format";
-import { USDCX, USDM } from "./tokens";
+import { BASE_MAINNET_USDC, USDCX, USDM } from "./tokens";
 
 describe("formatUnitAmount", () => {
   it("formats ADA from empty unit", () => {
@@ -61,18 +61,19 @@ describe("splitIncomeUnitsStablecoinUsdAndAda", () => {
     });
   });
 
-  it("counts mainnet USDM, USDCx, and ADA", () => {
+  it("counts mainnet USDM, USDCx, Base USDC, and ADA", () => {
     expect(
       splitIncomeUnitsStablecoinUsdAndAda(
         [
           { unit: USDM.Mainnet.unit, amount: 1_250_000 },
           { unit: USDCX.unit, amount: 2_500_000 },
+          { unit: BASE_MAINNET_USDC.unit, amount: 100_000 },
           { unit: "lovelace", amount: 3_000_000 },
         ],
         "Mainnet",
       ),
     ).toEqual({
-      usd: 3.75,
+      usd: 3.85,
       ada: 3,
     });
   });
