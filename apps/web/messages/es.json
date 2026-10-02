@@ -953,8 +953,10 @@
       "clearAll": "Borrar todo",
       "dismiss": "Despedir",
       "agentRegistrationComplete": "Agente registrado exitosamente",
+      "agentDeregistrationComplete": "Agente dado de baja correctamente",
       "agentOnChainVerificationComplete": "Verificación on-chain completada",
       "registrationFailed": "Registro fallido",
+      "deregistrationFailed": "Error al dar de baja",
       "registrationTimedOut": "Se agotó el tiempo de registro",
       "viewAgent": "Ver agente"
     },

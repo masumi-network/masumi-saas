@@ -953,8 +953,10 @@
       "clearAll": "Alles löschen",
       "dismiss": "Zurückweisen",
       "agentRegistrationComplete": "Der Agent wurde erfolgreich registriert",
+      "agentDeregistrationComplete": "Der Agent wurde erfolgreich abgemeldet",
       "agentOnChainVerificationComplete": "On-Chain-Verifizierung abgeschlossen",
       "registrationFailed": "Die Registrierung ist fehlgeschlagen",
+      "deregistrationFailed": "Abmeldung fehlgeschlagen",
       "registrationTimedOut": "Zeitüberschreitung bei der Registrierung",
       "viewAgent": "Agent anzeigen"
     },

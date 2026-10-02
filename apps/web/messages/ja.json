@@ -953,8 +953,10 @@
       "clearAll": "すべてクリア",
       "dismiss": "却下する",
       "agentRegistrationComplete": "エージェントが正常に登録されました",
+      "agentDeregistrationComplete": "エージェントの登録解除が完了しました",
       "agentOnChainVerificationComplete": "オンチェーン検証が完了しました",
       "registrationFailed": "登録に失敗しました",
+      "deregistrationFailed": "登録解除に失敗しました",
       "registrationTimedOut": "登録がタイムアウトしました",
       "viewAgent": "エージェントを見る"
     },

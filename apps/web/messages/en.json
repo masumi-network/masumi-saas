@@ -1490,8 +1490,10 @@
       "clearAll": "Clear all",
       "dismiss": "Dismiss",
       "agentRegistrationComplete": "Agent registered successfully",
+      "agentDeregistrationComplete": "Agent deregistered successfully",
       "agentOnChainVerificationComplete": "On-chain verification complete",
       "registrationFailed": "Registration failed",
+      "deregistrationFailed": "Deregistration failed",
       "registrationTimedOut": "Registration timed out",
       "viewAgent": "View agent"
     },

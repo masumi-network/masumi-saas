@@ -91,6 +91,48 @@ export function isRegistrationUiPending(state: string): boolean {
   return (REGISTRATION_UI_PENDING_STATES as readonly string[]).includes(state);
 }
 
+/** Outcome for one registration-poll tick after syncing from the payment node. */
+export type RegistrationPollAfterSync =
+  | "registration_complete"
+  | "deregistration_complete"
+  | "registration_failed"
+  | "deregistration_failed"
+  | "still_pending"
+  | "continue_registration";
+
+/**
+ * Classifies agent state after sync so the client poll does not treat every
+ * non-pending state as registration success or call registration completion
+ * during deregistration.
+ */
+export function classifyRegistrationPollAfterSync(
+  state: RegistrationState,
+): RegistrationPollAfterSync {
+  if (state === "RegistrationConfirmed") {
+    return "registration_complete";
+  }
+  if (state === "DeregistrationConfirmed") {
+    return "deregistration_complete";
+  }
+  if (state === "RegistrationFailed") {
+    return "registration_failed";
+  }
+  if (state === "DeregistrationFailed") {
+    return "deregistration_failed";
+  }
+  if (
+    (REGISTRY_DEREGISTRATION_PENDING_STATES as readonly string[]).includes(
+      state,
+    )
+  ) {
+    return "still_pending";
+  }
+  if (isRegistrationUiPending(state)) {
+    return "continue_registration";
+  }
+  return "still_pending";
+}
+
 export function isRegistrationConfirmedOnNetwork(state: string): boolean {
   return state === "RegistrationConfirmed";
 }

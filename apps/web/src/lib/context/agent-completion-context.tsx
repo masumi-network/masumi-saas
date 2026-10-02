@@ -19,7 +19,7 @@ import {
   getPendingRegistrationAgentIdsAction,
   syncAgentRegistrationStatusAction,
 } from "@/lib/actions/agent.action";
-import { isRegistrationUiPending } from "@/lib/agents/registration-state";
+import { classifyRegistrationPollAfterSync } from "@/lib/agents/registration-state";
 import { agentApiClient } from "@/lib/api/agent.client";
 import { useSession } from "@/lib/auth/auth.client";
 import { useNotifications } from "@/lib/context/notifications-context";
@@ -304,19 +304,42 @@ export function AgentCompletionProvider({
           toPoll.map(async (agentId) => {
             await syncAgentRegistrationStatusAction(agentId);
             const agentResult = await getAgentAction(agentId);
-            if (
-              agentResult.success &&
-              !isRegistrationUiPending(agentResult.data.registrationState)
-            ) {
-              return { status: "registered" as const };
+            if (!agentResult.success) {
+              return {
+                status: "error" as const,
+                error: tRef.current("registrationFailed"),
+              };
             }
-            return completeRegistrationIfReadyAction(agentId);
+            switch (
+              classifyRegistrationPollAfterSync(
+                agentResult.data.registrationState,
+              )
+            ) {
+              case "registration_complete":
+                return { status: "registered" as const };
+              case "deregistration_complete":
+                return { status: "deregistered" as const };
+              case "registration_failed":
+                return {
+                  status: "error" as const,
+                  error: tRef.current("registrationFailed"),
+                };
+              case "deregistration_failed":
+                return {
+                  status: "error" as const,
+                  error: tRef.current("deregistrationFailed"),
+                };
+              case "still_pending":
+                return { status: "pending" as const };
+              case "continue_registration":
+                return completeRegistrationIfReadyAction(agentId);
+            }
           }),
         );
 
         const toRemove: {
           agentId: string;
-          kind: "registered" | "error";
+          kind: "registered" | "deregistered" | "error";
           errorMessage?: string;
         }[] = [];
 
@@ -327,6 +350,8 @@ export function AgentCompletionProvider({
           const result = settled.value;
           if (result.status === "registered") {
             toRemove.push({ agentId, kind: "registered" });
+          } else if (result.status === "deregistered") {
+            toRemove.push({ agentId, kind: "deregistered" });
           } else if (result.status === "error") {
             toRemove.push({
               agentId,
@@ -366,6 +391,16 @@ export function AgentCompletionProvider({
                 detail: { agentId },
               }),
             );
+          } else if (kind === "deregistered") {
+            toast.success(tRef.current("agentDeregistrationComplete"));
+            addNotificationRef.current({
+              type: "success",
+              titleKey: "agentDeregistrationComplete",
+              link: {
+                href: `/ai-agents/${agentId}`,
+                labelKey: "viewAgent",
+              },
+            });
           } else {
             const msg = errorMessage ?? tRef.current("registrationFailed");
             toast.error(msg);

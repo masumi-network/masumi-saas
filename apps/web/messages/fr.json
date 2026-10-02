@@ -953,8 +953,10 @@
       "clearAll": "Tout effacer",
       "dismiss": "Rejeter",
       "agentRegistrationComplete": "Agent enregistré avec succès",
+      "agentDeregistrationComplete": "Agent désinscrit avec succès",
       "agentOnChainVerificationComplete": "Vérification on-chain terminée",
       "registrationFailed": "L'inscription a échoué",
+      "deregistrationFailed": "Échec de la désinscription",
       "registrationTimedOut": "L'inscription a expiré",
       "viewAgent": "Afficher l'agent"
     },
