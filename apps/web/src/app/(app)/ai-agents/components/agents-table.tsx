@@ -1,5 +1,6 @@
 "use client";
 
+import { getEvmFixedPrice } from "@masumi/payment-source-x402/payment-source";
 import { Trash2, Unplug } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -7,7 +8,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
-import { CompactAgentPricing } from "@/components/compact-agent-pricing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -26,6 +26,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
 import { useFormatDate } from "@/hooks/use-format-date";
 import {
   canDeregisterAgent,
@@ -45,6 +46,8 @@ import {
   getRegistrationStatusDisplayKey,
 } from "./agent-utils";
 import {
+  AgentPayoutTableCell,
+  AgentPriceTableCell,
   agentsTableShowsX402Column,
   AgentX402TableCell,
 } from "./agent-x402-options";
@@ -72,6 +75,22 @@ export function AgentsTable({
     () => agentsTableShowsX402Column(agents),
     [agents],
   );
+  const payoutChainCaip2Ids = useMemo(
+    () => [
+      ...new Set(
+        agents.flatMap((agent) =>
+          (agent.supportedPaymentSources ?? [])
+            .filter(
+              (source) =>
+                source.chain === "EVM" && getEvmFixedPrice(source) != null,
+            )
+            .map((source) => source.network),
+        ),
+      ),
+    ],
+    [agents],
+  );
+  const payoutChainIconSlugs = useChainRegistryIcons(payoutChainCaip2Ids);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeregisterDialogOpen, setIsDeregisterDialogOpen] = useState(false);
   const [selectedAgentToDelete, setSelectedAgentToDelete] =
@@ -230,12 +249,21 @@ export function AgentsTable({
                     >
                       {agent.agentIdentifier ? (
                         <>
-                          <span
-                            className="truncate"
-                            title={agent.agentIdentifier}
-                          >
-                            {agent.agentIdentifier}
-                          </span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-default truncate font-mono">
+                                {shortenAddress(agent.agentIdentifier, 7)}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="top"
+                              className="max-w-md text-tooltip-foreground"
+                            >
+                              <p className="break-all font-mono text-xs leading-relaxed">
+                                {agent.agentIdentifier}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
                           <CopyButton
                             value={agent.agentIdentifier}
                             className="h-7 w-7 shrink-0"
@@ -253,13 +281,25 @@ export function AgentsTable({
                       className="text-xs font-mono truncate max-w-52 flex items-center gap-2"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Link
-                        href={agent.apiUrl}
-                        target="_blank"
-                        className="truncate hover:underline text-muted-foreground"
-                      >
-                        {agent.apiUrl}
-                      </Link>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={agent.apiUrl}
+                            target="_blank"
+                            className="min-w-0 truncate hover:underline text-muted-foreground"
+                          >
+                            {agent.apiUrl}
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="max-w-md text-tooltip-foreground"
+                        >
+                          <p className="break-all font-mono text-xs leading-relaxed">
+                            {agent.apiUrl}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                       <CopyButton
                         value={agent.apiUrl}
                         className="h-7 w-7 shrink-0"
@@ -267,32 +307,21 @@ export function AgentsTable({
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">
-                    <CompactAgentPricing pricing={agent.pricing} />
+                    <AgentPriceTableCell
+                      pricing={agent.pricing}
+                      supportedPaymentSources={agent.supportedPaymentSources}
+                      networks={x402Networks}
+                    />
                   </TableCell>
                   <TableCell>
-                    <div
-                      className="text-xs font-mono truncate max-w-44 flex items-center gap-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {agent.payoutAddress ? (
-                        <>
-                          <span
-                            className="truncate"
-                            title={agent.payoutAddress}
-                          >
-                            {shortenAddress(agent.payoutAddress, 8)}
-                          </span>
-                          <CopyButton
-                            value={agent.payoutAddress}
-                            className="h-7 w-7 shrink-0"
-                          />
-                        </>
-                      ) : (
-                        <span className="text-sm text-muted-foreground font-sans">
-                          {t("table.noPayoutAddress")}
-                        </span>
-                      )}
-                    </div>
+                    <AgentPayoutTableCell
+                      payoutAddress={agent.payoutAddress}
+                      supportedPaymentSources={agent.supportedPaymentSources}
+                      networks={x402Networks}
+                      chainIconSlugs={payoutChainIconSlugs}
+                      cardanoEmptyLabel={t("table.noPayoutAddress")}
+                      x402PayToTitle={t("table.x402PayToHint")}
+                    />
                   </TableCell>
                   {showX402Column ? (
                     <TableCell>
@@ -304,11 +333,26 @@ export function AgentsTable({
                       />
                     </TableCell>
                   ) : null}
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     {agent.tags.length > 0 ? (
-                      <Badge variant="secondary" className="truncate">
-                        {t("table.tagCount", { count: agent.tags.length })}
-                      </Badge>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="secondary"
+                            className="max-w-full cursor-default truncate"
+                          >
+                            {t("table.tagCount", { count: agent.tags.length })}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="max-w-xs text-tooltip-foreground"
+                        >
+                          <p className="text-sm leading-snug">
+                            {agent.tags.join(", ")}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     ) : (
                       <span className="text-sm text-muted-foreground">
                         {t("table.noTags")}

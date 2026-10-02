@@ -1,16 +1,11 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, CircleHelp, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
@@ -26,8 +21,6 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface AgentIconPickerTranslations {
-  icon: string;
-  iconTooltip: string;
   iconDescription: string;
   iconSearchPlaceholder: string;
   iconSearchEmpty: string;
@@ -88,6 +81,33 @@ export function AgentIconPicker({
     return () => ro.disconnect();
   }, [updateIconScrollGradients, filteredKeys.length]);
 
+  useEffect(() => {
+    if (!selectedKey) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Clear filter when selection changes externally (e.g. autofill).
+    setSearchQuery((current) => {
+      if (searchAgentIconKeys(current).includes(selectedKey)) return current;
+      return "";
+    });
+  }, [selectedKey]);
+
+  useEffect(() => {
+    if (!selectedKey) return;
+    const frame = requestAnimationFrame(() => {
+      const scroller = iconScrollRef.current;
+      if (!scroller) return;
+      const button = scroller.querySelector<HTMLElement>(
+        `[data-agent-icon-key="${selectedKey}"]`,
+      );
+      button?.scrollIntoView({
+        inline: "center",
+        block: "nearest",
+        behavior: "smooth",
+      });
+      updateIconScrollGradients();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedKey, searchQuery, updateIconScrollGradients]);
+
   const scrollIcons = useCallback((direction: "left" | "right") => {
     const el = iconScrollRef.current;
     if (!el) return;
@@ -105,18 +125,7 @@ export function AgentIconPicker({
   };
 
   return (
-    <FormItem>
-      <div className="flex items-center gap-2 mb-3">
-        <FormLabel className="text-base font-medium">{t.icon}</FormLabel>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-              <CircleHelp className="h-4 w-4" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{t.iconTooltip}</TooltipContent>
-        </Tooltip>
-      </div>
+    <FormItem className="gap-1.5">
       <FormControl>
         <Card className="min-w-0 overflow-hidden border-border/80 bg-muted-surface">
           <CardContent className="min-w-0 space-y-4">
@@ -204,9 +213,11 @@ export function AgentIconPicker({
                         <TooltipTrigger asChild>
                           <button
                             type="button"
+                            data-agent-icon-key={key}
                             onClick={() => handlePresetClick(key)}
                             disabled={disabled}
                             aria-label={formatAgentIconLabel(key)}
+                            aria-pressed={isSelected}
                             className={cn(
                               "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-[background-color,border-color,box-shadow,color] duration-200",
                               isSelected

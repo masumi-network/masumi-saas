@@ -12968,6 +12968,19 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "registrationKind": {
+                    "type": "string",
+                    "enum": [
+                      "STANDARD",
+                      "X402_HTTP"
+                    ]
+                  },
+                  "x402ResourceUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://agent.example.com/mip",
+                    "description": "Agent API base URL. In production it must use HTTPS and resolve only to public internet addresses; localhost and private-network targets are rejected."
+                  },
                   "runtimeProvider": {
                     "type": "string",
                     "enum": [

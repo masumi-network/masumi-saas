@@ -3,6 +3,15 @@ export * from "./balance.js";
 export * from "./counts.js";
 export * from "./encryption.js";
 export {
+  assessSokosumiBuySideCompatibility,
+  parsePaymentRequiredHeader,
+  probeX402HttpResource,
+  type ProbeX402HttpResourceResult,
+  type SokosumiCompatibilityResult,
+  USDC_BY_EVM_NETWORK,
+  type X402HttpProbeRow,
+} from "./http-resource-probe.js";
+export {
   assertSafeRpcUrl,
   assertSafeRpcUrlResolved,
   probeX402NetworkRpc,
@@ -37,3 +46,11 @@ export {
 } from "./service.js";
 export * from "./supported-payment-sources.js";
 export * from "./tenant-scope.js";
+export {
+  buildEvmPaymentSourceFromProbeRow,
+  buildRegistryExtraFromProbeRow,
+  buildX402AgentManifestFromProbeRow,
+  CARDANO_NETWORK_BY_EVM,
+  evmNetworkForCardanoPaymentNetwork,
+  type X402AgentManifest,
+} from "./x402-http-agent.js";

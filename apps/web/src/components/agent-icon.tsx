@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, HelpCircle } from "lucide-react";
+import { Bot } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -36,9 +36,9 @@ function AgentIconImage({
 
   if (loadError) {
     return (
-      <HelpCircle
+      <Bot
         className={cn(
-          "size-8 shrink-0 text-destructive",
+          "size-8 shrink-0 text-muted-foreground",
           className,
           isMuted && "opacity-60",
         )}
