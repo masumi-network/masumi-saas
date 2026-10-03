@@ -47,15 +47,21 @@ function supportedToSearchResult(
   };
 }
 
-function ChainOption({
+export function ChainOption({
   chain,
   testnetLabel,
   mainnetLabel,
+  trailingLabel,
 }: {
   chain: ChainSearchResult;
   testnetLabel: string;
   mainnetLabel: string;
+  /** Overrides testnet/mainnet suffix (e.g. Cardano Preprod / Mainnet). */
+  trailingLabel?: string;
 }) {
+  const suffix =
+    trailingLabel ?? (chain.isTestnet ? testnetLabel : mainnetLabel);
+
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
       <ChainIcon
@@ -70,9 +76,7 @@ function ChainOption({
           {chain.caip2Id}
         </span>
       </span>
-      <span className="shrink-0 text-xs text-muted-foreground">
-        {chain.isTestnet ? testnetLabel : mainnetLabel}
-      </span>
+      <span className="shrink-0 text-xs text-muted-foreground">{suffix}</span>
     </div>
   );
 }

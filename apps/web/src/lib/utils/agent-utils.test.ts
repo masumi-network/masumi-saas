@@ -6,6 +6,15 @@ import {
 } from "./agent-utils";
 
 describe("registration status display", () => {
+  it("maps in-flight registration to registering", () => {
+    expect(getRegistrationStatusDisplayKey("RegistrationRequested")).toBe(
+      "registering",
+    );
+    expect(getRegistrationStatusDisplayKey("RegistrationInitiated")).toBe(
+      "registering",
+    );
+  });
+
   it("maps registry update lifecycle to pending", () => {
     expect(getRegistrationStatusKey("UpdateRequested")).toBe("pending");
     expect(getRegistrationStatusKey("UpdateInitiated")).toBe("pending");

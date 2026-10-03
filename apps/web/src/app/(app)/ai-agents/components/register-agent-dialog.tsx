@@ -1,11 +1,25 @@
 "use client";
 
 import { isCardanoAddressForNetwork } from "@masumi/payment-source-x402/payment-source";
-import { CircleHelp, Plug, Sparkles, Trash2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  CircleHelp,
+  Plug,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import {
+  useFieldArray,
+  useForm,
+  useFormState,
+  useWatch,
+} from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -21,9 +35,12 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogBody,
-  DialogContent,
+  DialogContentPanel,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
+  DialogPortal,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -35,6 +52,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,20 +61,45 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { FieldProbeIndicator } from "@/components/x402/field-probe-indicator";
+import { X402Logo } from "@/components/x402/x402-logo";
+import { X402RegistryChainPicker } from "@/components/x402/x402-registry-chain-picker";
+import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { syncPricesValidationAfterPricingModeChange } from "@/lib/agents/register-agent-pricing-effects";
+import {
+  persistRegistrationKind,
+  readStoredRegistrationKind,
+} from "@/lib/agents/register-agent-registration-kind-storage";
 import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
 import { zodResolver } from "@/lib/form-zod-resolver";
+import { useMainnetRegistrationCreditsGate } from "@/lib/hooks/use-mainnet-registration-credits-gate";
 import { useX402Networks } from "@/lib/hooks/use-x402-networks";
+import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { normalizePayoutAddress } from "@/lib/payment-node/payout-address";
 import {
   getDefaultPricingAssetId,
   getPricingAssetOptions,
 } from "@/lib/payment-node/pricing-assets";
 import { cn } from "@/lib/utils";
+import { evmNetworkForCardanoPaymentNetwork } from "@/lib/x402/evm-config";
+import {
+  hasMultipleX402ResourceUrlsInInput,
+  MAX_BATCH_RESOURCE_URLS,
+  parseBatchResourceUrlsInput,
+} from "@/lib/x402/parse-batch-resource-urls";
+import {
+  buildX402ResourceAutofill,
+  resolveX402AutofillPresetIcon,
+  type X402ProbeRowSnapshot,
+} from "@/lib/x402/resource-autofill";
 
 import { AgentIconPicker } from "./agent-icon-picker";
+import { MainnetCreditsRequiredNotice } from "./mainnet-credits-required-notice";
 import { type AgentPriceField, PricingFields } from "./pricing-fields";
+import { RegisterAgentReviewSection } from "./register-agent-review-section";
 import {
   validateX402Options,
   type X402OptionDraft,
@@ -64,8 +107,37 @@ import {
 } from "./x402-options-section";
 
 type RuntimeProvider = "DIRECT_MIP" | "LANGDOCK";
+type RegistrationKind = "STANDARD" | "X402_HTTP";
+
+const X402_REGISTRY_CAIP2_IDS = ["eip155:84532", "eip155:8453"] as const;
+
+type RegisterAgentDialogStep = "form" | "review";
+
+type X402ProbeViewState =
+  | { status: "idle" }
+  | { status: "checking"; key: string }
+  | { status: "valid"; key: string }
+  | { status: "invalid"; key: string; message: string };
+
+function buildX402ResourceProbeKey(
+  paymentNetwork: string,
+  resourceUrl: string,
+) {
+  return `${paymentNetwork}|${resourceUrl.trim()}`;
+}
+
+function isProbeableResourceUrl(resourceUrl: string) {
+  try {
+    const url = new URL(resourceUrl.trim());
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 type RegisterAgentFormType = AgentFormFields & {
+  registrationKind: RegistrationKind;
+  x402ResourceUrl: string;
   runtimeProvider: RuntimeProvider;
   apiUrl: string;
   integrationConnectionId: string;
@@ -75,10 +147,80 @@ type RegisterAgentFormType = AgentFormFields & {
   payoutAddress: string;
 };
 
+function trimmedField(value: string | undefined): string {
+  return (value ?? "").trim();
+}
+
+function baselinePricingTypeForKind(kind: RegistrationKind): PricingMode {
+  return kind === "X402_HTTP" ? "Free" : "Fixed";
+}
+
+function registerFormHasMeaningfulDraft(
+  values: RegisterAgentFormType,
+  tags: string[],
+  tagInput: string,
+  x402Options: X402OptionDraft[],
+): boolean {
+  if (tags.length > 0 || tagInput.trim().length > 0) return true;
+  if (x402Options.length > 0) return true;
+
+  if (trimmedField(values.name)) return true;
+  if (trimmedField(values.description)) return true;
+
+  if (values.registrationKind === "X402_HTTP") {
+    if (trimmedField(values.x402ResourceUrl)) return true;
+  } else if (trimmedField(values.apiUrl)) return true;
+
+  if (
+    values.pricingType !== baselinePricingTypeForKind(values.registrationKind)
+  ) {
+    return true;
+  }
+  if (trimmedField(values.payoutAddress)) return true;
+
+  const prices = values.prices ?? [];
+  if (prices.length > 1) return true;
+  if (prices.some((price) => trimmedField(price.amount))) return true;
+
+  if (trimmedField(values.termsOfUseUrl)) return true;
+  if (trimmedField(values.privacyPolicyUrl)) return true;
+  if (trimmedField(values.otherUrl)) return true;
+  if (trimmedField(values.capabilityName)) return true;
+  if (trimmedField(values.capabilityVersion)) return true;
+
+  const outputs = values.exampleOutputs ?? [];
+  if (
+    outputs.some(
+      (output) =>
+        trimmedField(output.name) ||
+        trimmedField(output.url) ||
+        trimmedField(output.mimeType),
+    )
+  ) {
+    return true;
+  }
+
+  if (values.icon && values.icon !== "bot") return true;
+
+  if (values.runtimeProvider === "LANGDOCK") {
+    if (values.integrationConnectionId === NEW_LANGDOCK_CONNECTION) {
+      if (trimmedField(values.langdockApiKey)) return true;
+      if (trimmedField(values.langdockAgentId)) return true;
+      if (trimmedField(values.langdockBaseUrl)) return true;
+    }
+  }
+
+  return false;
+}
+
 interface RegisterAgentDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onBeginBatchX402Registration?: (payload: {
+    urlText: string;
+    extraTags: string;
+  }) => void;
 }
 
 type PricingMode = "Free" | "Fixed" | "Dynamic";
@@ -204,22 +346,31 @@ export function RegisterAgentDialog({
   open,
   onClose,
   onSuccess,
+  onBeginBatchX402Registration,
 }: RegisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Register");
+  const tCreditsGate = useTranslations("App.Agents.CreditsGate");
   const { addPendingRegistration } = useAgentCompletion();
-  const { network } = usePaymentNetwork();
+  const { network, setNetwork } = usePaymentNetwork();
+  const mainnetCreditsGate = useMainnetRegistrationCreditsGate();
+  const selectedX402Caip2 = evmNetworkForCardanoPaymentNetwork(network);
+  const x402RegistryChainIconSlugs = useChainRegistryIcons([
+    ...X402_REGISTRY_CAIP2_IDS,
+  ]);
   const defaultPricingAssetId = getDefaultPricingAssetId(network);
 
   const [isLoading, setIsLoading] = useState(false);
   const closedViaConfirmRef = useRef(false);
   const userClosedViaConfirmRef = useRef(false);
-  const showCloseConfirmRef = useRef(false);
+  const closeConfirmOpenRef = useRef(false);
   const submitIdRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   const onCloseRef = useRef(onClose);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [closeConfirmReason, setCloseConfirmReason] = useState<
+    "loading" | "unsaved" | null
+  >(null);
   const [connections, setConnections] = useState<IntegrationConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [testingLangdock, setTestingLangdock] = useState(false);
@@ -227,6 +378,25 @@ export function RegisterAgentDialog({
     useX402Networks({ silentErrors: true, requireFacilitator: true });
   const [x402Options, setX402Options] = useState<X402OptionDraft[]>([]);
   const [x402Error, setX402Error] = useState<string | null>(null);
+  const [x402Probe, setX402Probe] = useState<X402ProbeViewState>({
+    status: "idle",
+  });
+  const [x402ProbeRow, setX402ProbeRow] = useState<X402ProbeRowSnapshot | null>(
+    null,
+  );
+  const [x402AutofillInProgress, setX402AutofillInProgress] = useState(false);
+  const [networkSwitchConfirmOpen, setNetworkSwitchConfirmOpen] =
+    useState(false);
+  const [pendingPaymentNetwork, setPendingPaymentNetwork] =
+    useState<PaymentNodeNetwork | null>(null);
+  const [step, setStep] = useState<RegisterAgentDialogStep>("form");
+  const [reviewValues, setReviewValues] =
+    useState<RegisterAgentFormType | null>(null);
+  const [additionalFieldsExpanded, setAdditionalFieldsExpanded] =
+    useState(false);
+  const registerDialogBodyRef = useRef<HTMLDivElement>(null);
+  const x402ProbeGenerationRef = useRef(0);
+  const lastAutoProbeKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -234,15 +404,31 @@ export function RegisterAgentDialog({
   }, [onSuccess, onClose]);
 
   useEffect(() => {
-    showCloseConfirmRef.current = showCloseConfirm;
-  }, [showCloseConfirm]);
+    if (!open || step !== "form" || !additionalFieldsExpanded) return;
+    const timer = window.setTimeout(() => {
+      const body = registerDialogBodyRef.current;
+      if (!body) return;
+      body.scrollTo({ top: body.scrollHeight, behavior: "smooth" });
+    }, 280);
+    return () => window.clearTimeout(timer);
+  }, [additionalFieldsExpanded, open, step]);
+
+  useEffect(() => {
+    closeConfirmOpenRef.current = closeConfirmReason !== null;
+  }, [closeConfirmReason]);
 
   // On open: reset close flags and invalidate any in-flight submit from a previous session so its response is ignored.
   useEffect(() => {
     if (open) {
+      x402ProbeGenerationRef.current += 1;
+      lastAutoProbeKeyRef.current = null;
       closedViaConfirmRef.current = false;
       userClosedViaConfirmRef.current = false;
+      setCloseConfirmReason(null);
       submitIdRef.current += 1;
+      setStep("form");
+      setReviewValues(null);
+      setAdditionalFieldsExpanded(false);
       setConnectionsLoading(true);
       fetch("/api/integrations/langdock", { credentials: "include" })
         .then((res) => res.json())
@@ -256,6 +442,8 @@ export function RegisterAgentDialog({
 
   const registerAgentSchema = z
     .object({
+      registrationKind: z.enum(["STANDARD", "X402_HTTP"]),
+      x402ResourceUrl: z.string().optional().or(z.literal("")),
       name: z.string().min(1, t("nameRequired")).max(250, t("nameMaxLength")),
       description: z
         .string()
@@ -301,6 +489,7 @@ export function RegisterAgentDialog({
     })
     .refine(
       (data) => {
+        if (data.registrationKind === "X402_HTTP") return true;
         if (data.pricingType !== "Fixed") return true;
         const filled = (data.prices ?? []).filter((p) => p.amount?.trim());
         return filled.length > 0;
@@ -308,6 +497,45 @@ export function RegisterAgentDialog({
       { message: t("priceAmountRequired"), path: ["prices"] },
     )
     .superRefine((data, ctx) => {
+      if (data.registrationKind === "X402_HTTP") {
+        const raw = data.x402ResourceUrl?.trim() ?? "";
+        if (!raw) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("x402ResourceUrlRequired"),
+            path: ["x402ResourceUrl"],
+          });
+          return;
+        }
+        const parsed = parseBatchResourceUrlsInput(raw);
+        if (parsed.urls.length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("x402ResourceUrlInvalid"),
+            path: ["x402ResourceUrl"],
+          });
+          return;
+        }
+        if (hasMultipleX402ResourceUrlsInInput(raw)) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("x402MultipleResourcesBlocked"),
+            path: ["x402ResourceUrl"],
+          });
+          return;
+        }
+        if (parsed.urls.length > MAX_BATCH_RESOURCE_URLS) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("x402ResourceUrlBatchMax", {
+              max: MAX_BATCH_RESOURCE_URLS,
+            }),
+            path: ["x402ResourceUrl"],
+          });
+        }
+        return;
+      }
+
       if (data.runtimeProvider === "DIRECT_MIP") {
         const apiUrl = data.apiUrl?.trim() ?? "";
         try {
@@ -372,6 +600,8 @@ export function RegisterAgentDialog({
   const form = useForm<RegisterAgentFormType>({
     resolver: zodResolver(registerAgentSchema),
     defaultValues: {
+      registrationKind: readStoredRegistrationKind(),
+      x402ResourceUrl: "",
       name: "",
       description: "",
       runtimeProvider: "DIRECT_MIP",
@@ -394,6 +624,10 @@ export function RegisterAgentDialog({
     },
   });
 
+  const { dirtyFields: registerFormDirtyFields } = useFormState({
+    control: form.control,
+  });
+
   const pricingType = useWatch({
     control: form.control,
     name: "pricingType",
@@ -401,10 +635,11 @@ export function RegisterAgentDialog({
   }) as PricingMode;
 
   useEffect(() => {
+    syncPricesValidationAfterPricingModeChange(pricingType, form);
     if (pricingType === "Fixed") return;
     setX402Options([]);
     setX402Error(null);
-  }, [pricingType]);
+  }, [pricingType, form]);
 
   useEffect(() => {
     if (!open) return;
@@ -425,6 +660,49 @@ export function RegisterAgentDialog({
       }
     });
   }, [open, network, defaultPricingAssetId, form]);
+
+  useEffect(() => {
+    if (!open) return;
+    const stored = readStoredRegistrationKind();
+    if (form.getValues("registrationKind") !== stored) {
+      form.setValue("registrationKind", stored, { shouldDirty: false });
+    }
+    if (stored === "X402_HTTP") {
+      form.setValue("pricingType", "Free", { shouldDirty: false });
+      form.clearErrors("prices");
+      form.clearErrors("payoutAddress");
+    }
+  }, [open, form]);
+
+  const registrationKind = useWatch({
+    control: form.control,
+    name: "registrationKind",
+    defaultValue: "STANDARD",
+  }) as RegistrationKind;
+
+  const watchedX402ResourceUrl = useWatch({
+    control: form.control,
+    name: "x402ResourceUrl",
+    defaultValue: "",
+  });
+  const debouncedX402ResourceUrl = useDebouncedValue(
+    watchedX402ResourceUrl ?? "",
+    500,
+  );
+  const x402ParsedResourceUrls = useMemo(
+    () => parseBatchResourceUrlsInput(watchedX402ResourceUrl ?? "").urls,
+    [watchedX402ResourceUrl],
+  );
+  const x402BatchResourceMode = useMemo(
+    () => hasMultipleX402ResourceUrlsInInput(watchedX402ResourceUrl ?? ""),
+    [watchedX402ResourceUrl],
+  );
+  const x402ProbeTargetUrl =
+    x402ParsedResourceUrls.length === 1 ? x402ParsedResourceUrls[0] : "";
+  const debouncedX402ProbeTargetUrl = useDebouncedValue(
+    x402ProbeTargetUrl,
+    500,
+  );
 
   const runtimeProvider = useWatch({
     control: form.control,
@@ -477,7 +755,11 @@ export function RegisterAgentDialog({
   };
 
   const resetSuccessfulSubmitState = () => {
+    x402ProbeGenerationRef.current += 1;
+    lastAutoProbeKeyRef.current = null;
     form.reset({
+      registrationKind: readStoredRegistrationKind(),
+      x402ResourceUrl: "",
       name: "",
       description: "",
       runtimeProvider: "DIRECT_MIP",
@@ -501,13 +783,214 @@ export function RegisterAgentDialog({
     setTagInput("");
     setX402Options([]);
     setX402Error(null);
+    setX402ProbeRow(null);
+    setX402Probe({ status: "idle" });
+    setNetworkSwitchConfirmOpen(false);
+    setPendingPaymentNetwork(null);
+    setStep("form");
+    setReviewValues(null);
+    setAdditionalFieldsExpanded(false);
+  };
+
+  const applyPaymentNetworkChange = useCallback(
+    (next: PaymentNodeNetwork) => {
+      setNetwork(next);
+      lastAutoProbeKeyRef.current = null;
+      setX402ProbeRow(null);
+      setX402Probe({ status: "idle" });
+    },
+    [setNetwork],
+  );
+
+  const requestPaymentNetworkChange = useCallback(
+    (next: PaymentNodeNetwork) => {
+      if (next === network) return;
+      setPendingPaymentNetwork(next);
+      setNetworkSwitchConfirmOpen(true);
+    },
+    [network],
+  );
+
+  const confirmPaymentNetworkChange = () => {
+    if (pendingPaymentNetwork) {
+      applyPaymentNetworkChange(pendingPaymentNetwork);
+    }
+    setPendingPaymentNetwork(null);
+    setNetworkSwitchConfirmOpen(false);
+  };
+
+  const runX402ResourceProbe = useCallback(
+    async (resourceUrl: string): Promise<X402ProbeViewState> => {
+      const trimmed = resourceUrl.trim();
+      const key = buildX402ResourceProbeKey(network, trimmed);
+      const probeGeneration = ++x402ProbeGenerationRef.current;
+      const isCurrentProbe = () =>
+        probeGeneration === x402ProbeGenerationRef.current;
+
+      setX402Probe({ status: "checking", key });
+      setX402ProbeRow(null);
+
+      try {
+        const res = await fetch("/api/x402/probe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ resourceUrl: trimmed, network }),
+        });
+        const json = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          row?: X402ProbeRowSnapshot;
+        };
+        if (!isCurrentProbe()) {
+          return { status: "idle" };
+        }
+        if (!res.ok) {
+          const next: X402ProbeViewState = {
+            status: "invalid",
+            key,
+            message: json.error || t("x402ProbeError"),
+          };
+          setX402Probe(next);
+          setX402ProbeRow(null);
+          return next;
+        }
+
+        const registeredCheck = await fetch(
+          "/api/agents/x402-registered-check",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ resourceUrls: [trimmed] }),
+          },
+        );
+        const registeredJson = (await registeredCheck
+          .json()
+          .catch(() => ({}))) as {
+          registeredResourceKeys?: string[];
+        };
+        if (!isCurrentProbe()) {
+          return { status: "idle" };
+        }
+        if (
+          registeredCheck.ok &&
+          (registeredJson.registeredResourceKeys?.length ?? 0) > 0
+        ) {
+          const next: X402ProbeViewState = {
+            status: "invalid",
+            key,
+            message: t("x402ResourceAlreadyRegistered"),
+          };
+          setX402Probe(next);
+          setX402ProbeRow(null);
+          return next;
+        }
+
+        const next: X402ProbeViewState = { status: "valid", key };
+        setX402Probe(next);
+        setX402ProbeRow(json.row ?? { resource: trimmed });
+        return next;
+      } catch {
+        if (!isCurrentProbe()) {
+          return { status: "idle" };
+        }
+        const next: X402ProbeViewState = {
+          status: "invalid",
+          key,
+          message: t("x402ProbeError"),
+        };
+        setX402Probe(next);
+        setX402ProbeRow(null);
+        return next;
+      }
+    },
+    [network, t],
+  );
+
+  useEffect(() => {
+    if (!open || registrationKind !== "X402_HTTP") return;
+
+    if (x402BatchResourceMode) {
+      lastAutoProbeKeyRef.current = null;
+      x402ProbeGenerationRef.current += 1;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Batch mode skips single-URL probe.
+      setX402Probe({ status: "idle" });
+      setX402ProbeRow(null);
+      return;
+    }
+
+    const liveResourceUrl = x402ProbeTargetUrl.trim();
+    const resourceUrl = debouncedX402ProbeTargetUrl.trim();
+
+    if (!liveResourceUrl) {
+      lastAutoProbeKeyRef.current = null;
+      x402ProbeGenerationRef.current += 1;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Clear stale probe when URL is empty.
+      setX402Probe({ status: "idle" });
+      setX402ProbeRow(null);
+      return;
+    }
+
+    if (
+      resourceUrl !== liveResourceUrl ||
+      !resourceUrl ||
+      !isProbeableResourceUrl(resourceUrl)
+    ) {
+      return;
+    }
+
+    const probeKey = buildX402ResourceProbeKey(network, resourceUrl);
+    if (lastAutoProbeKeyRef.current === probeKey) {
+      return;
+    }
+    lastAutoProbeKeyRef.current = probeKey;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Debounced live 402 probe on URL input.
+    void runX402ResourceProbe(resourceUrl);
+  }, [
+    debouncedX402ProbeTargetUrl,
+    x402BatchResourceMode,
+    x402ProbeTargetUrl,
+    open,
+    registrationKind,
+    network,
+    runX402ResourceProbe,
+  ]);
+
+  const autofillX402Metadata = async () => {
+    if (
+      !x402ProbeRow ||
+      x402Probe.status !== "valid" ||
+      x402AutofillInProgress
+    ) {
+      return;
+    }
+    setX402AutofillInProgress(true);
+    try {
+      const filled = buildX402ResourceAutofill(x402ProbeRow);
+      form.setValue("name", filled.name, { shouldDirty: true });
+      form.setValue("description", filled.description, { shouldDirty: true });
+      setTags(filled.tags);
+      form.setValue("tags", filled.tags.join(", "), { shouldDirty: true });
+      form.clearErrors("name");
+      form.clearErrors("description");
+      form.clearErrors("tags");
+
+      const iconPreset = resolveX402AutofillPresetIcon(x402ProbeRow);
+      form.setValue("icon", iconPreset, { shouldDirty: true });
+      form.clearErrors("icon");
+
+      toast.success(t("x402AutofillSuccess"));
+    } finally {
+      setX402AutofillInProgress(false);
+    }
   };
 
   const finalizeSuccessfulSubmit = () => {
     toast.info(t("registrationStarted"));
     resetSuccessfulSubmitState();
     setIsLoading(false);
-    setShowCloseConfirm(false);
+    setCloseConfirmReason(null);
     onSuccessRef.current();
     onCloseRef.current();
   };
@@ -553,25 +1036,65 @@ export function RegisterAgentDialog({
     }
   };
 
-  const onSubmit = async (data: RegisterAgentFormType) => {
+  const assertRegistrationPreflight = (
+    data: RegisterAgentFormType,
+  ): boolean => {
     if (tags.length === 0) {
       form.setError("tags", { message: t("tagsRequired") });
+      return false;
+    }
+    if (
+      data.registrationKind === "STANDARD" &&
+      data.pricingType === "Fixed" &&
+      x402Options.length > 0
+    ) {
+      const x402ValidationError = validateX402Options(x402Options);
+      if (x402ValidationError) {
+        setX402Error(x402ValidationError);
+        toast.error(x402ValidationError);
+        return false;
+      }
+    }
+    setX402Error(null);
+    return true;
+  };
+
+  const goToReview = () => {
+    if (mainnetCreditsGate.isBlocked) {
+      toast.error(tCreditsGate("registerBlocked"));
+      return;
+    }
+    void form.handleSubmit((data) => {
+      if (!assertRegistrationPreflight(data)) return;
+      setReviewValues(data);
+      setStep("review");
+    })();
+  };
+
+  const handleBackFromReview = () => {
+    if (isLoading) return;
+    setStep("form");
+  };
+
+  const handleConfirmRegistration = () => {
+    if (!reviewValues || isLoading) return;
+    if (mainnetCreditsGate.isBlocked) {
+      toast.error(tCreditsGate("registerBlocked"));
+      return;
+    }
+    void onSubmit(reviewValues);
+  };
+
+  const onSubmit = async (data: RegisterAgentFormType) => {
+    if (!assertRegistrationPreflight(data)) {
+      if (step === "review") {
+        setStep("form");
+      }
       return;
     }
     setIsLoading(true);
     const submitId = ++submitIdRef.current;
     try {
-      if (data.pricingType === "Fixed" && x402Options.length > 0) {
-        const x402ValidationError = validateX402Options(x402Options);
-        if (x402ValidationError) {
-          setX402Error(x402ValidationError);
-          toast.error(x402ValidationError);
-          setIsLoading(false);
-          return;
-        }
-      }
-      setX402Error(null);
-
       const exampleOutputs = (data.exampleOutputs ?? []).filter(
         (e) => e.name?.trim() && e.url?.trim() && e.mimeType?.trim(),
       );
@@ -615,10 +1138,22 @@ export function RegisterAgentDialog({
           : [];
 
       const body = {
+        registrationKind: data.registrationKind,
+        ...(data.registrationKind === "X402_HTTP"
+          ? {
+              x402ResourceUrl:
+                parseBatchResourceUrlsInput(data.x402ResourceUrl?.trim() ?? "")
+                  .urls[0] ?? data.x402ResourceUrl?.trim(),
+            }
+          : {}),
         runtimeProvider: data.runtimeProvider,
         name: data.name,
         description: data.description?.trim() ?? "",
-        apiUrl: data.runtimeProvider === "DIRECT_MIP" ? data.apiUrl : undefined,
+        apiUrl:
+          data.registrationKind === "STANDARD" &&
+          data.runtimeProvider === "DIRECT_MIP"
+            ? data.apiUrl
+            : undefined,
         integrationConnectionId:
           data.runtimeProvider === "LANGDOCK" &&
           data.integrationConnectionId !== NEW_LANGDOCK_CONNECTION
@@ -639,17 +1174,26 @@ export function RegisterAgentDialog({
             : undefined,
         tags: tags.join(", "),
         icon: data.icon?.trim() ?? "",
-        pricing: pricingBody,
+        pricing:
+          data.registrationKind === "X402_HTTP"
+            ? { pricingType: "Free" as const }
+            : pricingBody,
         termsOfUseUrl: data.termsOfUseUrl?.trim() ?? "",
         privacyPolicyUrl: data.privacyPolicyUrl?.trim() ?? "",
         otherUrl: data.otherUrl?.trim() ?? "",
         capabilityName: data.capabilityName?.trim() ?? "",
         capabilityVersion: data.capabilityVersion?.trim() ?? "",
-        exampleOutputs: exampleOutputs.length > 0 ? exampleOutputs : undefined,
+        exampleOutputs:
+          data.registrationKind === "X402_HTTP"
+            ? undefined
+            : exampleOutputs.length > 0
+              ? exampleOutputs
+              : undefined,
         ...(data.pricingType !== "Free" && data.payoutAddress.trim()
           ? { payoutAddress: data.payoutAddress.trim() }
           : {}),
-        ...(evmSupportedSources.length > 0
+        ...(data.registrationKind === "STANDARD" &&
+        evmSupportedSources.length > 0
           ? { supportedPaymentSources: evmSupportedSources }
           : {}),
       };
@@ -675,7 +1219,7 @@ export function RegisterAgentDialog({
           toast.info(t("registrationStarted"));
           onSuccessRef.current();
           setIsLoading(false);
-          setShowCloseConfirm(false);
+          setCloseConfirmReason(null);
           userClosedViaConfirmRef.current = false;
           return;
         }
@@ -684,18 +1228,22 @@ export function RegisterAgentDialog({
           toast.info(t("registrationStarted"));
           onSuccessRef.current();
           setIsLoading(false);
-          setShowCloseConfirm(false);
+          setCloseConfirmReason(null);
           userClosedViaConfirmRef.current = false;
           return;
         }
-        if (showCloseConfirmRef.current) {
+        if (closeConfirmOpenRef.current) {
           // Call directly: Radix onOpenChange may not fire when closing via controlled state.
           finalizeSuccessfulSubmit();
           return;
         }
         finalizeSuccessfulSubmit();
       } else {
-        toast.error(json.error || t("error"));
+        const message =
+          res.status === 402
+            ? tCreditsGate("apiInsufficientCredits")
+            : json.error || t("error");
+        toast.error(message);
         setIsLoading(false);
       }
     } catch (error) {
@@ -708,539 +1256,1048 @@ export function RegisterAgentDialog({
 
   const performClose = () => {
     setIsLoading(false);
+    setCloseConfirmReason(null);
     resetSuccessfulSubmitState();
     onClose();
   };
 
-  const handleOnOpenChange = (newOpen: boolean) => {
+  const openBatchX402Registration = () => {
+    if (!onBeginBatchX402Registration) {
+      toast.error(t("x402BatchUnavailable"));
+      return;
+    }
+    const urlText = form.getValues("x402ResourceUrl")?.trim() ?? "";
+    const extraTags =
+      tags.join(", ").trim() ||
+      form.getValues("tags")?.trim() ||
+      "x402, base, bazaar";
+    onBeginBatchX402Registration({ urlText, extraTags });
+    performClose();
+  };
+
+  const registrationHasDraft = useCallback((): boolean => {
+    if (step === "review") return true;
+    if (
+      registerFormHasMeaningfulDraft(
+        form.getValues(),
+        tags,
+        tagInput,
+        x402Options,
+      )
+    ) {
+      return true;
+    }
+    if (form.getValues("runtimeProvider") === "LANGDOCK") {
+      if (
+        registerFormDirtyFields.langdockApiKey ||
+        registerFormDirtyFields.langdockAgentId ||
+        registerFormDirtyFields.langdockBaseUrl
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }, [step, form, tags, tagInput, x402Options, registerFormDirtyFields]);
+
+  const handleRegistrationDialogOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       closedViaConfirmRef.current = false;
-      setShowCloseConfirm(false);
+      setCloseConfirmReason(null);
     } else {
       if (isLoading) {
-        setShowCloseConfirm(true);
+        setCloseConfirmReason("loading");
+        return;
+      }
+      if (registrationHasDraft()) {
+        setCloseConfirmReason("unsaved");
         return;
       }
       performClose();
     }
   };
 
+  const x402ResourceUrlTrimmed = x402ProbeTargetUrl.trim();
+  const x402ProbeKeyForField = buildX402ResourceProbeKey(
+    network,
+    x402ResourceUrlTrimmed,
+  );
+  const showX402ResourceProbeStatus =
+    registrationKind === "X402_HTTP" &&
+    !x402BatchResourceMode &&
+    x402Probe.status !== "idle" &&
+    x402Probe.key === x402ProbeKeyForField &&
+    isProbeableResourceUrl(x402ResourceUrlTrimmed);
+  const x402ResourceProbeInFlight =
+    x402Probe.status === "checking" && x402Probe.key === x402ProbeKeyForField;
+  const x402CanAutofillMetadata =
+    showX402ResourceProbeStatus &&
+    x402Probe.status === "valid" &&
+    x402ProbeRow != null;
+
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOnOpenChange}>
-        <DialogContent
-          className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
-          closeButtonClassName="top-8 right-4 -translate-y-1/2"
-        >
-          <div
-            className={cn(
-              "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
-              dialogHeaderEnterClass,
-            )}
-          >
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold tracking-tight">
-                {t("title")}
-              </DialogTitle>
-            </DialogHeader>
-          </div>
-
-          <Form {...form}>
-            <form
-              className="flex flex-1 flex-col min-h-0 overflow-hidden"
-              onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
+      <Dialog open={open} onOpenChange={handleRegistrationDialogOpenChange}>
+        <DialogPortal>
+          <DialogOverlay />
+          {step === "form" ? (
+            <DialogContentPanel
+              key="register-agent-form"
+              className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
+              closeButtonClassName="top-8 right-4 -translate-y-1/2"
             >
-              <DialogBody className="space-y-8">
-                {/* Icon section */}
-                <FormField
-                  control={form.control}
-                  name="icon"
-                  render={({ field }) => (
-                    <AgentIconPicker
-                      value={field.value ?? "bot"}
-                      onChange={field.onChange}
-                      onClearError={() => form.clearErrors("icon")}
-                      translations={{
-                        icon: t("icon"),
-                        iconTooltip: t("iconTooltip"),
-                        iconDescription: t("iconDescription"),
-                        iconSearchPlaceholder: t("iconSearchPlaceholder"),
-                        iconSearchEmpty: t("iconSearchEmpty"),
-                        scrollLeft: t("scrollLeft"),
-                        scrollRight: t("scrollRight"),
-                      }}
-                    />
-                  )}
-                />
+              <div
+                className={cn(
+                  "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+                  dialogHeaderEnterClass,
+                )}
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-semibold tracking-tight">
+                    {t("title")}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground pt-1">
+                    {t("formDescription")}
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
 
-                <Separator />
-
-                {/* Basic info */}
-                <div className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("name")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t("namePlaceholder")}
-                            {...field}
-                            className="h-11"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("description")}</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder={t("descriptionPlaceholder")}
-                            {...field}
-                            className="min-h-24 resize-none"
-                            maxLength={251}
-                          />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          {(field.value ?? "").length}
-                          {" / "}
-                          {250}
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="runtimeProvider"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("runtimeProvider")}</FormLabel>
-                        <FormControl>
-                          <div
-                            className="grid gap-3 sm:grid-cols-2"
-                            role="radiogroup"
-                            aria-label={t("runtimeProvider")}
-                          >
-                            {(
-                              [
-                                {
-                                  value: "DIRECT_MIP" as const,
-                                  titleKey: "runtimeDirectTitle",
-                                  descKey: "runtimeDirectDescription",
-                                  Icon: Plug,
-                                },
-                                {
-                                  value: "LANGDOCK" as const,
-                                  titleKey: "runtimeLangdockTitle",
-                                  descKey: "runtimeLangdockDescription",
-                                  Icon: Sparkles,
-                                },
-                              ] as const
-                            ).map((opt) => {
-                              const selected = field.value === opt.value;
-                              const Icon = opt.Icon;
-                              return (
-                                <button
-                                  key={opt.value}
-                                  type="button"
-                                  role="radio"
-                                  aria-checked={selected}
-                                  className={cn(
-                                    "rounded-lg border p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                    selected
-                                      ? "border-primary bg-primary/5 shadow-sm"
-                                      : "border-border/80 bg-muted/20 hover:bg-muted/40",
-                                  )}
-                                  onClick={() => field.onChange(opt.value)}
-                                >
-                                  <span className="mb-2 flex items-center gap-2 text-sm font-medium">
-                                    <Icon className="h-4 w-4" />
-                                    {t(opt.titleKey)}
-                                  </span>
-                                  <span className="block text-xs text-muted-foreground leading-snug">
-                                    {t(opt.descKey)}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {runtimeProvider === "DIRECT_MIP" ? (
+              <Form {...form}>
+                <form
+                  className="flex flex-1 flex-col min-h-0 overflow-hidden"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                  }}
+                >
+                  <DialogBody ref={registerDialogBodyRef} className="space-y-8">
+                    <MainnetCreditsRequiredNotice />
                     <FormField
                       control={form.control}
-                      name="apiUrl"
+                      name="registrationKind"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("apiUrl")}</FormLabel>
+                          <FormLabel>{t("registrationKind")}</FormLabel>
                           <FormControl>
-                            <Input
-                              type="url"
-                              placeholder={t("apiUrlPlaceholder")}
-                              {...field}
-                              className="h-11 font-mono text-sm"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ) : (
-                    <LangdockConnectionFields
-                      control={form.control}
-                      connections={connections}
-                      connectionsLoading={connectionsLoading}
-                      testingLangdock={testingLangdock}
-                      onTest={() => void testLangdockAndAutofill()}
-                      onConnectionSelect={handleLangdockConnectionSelect}
-                      t={t}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="pricingType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("pricingModel")}</FormLabel>
-                        <FormControl>
-                          <div
-                            className="grid gap-3 sm:grid-cols-3"
-                            role="radiogroup"
-                            aria-label={t("pricingModel")}
-                          >
-                            {(
-                              [
-                                {
-                                  value: "Free" as const,
-                                  titleKey: "pricingFreeTitle",
-                                  descKey: "pricingFreeDescription",
-                                },
-                                {
-                                  value: "Fixed" as const,
-                                  titleKey: "pricingFixedTitle",
-                                  descKey: "pricingFixedDescription",
-                                },
-                                {
-                                  value: "Dynamic" as const,
-                                  titleKey: "pricingDynamicTitle",
-                                  descKey: "pricingDynamicDescription",
-                                },
-                              ] as const
-                            ).map((opt) => {
-                              const selected = field.value === opt.value;
-                              return (
-                                <button
-                                  key={opt.value}
-                                  type="button"
-                                  role="radio"
-                                  aria-checked={selected}
-                                  className={cn(
-                                    "rounded-lg border p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                    selected
-                                      ? "border-primary bg-primary/5 shadow-sm"
-                                      : "border-border/80 bg-muted/20 hover:bg-muted/40",
-                                  )}
-                                  onClick={() => field.onChange(opt.value)}
-                                >
-                                  <p className="text-sm font-medium">
-                                    {t(opt.titleKey)}
-                                  </p>
-                                  <p className="mt-1 text-xs text-muted-foreground leading-snug">
-                                    {t(opt.descKey)}
-                                  </p>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {pricingType === "Dynamic" && (
-                    <div className="rounded-lg border border-dashed border-primary/35 bg-muted/30 px-4 py-3 text-sm text-muted-foreground leading-relaxed">
-                      <p>{t("pricingDynamicContext")}</p>
-                      <p className="mt-2">{t("pricingDynamicNoX402")}</p>
-                    </div>
-                  )}
-
-                  <PricingFields
-                    form={
-                      form as unknown as UseFormReturn<{
-                        prices: AgentPriceField[];
-                      }>
-                    }
-                    t={t}
-                    pricingMode={pricingType}
-                    network={network}
-                  />
-
-                  {pricingType !== "Free" ? (
-                    <FormField
-                      control={form.control}
-                      name="payoutAddress"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center gap-1.5">
-                            <FormLabel>{t("payoutAddress")}</FormLabel>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                                  <CircleHelp className="h-3.5 w-3.5" />
-                                  <span className="sr-only">
-                                    {t("payoutAddressHint")}
-                                  </span>
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                {t("payoutAddressHint")}
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={t(
-                                network === "Mainnet"
-                                  ? "payoutAddressPlaceholderMainnet"
-                                  : "payoutAddressPlaceholderPreprod",
-                              )}
-                              className="h-11 font-mono text-sm"
-                              spellCheck={false}
-                              autoComplete="off"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ) : null}
-
-                  {pricingType === "Fixed" ? (
-                    <X402OptionsSection
-                      options={x402Options}
-                      networks={x402Networks}
-                      networksLoading={x402NetworksLoading}
-                      onChange={setX402Options}
-                      error={x402Error}
-                      t={t}
-                    />
-                  ) : null}
-                </div>
-
-                <Separator />
-
-                {/* Tags */}
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel>{t("tags")}</FormLabel>
-                      <div className="flex gap-2 items-center">
-                        <Input
-                          value={tagInput}
-                          onChange={(e) => setTagInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleAddTag();
-                            }
-                          }}
-                          placeholder={t("tagsPlaceholder")}
-                          className="h-11"
-                        />
-                        <Button
-                          type="button"
-                          onClick={handleAddTag}
-                          variant="secondary"
-                          className="shrink-0"
-                        >
-                          {t("addTag")}
-                        </Button>
-                      </div>
-                      {tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {tags.map((tag, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm"
+                            <div
+                              className="flex rounded-lg border bg-muted/30 p-1"
+                              role="radiogroup"
+                              aria-label={t("registrationKind")}
                             >
-                              {tag}
-                              <button
+                              {(
+                                [
+                                  {
+                                    value: "STANDARD" as const,
+                                    titleKey: "registrationKindStandardTitle",
+                                    leading: (
+                                      <Plug
+                                        className="h-4 w-4 shrink-0"
+                                        aria-hidden
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    value: "X402_HTTP" as const,
+                                    titleKey: "registrationKindX402Title",
+                                    leading: (
+                                      <X402Logo className="-mb-px h-4 w-auto shrink-0" />
+                                    ),
+                                  },
+                                ] as const
+                              ).map((opt) => {
+                                const selected = field.value === opt.value;
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={selected}
+                                    className={cn(
+                                      "flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                      selected
+                                        ? "bg-background text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground",
+                                    )}
+                                    onClick={() => {
+                                      field.onChange(opt.value);
+                                      persistRegistrationKind(opt.value);
+                                      if (opt.value === "X402_HTTP") {
+                                        form.setValue("pricingType", "Free", {
+                                          shouldDirty: true,
+                                        });
+                                        form.setValue("exampleOutputs", [], {
+                                          shouldDirty: true,
+                                        });
+                                        form.clearErrors("prices");
+                                        form.clearErrors("payoutAddress");
+                                      }
+                                      lastAutoProbeKeyRef.current = null;
+                                      setX402ProbeRow(null);
+                                      setX402Probe({ status: "idle" });
+                                    }}
+                                  >
+                                    {opt.leading}
+                                    {t(opt.titleKey)}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {registrationKind === "X402_HTTP" ? (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">
+                          {t("x402Chain")}
+                        </Label>
+                        <X402RegistryChainPicker
+                          cardanoNetwork={network}
+                          onCardanoNetworkChange={requestPaymentNetworkChange}
+                          chainIconSlugs={x402RegistryChainIconSlugs}
+                        />
+                      </div>
+                    ) : null}
+
+                    {registrationKind === "X402_HTTP" ? (
+                      <FormField
+                        control={form.control}
+                        name="x402ResourceUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center justify-between gap-3">
+                              <FormLabel className="mb-0">
+                                {t("x402ResourceUrl")}
+                              </FormLabel>
+                              <Button
                                 type="button"
-                                onClick={() => handleRemoveTag(tag)}
-                                className="rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors"
+                                variant="link"
+                                className={cn(
+                                  "h-auto shrink-0 px-0 py-0 text-sm font-medium",
+                                  x402BatchResourceMode
+                                    ? "text-primary underline-offset-4 hover:underline"
+                                    : "text-muted-foreground hover:text-foreground",
+                                )}
+                                onClick={openBatchX402Registration}
                               >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </Badge>
-                          ))}
+                                {t("x402RegisterMultiple")}
+                              </Button>
+                            </div>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                              <FormControl>
+                                <div className="relative flex-1">
+                                  <Input
+                                    type="text"
+                                    inputMode="url"
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    placeholder={t(
+                                      "x402ResourceUrlPlaceholder",
+                                    )}
+                                    {...field}
+                                    className="h-11 pr-10 font-mono text-sm"
+                                    onChange={(event) => {
+                                      field.onChange(event);
+                                      x402ProbeGenerationRef.current += 1;
+                                      lastAutoProbeKeyRef.current = null;
+                                      setX402ProbeRow(null);
+                                      if (
+                                        hasMultipleX402ResourceUrlsInInput(
+                                          event.target.value,
+                                        )
+                                      ) {
+                                        form.clearErrors("x402ResourceUrl");
+                                      }
+                                    }}
+                                  />
+                                  {!x402BatchResourceMode ? (
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center">
+                                      <div className="pointer-events-auto flex items-center justify-center">
+                                        <FieldProbeIndicator
+                                          status={
+                                            showX402ResourceProbeStatus
+                                              ? x402Probe.status
+                                              : "idle"
+                                          }
+                                          checkingLabel={t("x402ProbeChecking")}
+                                          validLabel={t("x402ProbeValid")}
+                                          invalidMessage={
+                                            x402Probe.status === "invalid"
+                                              ? x402Probe.message
+                                              : undefined
+                                          }
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </FormControl>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-11 shrink-0 gap-2"
+                                disabled={
+                                  x402BatchResourceMode ||
+                                  !x402CanAutofillMetadata ||
+                                  x402ResourceProbeInFlight ||
+                                  x402AutofillInProgress
+                                }
+                                onClick={() => void autofillX402Metadata()}
+                              >
+                                {x402AutofillInProgress ? (
+                                  <Spinner className="h-4 w-4 shrink-0" />
+                                ) : (
+                                  <Sparkles className="h-4 w-4 shrink-0" />
+                                )}
+                                {t("x402AutofillMetadata")}
+                              </Button>
+                            </div>
+                            {x402BatchResourceMode ? (
+                              <p className="text-sm text-destructive">
+                                {t("x402MultipleResourcesDetectedPrefix")}{" "}
+                                <button
+                                  type="button"
+                                  className="font-medium underline-offset-4 hover:underline"
+                                  onClick={openBatchX402Registration}
+                                >
+                                  {t("x402RegisterMultipleInstead")}
+                                </button>
+                              </p>
+                            ) : (
+                              <FormMessage />
+                            )}
+                          </FormItem>
+                        )}
+                      />
+                    ) : null}
+
+                    <Separator />
+
+                    {/* Icon section */}
+                    <FormField
+                      control={form.control}
+                      name="icon"
+                      render={({ field }) => (
+                        <AgentIconPicker
+                          value={field.value ?? "bot"}
+                          onChange={field.onChange}
+                          onClearError={() => form.clearErrors("icon")}
+                          translations={{
+                            iconDescription: t("iconDescription"),
+                            iconSearchPlaceholder: t("iconSearchPlaceholder"),
+                            iconSearchEmpty: t("iconSearchEmpty"),
+                            scrollLeft: t("scrollLeft"),
+                            scrollRight: t("scrollRight"),
+                          }}
+                        />
+                      )}
+                    />
+
+                    <Separator />
+
+                    {/* Basic info */}
+                    <div className="space-y-6">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("name")}</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder={t("namePlaceholder")}
+                                {...field}
+                                className="h-11"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("description")}</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder={t("descriptionPlaceholder")}
+                                {...field}
+                                className="min-h-24 resize-none"
+                                maxLength={251}
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">
+                              {(field.value ?? "").length}
+                              {" / "}
+                              {250}
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {registrationKind === "STANDARD" ? (
+                        <>
+                          <FormField
+                            control={form.control}
+                            name="runtimeProvider"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t("runtimeProvider")}</FormLabel>
+                                <FormControl>
+                                  <div
+                                    className="grid gap-3 sm:grid-cols-2"
+                                    role="radiogroup"
+                                    aria-label={t("runtimeProvider")}
+                                  >
+                                    {(
+                                      [
+                                        {
+                                          value: "DIRECT_MIP" as const,
+                                          titleKey: "runtimeDirectTitle",
+                                          descKey: "runtimeDirectDescription",
+                                          Icon: Plug,
+                                        },
+                                        {
+                                          value: "LANGDOCK" as const,
+                                          titleKey: "runtimeLangdockTitle",
+                                          descKey: "runtimeLangdockDescription",
+                                          Icon: Sparkles,
+                                        },
+                                      ] as const
+                                    ).map((opt) => {
+                                      const selected =
+                                        field.value === opt.value;
+                                      const Icon = opt.Icon;
+                                      return (
+                                        <button
+                                          key={opt.value}
+                                          type="button"
+                                          role="radio"
+                                          aria-checked={selected}
+                                          className={cn(
+                                            "rounded-lg border p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                            selected
+                                              ? "border-primary bg-primary/5 shadow-sm"
+                                              : "border-border/80 bg-muted/20 hover:bg-muted/40",
+                                          )}
+                                          onClick={() =>
+                                            field.onChange(opt.value)
+                                          }
+                                        >
+                                          <span className="mb-2 flex items-center gap-2 text-sm font-medium">
+                                            <Icon className="h-4 w-4" />
+                                            {t(opt.titleKey)}
+                                          </span>
+                                          <span className="block text-xs text-muted-foreground leading-snug">
+                                            {t(opt.descKey)}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          {runtimeProvider === "DIRECT_MIP" ? (
+                            <FormField
+                              control={form.control}
+                              name="apiUrl"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t("apiUrl")}</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="url"
+                                      placeholder={t("apiUrlPlaceholder")}
+                                      {...field}
+                                      className="h-11 font-mono text-sm"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          ) : (
+                            <LangdockConnectionFields
+                              control={form.control}
+                              connections={connections}
+                              connectionsLoading={connectionsLoading}
+                              testingLangdock={testingLangdock}
+                              onTest={() => void testLangdockAndAutofill()}
+                              onConnectionSelect={
+                                handleLangdockConnectionSelect
+                              }
+                              t={t}
+                            />
+                          )}
+                        </>
+                      ) : null}
+
+                      {registrationKind === "STANDARD" ? (
+                        <>
+                          <FormField
+                            control={form.control}
+                            name="pricingType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t("pricingModel")}</FormLabel>
+                                <FormControl>
+                                  <div
+                                    className="grid gap-3 sm:grid-cols-3"
+                                    role="radiogroup"
+                                    aria-label={t("pricingModel")}
+                                  >
+                                    {(
+                                      [
+                                        {
+                                          value: "Free" as const,
+                                          titleKey: "pricingFreeTitle",
+                                          descKey: "pricingFreeDescription",
+                                        },
+                                        {
+                                          value: "Fixed" as const,
+                                          titleKey: "pricingFixedTitle",
+                                          descKey: "pricingFixedDescription",
+                                        },
+                                        {
+                                          value: "Dynamic" as const,
+                                          titleKey: "pricingDynamicTitle",
+                                          descKey: "pricingDynamicDescription",
+                                        },
+                                      ] as const
+                                    ).map((opt) => {
+                                      const selected =
+                                        field.value === opt.value;
+                                      return (
+                                        <button
+                                          key={opt.value}
+                                          type="button"
+                                          role="radio"
+                                          aria-checked={selected}
+                                          className={cn(
+                                            "rounded-lg border p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                            selected
+                                              ? "border-primary bg-primary/5 shadow-sm"
+                                              : "border-border/80 bg-muted/20 hover:bg-muted/40",
+                                          )}
+                                          onClick={() =>
+                                            field.onChange(opt.value)
+                                          }
+                                        >
+                                          <p className="text-sm font-medium">
+                                            {t(opt.titleKey)}
+                                          </p>
+                                          <p className="mt-1 text-xs text-muted-foreground leading-snug">
+                                            {t(opt.descKey)}
+                                          </p>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          {pricingType === "Dynamic" && (
+                            <div className="rounded-lg border border-dashed border-primary/35 bg-muted/30 px-4 py-3 text-sm text-muted-foreground leading-relaxed">
+                              <p>{t("pricingDynamicContext")}</p>
+                              <p className="mt-2">
+                                {t("pricingDynamicNoX402")}
+                              </p>
+                            </div>
+                          )}
+
+                          <PricingFields
+                            form={
+                              form as unknown as UseFormReturn<{
+                                prices: AgentPriceField[];
+                              }>
+                            }
+                            t={t}
+                            pricingMode={pricingType}
+                            network={network}
+                          />
+
+                          {pricingType !== "Free" ? (
+                            <FormField
+                              control={form.control}
+                              name="payoutAddress"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <div className="flex items-center gap-1.5">
+                                    <FormLabel>{t("payoutAddress")}</FormLabel>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                                          <CircleHelp className="h-3.5 w-3.5" />
+                                          <span className="sr-only">
+                                            {t("payoutAddressHint")}
+                                          </span>
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent className="max-w-xs">
+                                        {t("payoutAddressHint")}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder={t(
+                                        network === "Mainnet"
+                                          ? "payoutAddressPlaceholderMainnet"
+                                          : "payoutAddressPlaceholderPreprod",
+                                      )}
+                                      className="h-11 font-mono text-sm"
+                                      spellCheck={false}
+                                      autoComplete="off"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          ) : null}
+
+                          {pricingType === "Fixed" ? (
+                            <X402OptionsSection
+                              options={x402Options}
+                              networks={x402Networks}
+                              networksLoading={x402NetworksLoading}
+                              onChange={setX402Options}
+                              error={x402Error}
+                              t={t}
+                            />
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
+
+                    <Separator />
+
+                    {/* Tags */}
+                    <FormField
+                      control={form.control}
+                      name="tags"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>{t("tags")}</FormLabel>
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleAddTag();
+                                }
+                              }}
+                              placeholder={t("tagsPlaceholder")}
+                              className="h-11"
+                            />
+                            <Button
+                              type="button"
+                              onClick={handleAddTag}
+                              variant="secondary"
+                              className="shrink-0"
+                            >
+                              {t("addTag")}
+                            </Button>
+                          </div>
+                          {tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {tags.map((tag, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="secondary"
+                                  className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm"
+                                >
+                                  {tag}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveTag(tag)}
+                                    className="rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div>
+                      <div className="py-4">
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-4 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                          aria-expanded={additionalFieldsExpanded}
+                          onClick={() =>
+                            setAdditionalFieldsExpanded((prev) => !prev)
+                          }
+                        >
+                          <Separator className="flex-1" />
+                          <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground whitespace-nowrap">
+                            {t("additionalFields")}
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 shrink-0 transition-transform duration-200",
+                                additionalFieldsExpanded && "rotate-180",
+                              )}
+                              aria-hidden
+                            />
+                            <span className="sr-only">
+                              {additionalFieldsExpanded
+                                ? t("additionalFieldsCollapse")
+                                : t("additionalFieldsExpand")}
+                            </span>
+                          </span>
+                          <Separator className="flex-1" />
+                        </button>
+                      </div>
+
+                      <div
+                        className="grid-expand-wrapper"
+                        data-expanded={
+                          additionalFieldsExpanded ? "true" : "false"
+                        }
+                      >
+                        <div className="grid-expand-inner">
+                          <div className="space-y-6 pb-4">
+                            <FormField
+                              control={form.control}
+                              name="termsOfUseUrl"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t("termsOfUseUrl")}</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="url"
+                                      placeholder={t(
+                                        "termsOfUseUrlPlaceholder",
+                                      )}
+                                      {...field}
+                                      className="h-11 font-mono text-sm"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="privacyPolicyUrl"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t("privacyPolicyUrl")}</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="url"
+                                      placeholder={t(
+                                        "privacyPolicyUrlPlaceholder",
+                                      )}
+                                      {...field}
+                                      className="h-11 font-mono text-sm"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="otherUrl"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t("otherUrl")}</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="url"
+                                      placeholder={t("otherUrlPlaceholder")}
+                                      {...field}
+                                      className="h-11 font-mono text-sm"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                              <FormField
+                                control={form.control}
+                                name="capabilityName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t("capabilityName")}</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder={t(
+                                          "capabilityNamePlaceholder",
+                                        )}
+                                        {...field}
+                                        className="h-11"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="capabilityVersion"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>
+                                      {t("capabilityVersion")}
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder={t(
+                                          "capabilityVersionPlaceholder",
+                                        )}
+                                        {...field}
+                                        className="h-11"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            {registrationKind === "STANDARD" ? (
+                              <ExampleOutputsFields
+                                form={
+                                  form as unknown as UseFormReturn<AgentFormFields>
+                                }
+                                t={t}
+                              />
+                            ) : null}
+                          </div>
                         </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                      </div>
+                    </div>
+                  </DialogBody>
+
+                  <DialogFooter className="shrink-0 w-full justify-between border-t bg-background px-6 py-4">
+                    <div className="flex shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          handleRegistrationDialogOpenChange(false)
+                        }
+                        disabled={isLoading}
+                      >
+                        {t("cancel")}
+                      </Button>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        disabled={
+                          isLoading ||
+                          mainnetCreditsGate.isBlocked ||
+                          mainnetCreditsGate.isPending
+                        }
+                        className="group gap-2"
+                        onClick={goToReview}
+                      >
+                        {t("continue")}
+                        <span className="relative inline-flex size-4 shrink-0 items-center justify-center">
+                          <ArrowRight
+                            aria-hidden
+                            className="h-4 w-4 transition-all duration-200 ease-out motion-reduce:transition-none opacity-100 group-hover:translate-x-0.5 group-active:translate-x-1 motion-reduce:group-hover:translate-x-0 motion-reduce:group-active:translate-x-0"
+                          />
+                        </span>
+                      </Button>
+                    </div>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContentPanel>
+          ) : reviewValues ? (
+            <DialogContentPanel
+              key="register-agent-review"
+              className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col gap-0"
+              closeButtonClassName="top-8 right-4 -translate-y-1/2"
+            >
+              <div
+                className={cn(
+                  "shrink-0 border-b bg-masumi-gradient px-6 py-5 pr-12",
+                  dialogHeaderEnterClass,
+                )}
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-semibold tracking-tight">
+                    {t("reviewTitle")}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground pt-1">
+                    {t("reviewDescription")}
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+
+              <DialogBody className="space-y-8">
+                <MainnetCreditsRequiredNotice />
+                <RegisterAgentReviewSection
+                  values={reviewValues}
+                  tags={tags}
+                  cardanoNetwork={network}
+                  evmCaip2Network={selectedX402Caip2}
+                  x402ProbeRow={x402ProbeRow}
+                  x402Options={x402Options}
+                  t={{
+                    reviewSectionAgent: t("reviewSectionAgent"),
+                    reviewSectionPayment: t("reviewSectionPayment"),
+                    registrationKind: t("registrationKind"),
+                    reviewRegistrationKindStandard: t(
+                      "registrationKindStandardTitle",
+                    ),
+                    reviewRegistrationKindX402: t("registrationKindX402Title"),
+                    reviewCardanoNetwork: t("reviewCardanoNetwork"),
+                    reviewX402EvmNetwork: t("reviewX402EvmNetwork"),
+                    name: t("name"),
+                    description: t("description"),
+                    x402ResourceUrl: t("x402ResourceUrl"),
+                    apiUrl: t("apiUrl"),
+                    runtimeProvider: t("runtimeProvider"),
+                    runtimeDirectTitle: t("runtimeDirectTitle"),
+                    runtimeLangdockTitle: t("runtimeLangdockTitle"),
+                    langdockAgentId: t("langdockAgentId"),
+                    tags: t("tags"),
+                    pricingModel: t("pricingModel"),
+                    pricingFreeTitle: t("pricingFreeTitle"),
+                    pricingDynamicTitle: t("pricingDynamicTitle"),
+                    payoutAddress: t("payoutAddress"),
+                    x402Title: t("x402Title"),
+                  }}
                 />
-
-                <div className="flex items-center gap-4 pt-2">
-                  <Separator className="flex-1" />
-                  <h3 className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                    {t("additionalFields")}
-                  </h3>
-                  <Separator className="flex-1" />
-                </div>
-
-                <div className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="termsOfUseUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("termsOfUseUrl")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="url"
-                            placeholder={t("termsOfUseUrlPlaceholder")}
-                            {...field}
-                            className="h-11 font-mono text-sm"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="privacyPolicyUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("privacyPolicyUrl")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="url"
-                            placeholder={t("privacyPolicyUrlPlaceholder")}
-                            {...field}
-                            className="h-11 font-mono text-sm"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="otherUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("otherUrl")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="url"
-                            placeholder={t("otherUrlPlaceholder")}
-                            {...field}
-                            className="h-11 font-mono text-sm"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="capabilityName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("capabilityName")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={t("capabilityNamePlaceholder")}
-                              {...field}
-                              className="h-11"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="capabilityVersion"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("capabilityVersion")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={t("capabilityVersionPlaceholder")}
-                              {...field}
-                              className="h-11"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <ExampleOutputsFields
-                    form={form as unknown as UseFormReturn<AgentFormFields>}
-                    t={t}
-                  />
-                </div>
               </DialogBody>
 
-              <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleOnOpenChange(false)}
-                  disabled={isLoading}
-                >
-                  {t("cancel")}
-                </Button>
-                <Button type="submit" variant="primary" disabled={isLoading}>
-                  {isLoading && <Spinner size={16} className="mr-2" />}
-                  {t("submit")}
-                </Button>
+              <DialogFooter className="shrink-0 w-full justify-between border-t bg-background px-6 py-4">
+                <div className="flex shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="group gap-2"
+                    onClick={handleBackFromReview}
+                    disabled={isLoading}
+                  >
+                    <span className="relative inline-flex size-4 shrink-0 items-center justify-center">
+                      <ArrowLeft
+                        aria-hidden
+                        className="h-4 w-4 transition-all duration-200 ease-out motion-reduce:transition-none opacity-100 group-hover:-translate-x-0.5 group-active:-translate-x-1 motion-reduce:group-hover:translate-x-0 motion-reduce:group-active:translate-x-0"
+                      />
+                    </span>
+                    {t("reviewBack")}
+                  </Button>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    disabled={
+                      isLoading ||
+                      !reviewValues ||
+                      mainnetCreditsGate.isBlocked ||
+                      mainnetCreditsGate.isPending
+                    }
+                    className="group gap-2"
+                    onClick={handleConfirmRegistration}
+                  >
+                    {isLoading
+                      ? t("confirmSubmitting")
+                      : t("confirmRegistration")}
+                    <span className="relative inline-flex size-4 shrink-0 items-center justify-center">
+                      <ArrowRight
+                        aria-hidden
+                        className={cn(
+                          "h-4 w-4 transition-all duration-200 ease-out motion-reduce:transition-none",
+                          isLoading
+                            ? "scale-75 opacity-0"
+                            : "opacity-100 group-hover:translate-x-0.5 group-active:translate-x-1 motion-reduce:group-hover:translate-x-0 motion-reduce:group-active:translate-x-0",
+                        )}
+                      />
+                      <Spinner
+                        size={16}
+                        className={cn(
+                          "absolute transition-all duration-200 ease-out motion-reduce:transition-none",
+                          isLoading
+                            ? "scale-100 opacity-100"
+                            : "scale-75 opacity-0",
+                        )}
+                      />
+                    </span>
+                  </Button>
+                </div>
               </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
+            </DialogContentPanel>
+          ) : null}
+        </DialogPortal>
       </Dialog>
       <ConfirmDialog
-        open={showCloseConfirm}
+        open={closeConfirmReason !== null}
         onOpenChange={(open) => {
-          setShowCloseConfirm(open);
           if (open) {
             closedViaConfirmRef.current = false;
+          } else {
+            setCloseConfirmReason(null);
           }
         }}
         onConfirm={() => {
-          closedViaConfirmRef.current = true;
-          userClosedViaConfirmRef.current = true;
+          if (closeConfirmReason === "loading") {
+            closedViaConfirmRef.current = true;
+            userClosedViaConfirmRef.current = true;
+          }
           performClose();
-          setShowCloseConfirm(false);
         }}
-        title={t("closeConfirmTitle")}
-        description={t("closeConfirmDescription")}
-        confirmText={t("closeAnyway")}
+        title={
+          closeConfirmReason === "loading"
+            ? t("closeConfirmTitle")
+            : t("discardConfirmTitle")
+        }
+        description={
+          closeConfirmReason === "loading"
+            ? t("closeConfirmDescription")
+            : t("discardConfirmDescription")
+        }
+        confirmText={
+          closeConfirmReason === "loading"
+            ? t("closeAnyway")
+            : t("discardConfirm")
+        }
+        cancelText={t("cancel")}
+      />
+      <ConfirmDialog
+        open={networkSwitchConfirmOpen}
+        onOpenChange={(open) => {
+          setNetworkSwitchConfirmOpen(open);
+          if (!open) setPendingPaymentNetwork(null);
+        }}
+        onConfirm={confirmPaymentNetworkChange}
+        title={t("networkSwitchConfirmTitle")}
+        description={
+          pendingPaymentNetwork
+            ? t("networkSwitchConfirmDescription", {
+                from: network,
+                to: pendingPaymentNetwork,
+              })
+            : t("networkSwitchConfirmDescriptionGeneric")
+        }
+        confirmText={t("networkSwitchConfirm")}
         cancelText={t("cancel")}
       />
     </>

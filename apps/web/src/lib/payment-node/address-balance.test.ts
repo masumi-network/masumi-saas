@@ -17,7 +17,7 @@ describe("address-balance", () => {
         { unit: "", quantity: 500_000 },
         { unit: "policyasset", quantity: 42 },
       ]),
-    ).toBe(2_000_000n);
+    ).toBe(BigInt(2_000_000));
   });
 
   it("treats empty balance as unfunded", () => {
@@ -34,8 +34,8 @@ describe("address-balance", () => {
   });
 
   it("formats ADA for dashboard display", () => {
-    expect(formatLovelaceBalanceDisplay(2_500_000n)).toBe("2.5 ADA");
-    expect(formatLovelaceBalanceDisplay(0n)).toBe("0 ADA");
+    expect(formatLovelaceBalanceDisplay(BigInt(2_500_000))).toBe("2.5 ADA");
+    expect(formatLovelaceBalanceDisplay(BigInt(0))).toBe("0 ADA");
   });
 
   it("checks confirmed balance for an address via GET /balance", async () => {
@@ -83,5 +83,25 @@ describe("address-balance", () => {
 
     expect(balance).toBe("3 ADA");
     expect(getBalance).toHaveBeenCalledTimes(2);
+  });
+
+  it("skips mainnet addresses when querying preprod balance", async () => {
+    const getBalance = vi.fn().mockResolvedValue({
+      Balance: [{ unit: "lovelace", quantity: 1_000_000 }],
+    });
+    const client = { getBalance };
+
+    const balance = await resolveAdaBalanceForAddresses(
+      client as unknown as PaymentNodeClient,
+      "Preprod",
+      ["addr1mainnetwalletxxxxxxxx", "addr_test1preprod"],
+    );
+
+    expect(balance).toBe("1 ADA");
+    expect(getBalance).toHaveBeenCalledTimes(1);
+    expect(getBalance).toHaveBeenCalledWith({
+      address: "addr_test1preprod",
+      network: "Preprod",
+    });
   });
 });

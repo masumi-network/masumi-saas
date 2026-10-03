@@ -97,11 +97,26 @@ export const agentMetadataSchema = z
     capabilityName: z.string().optional(),
     capabilityVersion: z.string().optional(),
     exampleOutputs: z.array(exampleOutputSchema).optional(),
+    registryEntryType: z.literal("X402").optional(),
+    x402Manifest: z
+      .object({
+        x402Version: z.number(),
+        resources: z.array(
+          z.object({
+            resource: z.string().url(),
+            type: z.enum(["http", "mcp"]),
+            description: z.string().optional(),
+          }),
+        ),
+      })
+      .optional(),
   })
   .strict();
 
 export const registerAgentBodySchema = z
   .object({
+    registrationKind: z.enum(["STANDARD", "X402_HTTP"]).optional(),
+    x402ResourceUrl: agentApiUrlSchema.optional(),
     runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]).optional(),
     name: z
       .string()
@@ -138,6 +153,27 @@ export const registerAgentBodySchema = z
       .or(z.literal("")),
   })
   .superRefine((data, ctx) => {
+    const kind = data.registrationKind ?? "STANDARD";
+    if (kind === "X402_HTTP") {
+      const resource = data.x402ResourceUrl?.trim() ?? "";
+      if (!resource) {
+        ctx.addIssue({
+          code: "custom",
+          message: "x402 resource URL is required.",
+          path: ["x402ResourceUrl"],
+        });
+      }
+      if (data.supportedPaymentSources?.length) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Do not send supportedPaymentSources for X402 HTTP registration.",
+          path: ["supportedPaymentSources"],
+        });
+      }
+      return;
+    }
+
     if (!registerAgentPricingRequiresPayoutAddress(data.pricing)) return;
 
     const payoutAddress = data.payoutAddress?.trim() ?? "";

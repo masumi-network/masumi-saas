@@ -5,15 +5,21 @@ import { getEvmFixedPrice } from "@masumi/payment-source-x402/payment-source";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
+import { CompactAgentPricing } from "@/components/compact-agent-pricing";
 import { Badge } from "@/components/ui/badge";
 import { CopyButton } from "@/components/ui/copy-button";
-import { ChainLabel } from "@/components/x402/chain-icon";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ChainIcon, ChainLabel } from "@/components/x402/chain-icon";
 import { X402Logo } from "@/components/x402/x402-logo";
 import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
 import type { X402NetworkOption } from "@/lib/hooks/use-x402-networks";
 import { usePaymentNodeSupportedX402Networks } from "@/lib/hooks/use-x402-networks";
 import { formatX402Amount, shortenAddress } from "@/lib/utils";
-import { getEvmTokenPresetsForChain } from "@/lib/x402/evm-token-presets";
+import { resolveEvmAssetDisplayLabel } from "@/lib/x402/evm-token-presets";
 
 type EvmPaymentSource = Extract<SupportedPaymentSource, { chain: "EVM" }>;
 
@@ -25,14 +31,33 @@ export function agentHasX402Options(
   );
 }
 
+/** Seller x402 options on standard MIP agents (Fixed Cardano pricing). */
 export function shouldShowAgentX402Options(
   sources: SupportedPaymentSource[] | null | undefined,
   pricing: { pricingType?: string } | null | undefined,
 ): boolean {
-  if (pricing?.pricingType === "Free" || pricing?.pricingType === "Dynamic") {
+  if (pricing?.pricingType !== "Fixed") {
     return false;
   }
   return agentHasX402Options(sources);
+}
+
+/** x402 HTTP registry: Cardano Free, price lives on EVM from the resource probe. */
+export function shouldShowEvmX402PriceInPriceColumn(
+  sources: SupportedPaymentSource[] | null | undefined,
+  pricing: { pricingType?: string } | null | undefined,
+): boolean {
+  return pricing?.pricingType === "Free" && agentHasX402Options(sources);
+}
+
+export function getPrimaryEvmX402SettlementSource(
+  sources: SupportedPaymentSource[] | null | undefined,
+): EvmPaymentSource | null {
+  const match = (sources ?? []).find(
+    (source): source is EvmPaymentSource =>
+      source.chain === "EVM" && getEvmFixedPrice(source) != null,
+  );
+  return match ?? null;
 }
 
 function assetDisplayLabel(
@@ -40,10 +65,7 @@ function assetDisplayLabel(
   asset: string,
   defaultAsset: string | null | undefined,
 ) {
-  const preset = getEvmTokenPresetsForChain(caip2Network, defaultAsset).find(
-    (item) => item.address.toLowerCase() === asset.toLowerCase(),
-  );
-  return preset?.label ?? shortenAddress(asset, 6);
+  return resolveEvmAssetDisplayLabel(caip2Network, asset, defaultAsset);
 }
 
 export function agentsTableShowsX402Column(
@@ -54,6 +76,118 @@ export function agentsTableShowsX402Column(
 ): boolean {
   return agents.some((agent) =>
     shouldShowAgentX402Options(agent.supportedPaymentSources, agent.pricing),
+  );
+}
+
+export function AgentPriceTableCell({
+  pricing,
+  supportedPaymentSources,
+  networks,
+}: {
+  pricing: { pricingType?: string } | null | undefined;
+  supportedPaymentSources: SupportedPaymentSource[] | null | undefined;
+  networks: X402NetworkOption[];
+}) {
+  if (!shouldShowEvmX402PriceInPriceColumn(supportedPaymentSources, pricing)) {
+    return <CompactAgentPricing pricing={pricing} />;
+  }
+
+  const source = getPrimaryEvmX402SettlementSource(supportedPaymentSources);
+  const fixed = source ? getEvmFixedPrice(source) : null;
+  if (!source || !fixed) {
+    return <CompactAgentPricing pricing={pricing} />;
+  }
+
+  const network = networks.find((item) => item.caip2Id === source.network);
+  const chainName = network?.displayName ?? source.network;
+  const assetLabel = assetDisplayLabel(
+    source.network,
+    fixed.asset,
+    network?.defaultAsset,
+  );
+  const amountLabel = `${formatX402Amount(fixed.amount, fixed.decimals)} ${assetLabel}`;
+
+  return (
+    <div className="min-w-0" title={`${chainName} · ${amountLabel}`}>
+      <p className="text-sm tabular-nums leading-tight">{amountLabel}</p>
+      <p className="text-xs leading-none text-muted-foreground">{chainName}</p>
+    </div>
+  );
+}
+
+export function AgentPayoutTableCell({
+  payoutAddress,
+  supportedPaymentSources,
+  networks,
+  chainIconSlugs,
+  cardanoEmptyLabel,
+  x402PayToTitle,
+}: {
+  payoutAddress: string | null;
+  supportedPaymentSources: SupportedPaymentSource[] | null | undefined;
+  networks: X402NetworkOption[];
+  chainIconSlugs: Map<string, string | null | undefined>;
+  cardanoEmptyLabel: string;
+  x402PayToTitle: string;
+}) {
+  if (payoutAddress) {
+    return (
+      <div
+        className="flex max-w-44 items-center gap-2 truncate font-mono text-xs"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="truncate" title={payoutAddress}>
+          {shortenAddress(payoutAddress, 8)}
+        </span>
+        <CopyButton value={payoutAddress} className="h-7 w-7 shrink-0" />
+      </div>
+    );
+  }
+
+  const evmSource = getPrimaryEvmX402SettlementSource(supportedPaymentSources);
+  if (!evmSource) {
+    return (
+      <span className="font-sans text-sm text-muted-foreground">
+        {cardanoEmptyLabel}
+      </span>
+    );
+  }
+
+  const network = networks.find((item) => item.caip2Id === evmSource.network);
+  const chainName = network?.displayName ?? evmSource.network;
+
+  return (
+    <div
+      className="flex max-w-52 min-w-0 items-center gap-1.5"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="min-w-0 cursor-default truncate font-mono text-xs">
+            {shortenAddress(evmSource.payTo, 8)}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-tooltip-foreground">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <ChainIcon
+                caip2Id={evmSource.network}
+                name={chainName}
+                iconSlug={chainIconSlugs.get(evmSource.network)}
+                size={18}
+                className="shrink-0"
+              />
+              <span className="text-sm font-semibold">{chainName}</span>
+            </div>
+            <p className="break-all font-mono text-xs leading-relaxed">
+              {evmSource.payTo}
+            </p>
+            <p className="text-xs leading-snug opacity-90">{x402PayToTitle}</p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+      <CopyButton value={evmSource.payTo} className="h-7 w-7 shrink-0" />
+    </div>
   );
 }
 

@@ -35,9 +35,9 @@ import {
   canEditAgentDetails,
   isRegistrationConfirmedOnNetwork,
   isRegistrationUiPending,
-  isRegistryVerificationUpdatePending,
 } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
+import { isAgentDetailsEditEnabled } from "@/lib/config/agent-details-edit.config";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { agentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
 import { cn, formatPricingDisplay, shortenAddress } from "@/lib/utils";
@@ -68,11 +68,6 @@ interface AgentDetailsProps {
 }
 
 const STUCK_PENDING_MS = 2 * 60 * 1000;
-
-// Registry metadata edits submit an on-chain update via the payment node. Keep hidden until
-// payment-service holder-wallet funding for update transactions is fixed; SaaS already avoids
-// wedging users when those txs fail, but edits would still not succeed on-chain (MAS-499).
-const AGENT_DETAILS_EDIT_ENABLED = false;
 
 export function AgentDetails({
   agent,
@@ -142,14 +137,12 @@ export function AgentDetails({
   );
   const showPayoutAddressBanner = requiresPayoutAddress && !agent.payoutAddress;
   const showEditButton =
-    AGENT_DETAILS_EDIT_ENABLED &&
-    isRegistrationConfirmedOnNetwork(agent.registrationState) &&
-    Boolean(agent.agentIdentifier) &&
-    !isRegistryVerificationUpdatePending(agent.registrationState) &&
+    isAgentDetailsEditEnabled() &&
     canEditAgentDetails({
       registrationState: agent.registrationState,
       agentIdentifier: agent.agentIdentifier,
       updatedAt: new Date(agent.updatedAt),
+      now: now || undefined,
     });
 
   return (

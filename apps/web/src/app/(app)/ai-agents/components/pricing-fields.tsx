@@ -176,7 +176,7 @@ export function PricingFields({
             />
           </div>
         ))}
-        {form.formState.errors.prices && (
+        {form.formState.errors.prices && !fixedLocked && (
           <p className="text-sm text-destructive">
             {form.formState.errors.prices.message}
           </p>

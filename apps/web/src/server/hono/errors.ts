@@ -1,6 +1,8 @@
 import type { ErrorHandler } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
+import { serializeErrorForLog } from "@/lib/debug/do-runtime-log";
+
 export type ApiErrorInit = {
   details?: unknown;
   /** Extra fields merged into the JSON body (e.g. `{ code: "..." }`). */
@@ -193,6 +195,6 @@ export const handleApiError: ErrorHandler = (err, c) => {
       402,
     );
   }
-  console.error("Unhandled API error:", err);
+  console.error("Unhandled API error:", serializeErrorForLog(err), err);
   return c.json(buildBody("Internal server error"), 500);
 };

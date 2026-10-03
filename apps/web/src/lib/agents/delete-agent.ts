@@ -1,6 +1,7 @@
 import prisma from "@masumi/database/client";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { AGENT_LIVE_ON_REGISTRY_STATES } from "@/lib/agents/registration-state";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { createPaymentNodeClient, paymentNodeConfig } from "@/lib/payment-node";
 
@@ -40,7 +41,7 @@ export async function deleteAgentForUser(params: {
     }
 
     const liveStates: (typeof agent.registrationState)[] = [
-      "RegistrationConfirmed",
+      ...AGENT_LIVE_ON_REGISTRY_STATES,
       "RegistrationRequested",
       "RegistrationInitiated",
       "DeregistrationRequested",

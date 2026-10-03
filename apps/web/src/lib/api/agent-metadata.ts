@@ -1,7 +1,14 @@
 import type { SupportedPaymentSource } from "@masumi/payment-source-x402/payment-source";
 
 import { getAgentPayoutAddress } from "@/lib/agents/agent-reference-metadata";
-import { agentMetadataSchema } from "@/lib/schemas/agent";
+import {
+  agentMetadataSchema,
+  agentPricingRequiresPayoutAddress,
+} from "@/lib/schemas/agent";
+import {
+  isX402RegistryAgent,
+  parseAgentRegistryMetadata,
+} from "@/lib/x402/agent-registry-metadata";
 
 const METADATA_KEYS = [
   "authorName",
@@ -74,13 +81,33 @@ export function shapeAgentWithMergedMetadata<T extends AgentMetadataSource>(
   };
 }
 
+function shouldExposePayoutAddressToClient(
+  pricing: { pricingType?: string } | null | undefined,
+  metadata: string | null,
+): boolean {
+  if (!agentPricingRequiresPayoutAddress(pricing)) {
+    return false;
+  }
+  const registryMeta = parseAgentRegistryMetadata(metadata);
+  if (isX402RegistryAgent(registryMeta)) {
+    return false;
+  }
+  return true;
+}
+
 export function shapeAgentForApi<T extends AgentMetadataSource>(
   agent: T,
   supportedPaymentSources?: SupportedPaymentSource[] | null,
 ) {
+  const shaped = shapeAgentWithMergedMetadata(agent);
+  const pricing = shaped.pricing as { pricingType?: string } | null | undefined;
+  const collectionAddress = getAgentPayoutAddress(agent);
+
   return {
-    ...shapeAgentWithMergedMetadata(agent),
+    ...shaped,
     supportedPaymentSources: supportedPaymentSources ?? null,
-    payoutAddress: getAgentPayoutAddress(agent),
+    payoutAddress: shouldExposePayoutAddressToClient(pricing, shaped.metadata)
+      ? collectionAddress
+      : null,
   };
 }

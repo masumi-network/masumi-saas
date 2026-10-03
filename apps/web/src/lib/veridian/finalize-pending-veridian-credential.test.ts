@@ -141,7 +141,7 @@ describe("finalizePendingVeridianCredential", () => {
       userId: "user-1",
     });
 
-    expect(winner.newlyIssued).toBe(true);
+    expect(winner).toHaveProperty("newlyIssued", true);
     expect(recordAgentActivityEventMock).toHaveBeenCalledWith(
       "agent-1",
       "AgentVerified",

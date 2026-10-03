@@ -4,6 +4,7 @@ import { completeOnChainRegistration } from "@/lib/agent-registration";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { doRuntimeDebugLog } from "@/lib/debug/do-runtime-log";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
   completeRegistrationPendingSchema,
@@ -69,9 +70,26 @@ app.openapi(
         network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
       });
 
+      doRuntimeDebugLog("agent-registration", "POST complete-registration", {
+        agentId,
+        userId: authContext.user.id,
+        network: agent.networkIdentifier,
+        registrationState: agent.registrationState,
+      });
+
       const result = await completeOnChainRegistration(
         agentId,
         authContext.user.id,
+      );
+
+      doRuntimeDebugLog(
+        "agent-registration",
+        "POST complete-registration result",
+        {
+          agentId,
+          status: result.status,
+          ...(result.status === "error" ? { error: result.error } : {}),
+        },
       );
 
       if (result.status === "registered") {

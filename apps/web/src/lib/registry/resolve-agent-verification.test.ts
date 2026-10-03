@@ -55,6 +55,7 @@ vi.mock("@/lib/veridian", () => ({
   getAgentVerificationSchemaSaid: getAgentVerificationSchemaSaidMock,
 }));
 
+import type { RegistryAgentLookup } from "./find-agent-by-registry-identifier";
 import { resolveAgentVerification } from "./resolve-agent-verification";
 
 const POLICY_ID = "a".repeat(56);
@@ -64,7 +65,7 @@ const BUMPED = POLICY_ID + "11" + ROOT + "000002";
 const STABLE = POLICY_ID + ROOT;
 const SCHEMA_SAID = "ESCHEMA";
 
-const agentRow = {
+const agentRow: RegistryAgentLookup["agent"] = {
   id: "agent-1",
   name: "DB Agent",
   apiUrl: "https://db.example",
@@ -255,7 +256,7 @@ describe("resolveAgentVerification", () => {
       agentIdentifier: VERSIONED,
     });
 
-    expect(result.source).toBe("database");
+    expect(result).toHaveProperty("source", "database");
     expect(result).toMatchObject({
       verified: true,
       credentialId: "EDBCRED",

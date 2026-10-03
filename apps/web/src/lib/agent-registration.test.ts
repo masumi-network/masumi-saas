@@ -105,11 +105,16 @@ vi.mock("@/lib/payment-node/tokens", () => ({
   },
 }));
 
-vi.mock("@masumi/payment-source-x402/supported-payment-sources", () => ({
-  loadSupportedPaymentSourcesForAgent: vi.fn().mockResolvedValue([]),
-  replaceSupportedPaymentSourcesForAgent: vi.fn(),
-  mergeWithDefaultCardanoSource: vi.fn((sources) => sources),
-}));
+vi.mock(
+  "@masumi/payment-source-x402/supported-payment-sources",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("@masumi/payment-source-x402/supported-payment-sources")
+    >()),
+    loadSupportedPaymentSourcesForAgent: vi.fn().mockResolvedValue([]),
+    replaceSupportedPaymentSourcesForAgent: vi.fn(),
+  }),
+);
 
 const {
   completeOnChainRegistration,
@@ -463,6 +468,7 @@ describe("startAgentRegistration", () => {
       PaymentSources: [
         {
           id: "payment-source-preprod",
+          paymentSourceType: "Web3CardanoV2",
           network: "Preprod",
           SellingWallets: [
             {
@@ -567,6 +573,7 @@ describe("startAgentRegistration", () => {
       PaymentSources: [
         {
           id: "payment-source-preprod",
+          paymentSourceType: "Web3CardanoV2",
           network: "Preprod",
           SellingWallets: [
             {
@@ -665,7 +672,7 @@ describe("startAgentRegistration", () => {
 
 describe("completeOnChainRegistration", () => {
   const defaultRegistrationMetadata = {
-    paymentSourceType: "Web3CardanoV1",
+    paymentSourceType: "Web3CardanoV2",
     smartContractAddress:
       "addr_test1wz7j4kmg2cs7yf92uat3ed4a3u97kr7axxr4avaz0lhwdsqukgwfm",
   };
@@ -768,7 +775,15 @@ describe("completeOnChainRegistration", () => {
         contactOther: undefined,
         organization: undefined,
       },
-      AgentPricing: { pricingType: "Free" },
+      supportedPaymentSources: [
+        {
+          chain: "Cardano",
+          network: "Preprod",
+          address: defaultRegistrationMetadata.smartContractAddress,
+          paymentSourceType: "Web3CardanoV2",
+          pricing: { pricingType: "Free" },
+        },
+      ],
     });
   });
 

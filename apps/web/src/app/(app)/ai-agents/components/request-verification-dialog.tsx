@@ -48,6 +48,10 @@ import {
 } from "@/components/ui/tooltip";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
+import {
+  MASUMI_EXTERNAL_LINK_PROPS,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import {
@@ -1171,11 +1175,7 @@ export function RequestVerificationDialog({
 
           <DialogFooter className="shrink-0 border-t bg-background px-6 py-4 justify-between">
             <Button variant="ghost" size="sm" asChild>
-              <a
-                href="https://www.masumi.network/contact"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={SUPPORT_PAGE_URL} {...MASUMI_EXTERNAL_LINK_PROPS}>
                 {t("help")}
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>

@@ -171,6 +171,19 @@ export function isAgentLiveOnRegistry(state: string): boolean {
   return (AGENT_LIVE_ON_REGISTRY_STATES as readonly string[]).includes(state);
 }
 
+/**
+ * Block a second x402 HTTP registration for the same resource URL while any
+ * agent row for that URL is still on-chain or in a registration lifecycle.
+ */
+export const X402_RESOURCE_URL_BLOCKED_STATES = [
+  ...AGENT_LIVE_ON_REGISTRY_STATES,
+  "RegistrationRequested",
+  "RegistrationInitiated",
+  "DeregistrationRequested",
+  "DeregistrationInitiated",
+  "DeregistrationFailed",
+] as const satisfies readonly RegistrationState[];
+
 /** States where deregister is allowed (settled registration only). */
 export const AGENT_DEREGISTER_ELIGIBLE_STATES = [
   "RegistrationConfirmed",
@@ -220,4 +233,37 @@ export function canEditAgentDetails(params: {
   }
 
   return false;
+}
+
+export function isAgentDeletable(params: {
+  registrationState: string;
+  agentIdentifier: string | null;
+}): boolean {
+  const isRegistrationSettled = isRegistrationConfirmedOnNetwork(
+    params.registrationState,
+  );
+  const isLegacyConfirmed = isRegistrationSettled && !params.agentIdentifier;
+  return (
+    params.registrationState === "DeregistrationConfirmed" ||
+    params.registrationState === "RegistrationFailed" ||
+    params.registrationState === "DeregistrationFailed" ||
+    isLegacyConfirmed
+  );
+}
+
+export function isAgentDeregisterable(params: {
+  registrationState: string;
+  agentIdentifier: string | null;
+}): boolean {
+  return (
+    canDeregisterAgent(params.registrationState) &&
+    Boolean(params.agentIdentifier)
+  );
+}
+
+export function isAgentBulkActionSelectable(params: {
+  registrationState: string;
+  agentIdentifier: string | null;
+}): boolean {
+  return isAgentDeletable(params) || isAgentDeregisterable(params);
 }

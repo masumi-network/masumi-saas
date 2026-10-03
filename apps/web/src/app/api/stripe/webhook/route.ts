@@ -15,6 +15,10 @@ import {
   MASUMI_CHECKOUT_METADATA_PURPOSE,
   STRIPE_CHECKOUT_CURRENCY,
 } from "@/lib/stripe/config";
+import {
+  processChargeDisputeCreated,
+  processChargeRefunded,
+} from "@/lib/stripe/refund-clawback";
 import { parseVerifiedTopUpCheckoutMetadata } from "@/lib/stripe/top-up-metadata";
 
 /** Stripe webhook bodies are small; reject large payloads before buffering. */
@@ -43,12 +47,7 @@ function captureWebhookIntegrityFailure(
 
 export const runtime = "nodejs";
 
-/**
- * Raw body is required for Stripe signature verification. Do not parse JSON first.
- *
- * TODO: charge.refunded / charge.dispute.created — clawback or ops alert (credits
- * already granted + consumed is a financial risk). Track before production hardening.
- */
+/** Raw body is required for Stripe signature verification. Do not parse JSON first. */
 export async function POST(request: NextRequest) {
   if (!isStripeTopUpEnabled()) {
     return NextResponse.json(
@@ -126,6 +125,48 @@ export async function POST(request: NextRequest) {
       Sentry.captureException(err, {
         tags: { component: "stripe-webhook" },
         extra: { sessionId: session.id },
+      });
+      return NextResponse.json({ error: "Handler failed" }, { status: 500 });
+    }
+  }
+
+  if (event.type === "charge.refunded") {
+    const charge = event.data.object as Stripe.Charge;
+    try {
+      await processChargeRefunded({
+        stripe,
+        charge,
+        stripeEventId: event.id,
+      });
+    } catch (err) {
+      serverLog.error("[stripe webhook] charge.refunded handler error", {
+        chargeId: charge.id,
+        err,
+      });
+      Sentry.captureException(err, {
+        tags: { component: "stripe-webhook" },
+        extra: { chargeId: charge.id, eventId: event.id },
+      });
+      return NextResponse.json({ error: "Handler failed" }, { status: 500 });
+    }
+  }
+
+  if (event.type === "charge.dispute.created") {
+    const dispute = event.data.object as Stripe.Dispute;
+    try {
+      await processChargeDisputeCreated({
+        stripe,
+        dispute,
+        stripeEventId: event.id,
+      });
+    } catch (err) {
+      serverLog.error("[stripe webhook] charge.dispute.created handler error", {
+        disputeId: dispute.id,
+        err,
+      });
+      Sentry.captureException(err, {
+        tags: { component: "stripe-webhook" },
+        extra: { disputeId: dispute.id, eventId: event.id },
       });
       return NextResponse.json({ error: "Handler failed" }, { status: 500 });
     }

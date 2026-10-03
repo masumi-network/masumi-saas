@@ -89,8 +89,9 @@ function isPrivateHost(hostname: string): boolean {
       host.startsWith("100::") // discard-only prefix (100::/64)
     )
       return true;
-    const mapped = /::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(host);
-    if (mapped != null) return isPrivateIpv4(mapped[1]);
+    // Reject all IPv4-mapped IPv6 literals; URL normalization can otherwise
+    // reach internal targets through embedded dotted-quad forms.
+    if (host.includes("::ffff:")) return true;
     return false;
   }
   if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return isPrivateIpv4(host);

@@ -6,6 +6,10 @@ import { useTranslations } from "next-intl";
 
 import MasumiLogo from "@/components/masumi-logo";
 import { Button } from "@/components/ui/button";
+import {
+  MASUMI_EXTERNAL_LINK_PROPS,
+  SUPPORT_PAGE_URL,
+} from "@/lib/config/masumi-external-links";
 
 export function Header() {
   const t = useTranslations("Components.Header");
@@ -25,7 +29,7 @@ export function Header() {
               className="hidden md:flex"
             >
               <a
-                href="https://docs.masumi.network/"
+                href="https://www.masumi.network/dev/masumi/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2"
@@ -36,7 +40,7 @@ export function Header() {
             </Button>
             <Button variant="outline" size="icon" asChild className="md:hidden">
               <a
-                href="https://docs.masumi.network/"
+                href="https://www.masumi.network/dev/masumi/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t("documentation")}
@@ -51,9 +55,8 @@ export function Header() {
               className="hidden md:flex"
             >
               <a
-                href="https://discord.com/invite/aj4QfnTS92"
-                target="_blank"
-                rel="noopener noreferrer"
+                href={SUPPORT_PAGE_URL}
+                {...MASUMI_EXTERNAL_LINK_PROPS}
                 className="flex items-center gap-2"
               >
                 <MessageSquare className="h-4 w-4" />
@@ -62,9 +65,8 @@ export function Header() {
             </Button>
             <Button variant="outline" size="icon" asChild className="md:hidden">
               <a
-                href="https://discord.com/invite/aj4QfnTS92"
-                target="_blank"
-                rel="noopener noreferrer"
+                href={SUPPORT_PAGE_URL}
+                {...MASUMI_EXTERNAL_LINK_PROPS}
                 aria-label={t("support")}
               >
                 <MessageSquare className="h-4 w-4" />

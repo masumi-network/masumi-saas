@@ -22,6 +22,10 @@ import {
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
 import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
+import {
+  doRuntimeDebugLog,
+  serializeErrorForLog,
+} from "@/lib/debug/do-runtime-log";
 import { sendAgentRegistrationCompleteEmail } from "@/lib/email/send-registration-complete";
 import { sendAgentRegistrationFailedEmail } from "@/lib/email/send-registration-failed";
 import {
@@ -52,6 +56,11 @@ import { listSettleablePaymentNodeX402Networks } from "@/lib/payment-node/resolv
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 import type { RegistryEntry } from "@/lib/payment-node/schemas";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
+import {
+  isX402RegistryAgent,
+  parseAgentRegistryMetadata,
+} from "@/lib/x402/agent-registry-metadata";
+import { getPublicX402ManifestUrl } from "@/lib/x402/public-manifest-url";
 
 import {
   normalizePayoutAddress,
@@ -83,6 +92,15 @@ export type RegisterAgentParams = {
   name: string;
   description: string | null;
   apiUrl: string;
+  registryEntryType?: "X402";
+  x402Manifest?: {
+    x402Version: number;
+    resources: Array<{
+      resource: string;
+      type: "http" | "mcp";
+      description?: string;
+    }>;
+  };
   runtimeProvider?: "DIRECT_MIP" | "LANGDOCK";
   integrationConnectionId?: string | null;
   providerConfig?: Record<string, unknown> | null;
@@ -480,7 +498,10 @@ export async function validateAgentRegistrationPaymentSourcesPreflight(
         error: "x402 payment sources require a V2 payment source.",
       };
     }
-    return { ok: true };
+    return {
+      ok: false,
+      error: "Agent registration requires a V2 payment source.",
+    };
   }
 
   try {
@@ -545,6 +566,15 @@ async function registerAgentOnChainUntilSetup(
   { success: true; agentId: string } | { success: false; error: string }
 > {
   const { user, activeOrganizationId, network } = ctx;
+
+  doRuntimeDebugLog("agent-registration", "registerAgentOnChainUntilSetup", {
+    userId: user.id,
+    network,
+    organizationId: activeOrganizationId ?? null,
+    agentName: params.name,
+    pricingType: params.agentPricing.pricingType,
+    payoutProvided: Boolean(params.payoutAddress?.trim()),
+  });
 
   if (params.tags.length === 0) {
     return { success: false, error: "At least one tag is required." };
@@ -637,6 +667,12 @@ async function registerAgentOnChainUntilSetup(
     sellingWallets: configuredPaymentSourceWithWallets.SellingWallets,
   });
   if (!fundingWalletResult.wallet) {
+    doRuntimeDebugLog("agent-registration", "funding wallet missing", {
+      userId: user.id,
+      network,
+      paymentSourceId,
+      error: fundingWalletResult.error ?? null,
+    });
     return {
       success: false,
       error:
@@ -644,6 +680,17 @@ async function registerAgentOnChainUntilSetup(
         "No registration funding wallet is available for agent registration.",
     };
   }
+
+  doRuntimeDebugLog("agent-registration", "funding wallet resolved", {
+    userId: user.id,
+    network,
+    paymentSourceId,
+    fundingWalletId: fundingWalletResult.wallet.id,
+    fundingWalletAddressPrefix: fundingWalletResult.wallet.walletAddress.slice(
+      0,
+      16,
+    ),
+  });
 
   const fundingWalletNetworkError = validateRegistrationFundingWalletNetwork({
     fundingWallet: fundingWalletResult.wallet,
@@ -654,25 +701,25 @@ async function registerAgentOnChainUntilSetup(
   }
 
   let mergedSupportedPaymentSources: SupportedPaymentSource[] | null = null;
-  if (configuredPaymentSource.paymentSourceType === "Web3CardanoV2") {
-    try {
-      mergedSupportedPaymentSources =
-        prepareSupportedPaymentSourcesForRegistration(
-          network,
-          configuredPaymentSource.smartContractAddress,
-          params.supportedPaymentSources,
-          toCardanoSourcePricing(params.agentPricing),
-        );
-    } catch (error) {
-      return {
-        success: false,
-        error: formatSupportedPaymentSourceError(error),
-      };
-    }
-  } else if (params.supportedPaymentSources?.length) {
+  if (configuredPaymentSource.paymentSourceType !== "Web3CardanoV2") {
     return {
       success: false,
-      error: "x402 payment sources require a V2 payment source.",
+      error: "Agent registration requires a V2 payment source.",
+    };
+  }
+
+  try {
+    mergedSupportedPaymentSources =
+      prepareSupportedPaymentSourcesForRegistration(
+        network,
+        configuredPaymentSource.smartContractAddress,
+        params.supportedPaymentSources,
+        toCardanoSourcePricing(params.agentPricing),
+      );
+  } catch (error) {
+    return {
+      success: false,
+      error: formatSupportedPaymentSourceError(error),
     };
   }
 
@@ -785,6 +832,12 @@ async function registerAgentOnChainUntilSetup(
     capabilityName: params.capabilityName,
     capabilityVersion: params.capabilityVersion,
     exampleOutputs: params.exampleOutputs,
+    ...(params.registryEntryType === "X402" && params.x402Manifest
+      ? {
+          registryEntryType: "X402" as const,
+          x402Manifest: params.x402Manifest,
+        }
+      : {}),
   };
   const metadataCleaned: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(agentMetadata)) {
@@ -868,6 +921,13 @@ async function registerAgentOnChainUntilSetup(
 
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
+  doRuntimeDebugLog("agent-registration", "registerAgentOnChainUntilSetup ok", {
+    agentId: agent.id,
+    userId: user.id,
+    network,
+    registrationState: "RegistrationInitiated",
+  });
+
   return { success: true, agentId: agent.id };
 }
 
@@ -879,14 +939,34 @@ export async function completeOnChainRegistration(
   agentId: string,
   userId: string,
 ): Promise<CompleteRegistrationResult> {
+  doRuntimeDebugLog("agent-registration", "completeOnChainRegistration", {
+    agentId,
+    userId,
+  });
+
   const agent = await prisma.agent.findFirst({
     where: { id: agentId, userId },
     include: { agentReference: true },
   });
   if (!agent?.agentReference) {
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "error",
+        phase: "agent-not-found",
+      },
+    );
     return { status: "error", error: "Agent not found" };
   }
   const ref = agent.agentReference;
+  doRuntimeDebugLog("agent-registration", "completeOnChainRegistration state", {
+    agentId,
+    registrationState: agent.registrationState,
+    networkIdentifier: ref.networkIdentifier,
+    hasExternalId: Boolean(ref.externalId),
+  });
   if (ref.externalId) {
     const updated = await prisma.agent.findUnique({
       where: { id: agentId },
@@ -932,12 +1012,31 @@ export async function completeOnChainRegistration(
       if (walletSync) return walletSync;
     }
 
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "pending",
+        phase: "externalId-awaiting-registry-sync",
+        externalId: ref.externalId,
+      },
+    );
     return { status: "pending" };
   }
   const meta = (ref.metadata ?? {}) as RegistrationPayloadStored;
   const managedMintAddress = meta.sellingWalletAddress;
   const payload = meta.registrationPayload;
   if (!managedMintAddress || !payload) {
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "error",
+        phase: "missing-registration-metadata",
+      },
+    );
     return { status: "error", error: "Missing registration data" };
   }
   const network = (ref.networkIdentifier ??
@@ -1010,6 +1109,17 @@ export async function completeOnChainRegistration(
     }
     fundingWalletVkey = fundingWalletResult.wallet.walletVkey;
   }
+
+  doRuntimeDebugLog(
+    "agent-registration",
+    "completeOnChainRegistration will registerAgent",
+    {
+      agentId,
+      userId,
+      network,
+      hasFundingWalletVkey: Boolean(fundingWalletVkey),
+    },
+  );
 
   const updatedAgent = await prisma.$transaction(async (tx) => {
     const rows = await tx.$queryRaw<
@@ -1138,20 +1248,43 @@ export async function completeOnChainRegistration(
     }
 
     const isV2 = paymentSourceType === PaymentSourceType.Web3CardanoV2;
-    if (isV2 && !smartContractAddress) {
+    if (!isV2) {
+      throw new Error(
+        "Agent registration requires a V2 payment source on the payment node.",
+      );
+    }
+    if (!smartContractAddress) {
       throw new Error(
         "Configured payment source smart contract address is missing for agent registration.",
       );
     }
 
-    const supportedPaymentSources = isV2
-      ? prepareSupportedPaymentSourcesForRegistration(
-          network,
-          smartContractAddress,
-          (storedSources ?? []).filter((source) => source.chain !== "Cardano"),
-          toCardanoSourcePricing(payload.agentPricing),
-        )
-      : null;
+    const supportedPaymentSources =
+      prepareSupportedPaymentSourcesForRegistration(
+        network,
+        smartContractAddress,
+        (storedSources ?? []).filter((source) => source.chain !== "Cardano"),
+        toCardanoSourcePricing(payload.agentPricing),
+      );
+
+    doRuntimeDebugLog("agent-registration", "registerAgent payment-node call", {
+      agentId: agent.id,
+      userId,
+      network,
+      paymentSourceType,
+      recipientWalletAddressPrefix: recipientWalletAddress.slice(0, 16),
+    });
+
+    const registryMetadata = parseAgentRegistryMetadata(agent.metadata);
+    const x402Registry = isX402RegistryAgent(registryMetadata);
+    const x402ResourcesUrl = x402Registry
+      ? getPublicX402ManifestUrl(agent.id)
+      : undefined;
+    if (x402Registry && x402ResourcesUrl && x402ResourcesUrl.length > 250) {
+      throw new Error(
+        "x402 manifest URL exceeds registry length limit; set a shorter NEXT_PUBLIC_APP_URL.",
+      );
+    }
 
     const registerPromise = adminClient.registerAgent({
       network,
@@ -1160,7 +1293,9 @@ export async function completeOnChainRegistration(
       sendFundingLovelace:
         paymentNodeConfig.getRegistryHoldingWalletFundingLovelace(),
       name: agent.name,
-      apiBaseUrl: agent.apiUrl,
+      ...(x402Registry
+        ? { type: "X402" as const, x402ResourcesUrl }
+        : { apiBaseUrl: agent.apiUrl }),
       description: agent.description?.trim() ?? "",
       ...(registryImage ? { image: registryImage } : {}),
       Tags: agent.tags,
@@ -1184,9 +1319,7 @@ export async function completeOnChainRegistration(
             },
           }
         : {}),
-      ...(isV2 && supportedPaymentSources
-        ? { supportedPaymentSources }
-        : { AgentPricing: payload.agentPricing }),
+      supportedPaymentSources,
     });
     let timeoutId: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -1235,15 +1368,33 @@ export async function completeOnChainRegistration(
       const updated = await tx.agent.findUniqueOrThrow({
         where: { id: agent.id },
       });
+      doRuntimeDebugLog("agent-registration", "registerAgent succeeded", {
+        agentId: agent.id,
+        registryEntryId: registryEntry.id,
+        registryState: registryEntry.state,
+        agentIdentifier: registryEntry.agentIdentifier ?? null,
+      });
       return { agent: updated, eventType, pending: false };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      doRuntimeDebugLog("agent-registration", "registerAgent failed", {
+        agentId: agent.id,
+        userId,
+        network,
+        ...serializeErrorForLog(error),
+      });
       if (message.includes("Network and Address combination not supported")) {
         throw new Error(
           `Payment source and wallet network mismatch. Registration is using ${network}. Check that ${paymentNodeConfig.getPaymentSourceIdEnvName(network)} points to a ${network} payment source.`,
         );
       }
       if (message.includes("Registration request timed out")) {
+        doRuntimeDebugLog("agent-registration", "registerAgent timed out", {
+          agentId: agent.id,
+          userId,
+          network,
+          timeoutMs: REGISTER_AGENT_HTTP_TIMEOUT_MS,
+        });
         await tx.agentReference.update({
           where: { agentId: agent.id },
           data: {
@@ -1273,6 +1424,15 @@ export async function completeOnChainRegistration(
     }
   });
   if (updatedAgent.pending) {
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "pending",
+        phase: "registerAgent-still-pending",
+      },
+    );
     return { status: "pending" };
   }
   if (updatedAgent.eventType) {
@@ -1285,6 +1445,16 @@ export async function completeOnChainRegistration(
       updatedAgent.agent.id,
       updatedAgent.agent.name,
     );
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "registered",
+        phase: "registration-confirmed",
+        agentIdentifier: updatedAgent.agent.agentIdentifier ?? null,
+      },
+    );
     return { status: "registered", data: updatedAgent.agent };
   }
   if (state === "RegistrationFailed") {
@@ -1295,8 +1465,28 @@ export async function completeOnChainRegistration(
       updatedAgent.agent.name,
       errorMsg,
     );
+    doRuntimeDebugLog(
+      "agent-registration",
+      "completeOnChainRegistration result",
+      {
+        agentId,
+        status: "error",
+        phase: "registration-failed-on-chain",
+        error: errorMsg,
+      },
+    );
     return { status: "error", error: errorMsg };
   }
+  doRuntimeDebugLog(
+    "agent-registration",
+    "completeOnChainRegistration result",
+    {
+      agentId,
+      status: "pending",
+      phase: "post-registerAgent-awaiting-confirmation",
+      registrationState: state,
+    },
+  );
   return { status: "pending" };
 }
 

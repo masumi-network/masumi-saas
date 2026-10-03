@@ -219,6 +219,94 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
     expect(inboxAgentReferenceFindManyMock).not.toHaveBeenCalled();
   });
 
+  it("scopes requested wallets when wallet scope is enabled but current scopes are empty", async () => {
+    const getApiKeyStatusMock = vi.fn().mockResolvedValue({
+      id: "api-key-1",
+      token: "user-key",
+      permission: "ReadAndPay",
+      canRead: true,
+      canPay: true,
+      canAdmin: false,
+      usageLimited: false,
+      NetworkLimit: ["Preprod"],
+      RemainingUsageCredits: [],
+      status: "Active",
+      walletScopeEnabled: true,
+      WalletScopes: [],
+    });
+    const getWalletListMock = vi.fn().mockResolvedValue({
+      Wallets: [{ id: "wallet-new" }],
+    });
+    const updateApiKeyMock = vi.fn().mockResolvedValue({});
+    createPaymentNodeClientMock
+      .mockReturnValueOnce({
+        getApiKeyStatus: getApiKeyStatusMock,
+      })
+      .mockReturnValueOnce({
+        getWalletList: getWalletListMock,
+        updateApiKey: updateApiKeyMock,
+      });
+    agentReferenceFindManyMock.mockResolvedValue([]);
+
+    const { ensureUserPaymentNodeKeyScopedToWallets } =
+      await import("./wallet-scopes");
+
+    await ensureUserPaymentNodeKeyScopedToWallets({
+      userId: "user-1",
+      walletIds: ["wallet-new"],
+    });
+
+    expect(updateApiKeyMock).toHaveBeenCalledWith({
+      id: "api-key-1",
+      walletScopeEnabled: true,
+      WalletScopeHotWalletIds: ["wallet-new"],
+    });
+  });
+
+  it("throws when requested wallet ids are missing from the payment node hot wallet list", async () => {
+    const getApiKeyStatusMock = vi.fn().mockResolvedValue({
+      id: "api-key-1",
+      token: "user-key",
+      permission: "ReadAndPay",
+      canRead: true,
+      canPay: true,
+      canAdmin: false,
+      usageLimited: false,
+      NetworkLimit: ["Preprod"],
+      RemainingUsageCredits: [],
+      status: "Active",
+      walletScopeEnabled: true,
+      WalletScopes: [],
+    });
+    const getWalletListMock = vi.fn().mockResolvedValue({
+      Wallets: [],
+    });
+    const updateApiKeyMock = vi.fn();
+    createPaymentNodeClientMock
+      .mockReturnValueOnce({
+        getApiKeyStatus: getApiKeyStatusMock,
+      })
+      .mockReturnValueOnce({
+        getWalletList: getWalletListMock,
+        updateApiKey: updateApiKeyMock,
+      });
+    agentReferenceFindManyMock.mockResolvedValue([]);
+
+    const { ensureUserPaymentNodeKeyScopedToWallets } =
+      await import("./wallet-scopes");
+
+    await expect(
+      ensureUserPaymentNodeKeyScopedToWallets({
+        userId: "user-1",
+        walletIds: ["wallet-new"],
+      }),
+    ).rejects.toThrow(
+      "Payment node hot wallets missing requested scope targets: wallet-new",
+    );
+
+    expect(updateApiKeyMock).not.toHaveBeenCalled();
+  });
+
   it("drops stale agent wallet ids that no longer exist on the payment node", async () => {
     const getApiKeyStatusMock = vi.fn().mockResolvedValue({
       id: "api-key-1",

@@ -8,6 +8,7 @@ import {
   buildNetworkRegistrationPayload,
   buildNetworkSiteContinueUrl,
   buildNetworkSiteSuccessUrl,
+  networkRegisterBodySchema,
   resolveNetworkRegistrationCommerceForTest,
 } from "./index";
 
@@ -96,10 +97,24 @@ describe("buildNetworkRegistrationPayload", () => {
       mint: {
         kyc: "skip",
         destination: "managed",
+        payoutAddress: "addr_test1qxyz",
       },
     });
     expect(payload.payment).toBeUndefined();
     expect(payload.effectiveDestination).toBe("managed");
+    expect(payload.mint.payoutAddress).toBe("addr_test1qxyz");
+  });
+
+  it("defaults mint.kyc to skip when omitted", () => {
+    const { payment: _payment, ...withoutPayment } = base;
+    const parsed = networkRegisterBodySchema.parse({
+      ...withoutPayment,
+      mint: {
+        destination: "managed",
+        payoutAddress: "addr_test1qxyz",
+      },
+    });
+    expect(parsed.mint.kyc).toBe("skip");
   });
 });
 
@@ -137,8 +152,8 @@ describe("buildNetworkSiteSuccessUrl", () => {
 
   it("returns an absolute marketing-site success URL", () => {
     process.env.NETWORK_SITE_URL = "http://localhost:3001";
-    expect(buildNetworkSiteSuccessUrl("agent-123")).toBe(
-      "http://localhost:3001/register/success?agentId=agent-123",
+    expect(buildNetworkSiteSuccessUrl("policy1.assetname1", "Bot")).toBe(
+      "http://localhost:3001/register/success?agentIdentifier=policy1.assetname1&agentName=Bot",
     );
   });
 });
@@ -152,14 +167,9 @@ describe("buildNetworkSiteContinueUrl", () => {
   it("includes draftId and pollToken for pending registration polling", () => {
     process.env.NETWORK_SITE_URL = "http://localhost:3001";
     expect(
-      buildNetworkSiteContinueUrl(
-        "draft-1",
-        "agent-123",
-        "Research Bot",
-        "poll-token-abc",
-      ),
+      buildNetworkSiteContinueUrl("draft-1", "Research Bot", "poll-token-abc"),
     ).toBe(
-      "http://localhost:3001/register/success?agentId=agent-123&draftId=draft-1&agentName=Research+Bot&pollToken=poll-token-abc",
+      "http://localhost:3001/register/success?draftId=draft-1&agentName=Research+Bot&pollToken=poll-token-abc",
     );
   });
 });

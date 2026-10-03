@@ -28,13 +28,17 @@ function cred(params: {
     sad: {
       d: params.d,
       s: SCHEMA,
+      i: "issuer-aid",
+      ri: "registry-said",
       a: {
+        i: "holder-aid",
         dt: params.dt,
         signature: params.signature,
         agentId: params.agentId ?? AGENT_ROOT,
       },
     },
-  } as Credential;
+    status: { s: "0" },
+  };
 }
 
 describe("resolvePendingWalletCredential", () => {

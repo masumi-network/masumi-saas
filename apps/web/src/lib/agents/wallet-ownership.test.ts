@@ -47,7 +47,7 @@ const AGENT_IDENTIFIER = "policy+versioned-asset-name";
 /** Agent registered via the admin/funding wallet: confirmed on-chain, but the
  *  user's wallet-scoped key cannot enumerate the row (SmartContractWallet is the
  *  funding wallet, not the user's selling wallet). */
-function adminMintedConfirmedAgent() {
+function adminMintedConfirmedAgent(externalId: string | null = EXTERNAL_ID) {
   return {
     id: "agent-1",
     name: "devint",
@@ -56,7 +56,7 @@ function adminMintedConfirmedAgent() {
     agentIdentifier: AGENT_IDENTIFIER,
     networkIdentifier: "Preprod",
     agentReference: {
-      externalId: EXTERNAL_ID,
+      externalId,
       networkIdentifier: "Preprod",
       sellingWalletVkey: "selling-vkey",
       metadata: { smartContractAddress: SMART_CONTRACT_ADDRESS },
@@ -95,8 +95,7 @@ describe("getWalletOwnedAgentForUser", () => {
   });
 
   it("falls back to the admin agent-identifier lookup when there is no external id", async () => {
-    const agent = adminMintedConfirmedAgent();
-    agent.agentReference.externalId = null;
+    const agent = adminMintedConfirmedAgent(null);
     agentFindFirstMock.mockResolvedValue(agent);
     const adminGetByIdentifier = vi.fn().mockResolvedValue({
       agentIdentifier: AGENT_IDENTIFIER,

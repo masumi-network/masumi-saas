@@ -7,6 +7,11 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Locale } from "@/i18n/config";
 import {
+  DISCORD_INVITE_URL,
+  IMPRINT_PAGE_URL,
+  MASUMI_EXTERNAL_LINK_PROPS,
+} from "@/lib/config/masumi-external-links";
+import {
   PRIVACY_POLICY_LINK_PROPS,
   PRIVACY_POLICY_URL,
 } from "@/lib/config/privacy-policy-url";
@@ -45,9 +50,8 @@ export function FooterSections({ className }: FooterSectionsProps) {
       </div>
       <div className="flex flex-wrap items-center flex-1 justify-end gap-4">
         <Link
-          href="https://discord.com/invite/aj4QfnTS92"
-          target="_blank"
-          rel="noopener noreferrer"
+          href={DISCORD_INVITE_URL}
+          {...MASUMI_EXTERNAL_LINK_PROPS}
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
           {t("discord")}
@@ -60,10 +64,11 @@ export function FooterSections({ className }: FooterSectionsProps) {
           {t("privacyPolicy")}
         </Link>
         <Link
-          href="https://www.masumi.network/imprint"
+          href={IMPRINT_PAGE_URL}
+          {...MASUMI_EXTERNAL_LINK_PROPS}
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground tracking-tight transition-colors duration-200"
         >
-          {t("legal")}
+          {t("imprint")}
         </Link>
       </div>
     </div>

@@ -13,8 +13,10 @@ import {
   startAgentRegistration,
   validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
+import { pollAgentRegistrationCompletion } from "@/lib/agents/drive-registration-completion";
 import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import { consumeCreditIfRequired } from "@/lib/credits/service";
+import { doRuntimeDebugLog } from "@/lib/debug/do-runtime-log";
 import { getKycStatusForUser } from "@/lib/network-registration/kyc-status";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
@@ -66,10 +68,13 @@ export const networkRegisterBodySchema = z.object({
     })
     .optional(),
   mint: z.object({
-    kyc: z.enum(["skip", "kyc"]),
+    /** Omitted by masumi.network register; KYC mint path is deprecated. */
+    kyc: z.enum(["skip", "kyc"]).optional().default("skip"),
     destination: z.enum(["managed", "browser", "external"]),
     /** Cardano receive address for external / browser paths (and optional payout). */
     cardanoAddress: z.string().max(250).optional().or(z.literal("")),
+    /** Cardano payout address for managed registration (where job payments are sent). */
+    payoutAddress: z.string().max(250).optional().or(z.literal("")),
   }),
   cardanoNetwork: z.enum(["Preprod", "Mainnet"]).default("Preprod"),
 });
@@ -495,6 +500,8 @@ export async function completeNetworkRegistrationWithTicket(params: {
       status: "registered" | "pending";
       notes: string[];
       successPath: string;
+      agentIdentifier?: string;
+      agent?: NetworkRegistrationAgentPublicSummary;
       continueUrl?: string;
       pollToken?: string;
       draftId?: string;
@@ -579,7 +586,6 @@ export async function completeNetworkRegistrationWithTicket(params: {
     });
     continueUrl = buildNetworkSiteContinueUrl(
       draft.draftId,
-      fulfilled.agentId,
       params.body.agent.name,
       pollToken,
     );
@@ -594,10 +600,21 @@ export async function completeNetworkRegistrationWithTicket(params: {
     notes: fulfilled.notes,
     successPath: fulfilled.networkSiteSuccessUrl,
     draftId: draft.draftId,
+    ...(fulfilled.agentIdentifier
+      ? { agentIdentifier: fulfilled.agentIdentifier }
+      : {}),
+    ...(fulfilled.agent ? { agent: fulfilled.agent } : {}),
     ...(continueUrl ? { continueUrl } : {}),
     ...(pollToken ? { pollToken } : {}),
   };
 }
+
+export type NetworkRegistrationAgentPublicSummary = {
+  name: string;
+  description: string | null;
+  apiUrl: string;
+  tags: string[];
+};
 
 export async function pollNetworkRegistrationStatus(params: {
   draftId: string;
@@ -607,7 +624,9 @@ export async function pollNetworkRegistrationStatus(params: {
       ok: true;
       status: "registered";
       agentId: string;
+      agentIdentifier: string;
       successPath: string;
+      agent: NetworkRegistrationAgentPublicSummary;
     }
   | { ok: true; status: "pending"; agentId: string }
   | { ok: false; error: string; status: 401 | 404 | 400 }
@@ -636,7 +655,8 @@ export async function pollNetworkRegistrationStatus(params: {
   if (!draft) {
     return { ok: false, error: "Registration not found", status: 404 };
   }
-  const agentName = (draft.payload as NetworkRegistrationPayload).agent.name;
+  const payload = draft.payload as NetworkRegistrationPayload;
+  const agentName = payload.agent.name;
   if (!draft.agentId) {
     return {
       ok: false,
@@ -653,12 +673,37 @@ export async function pollNetworkRegistrationStatus(params: {
   }
 
   if (draft.status === "COMPLETED") {
-    return {
-      ok: true,
-      status: "registered",
-      agentId: draft.agentId,
-      successPath: buildNetworkSiteSuccessUrl(draft.agentId, agentName),
-    };
+    const completed = await resolveRegisteredNetworkPollPayload(
+      draft.agentId,
+      payload,
+    );
+    if (completed.status === "registered") {
+      return completed;
+    }
+    const retry = await completeOnChainRegistration(
+      draft.agentId,
+      session.userId,
+    );
+    if (retry.status === "registered") {
+      const resolved = await resolveRegisteredNetworkPollPayload(
+        draft.agentId,
+        payload,
+      );
+      if (resolved.status === "registered") {
+        return resolved;
+      }
+    }
+    if (
+      retry.status === "error" &&
+      isPermanentNetworkRegistrationError(retry.error)
+    ) {
+      await prisma.networkRegistrationDraft.update({
+        where: { id: draft.id },
+        data: { status: "FAILED", error: retry.error },
+      });
+      return { ok: false, error: retry.error, status: 400 };
+    }
+    return { ok: true, status: "pending", agentId: draft.agentId };
   }
   if (draft.status === "FAILED") {
     return {
@@ -668,22 +713,44 @@ export async function pollNetworkRegistrationStatus(params: {
     };
   }
 
+  doRuntimeDebugLog(
+    "network-register",
+    "pollNetworkRegistrationStatus complete",
+    {
+      draftId: params.draftId,
+      agentId: draft.agentId,
+      draftStatus: draft.status,
+    },
+  );
+
   const result = await completeOnChainRegistration(
     draft.agentId,
     session.userId,
   );
 
-  if (result.status === "registered") {
-    await prisma.networkRegistrationDraft.update({
-      where: { id: draft.id },
-      data: { status: "COMPLETED", error: null },
-    });
-    return {
-      ok: true,
-      status: "registered",
+  doRuntimeDebugLog(
+    "network-register",
+    "pollNetworkRegistrationStatus result",
+    {
+      draftId: params.draftId,
       agentId: draft.agentId,
-      successPath: buildNetworkSiteSuccessUrl(draft.agentId, agentName),
-    };
+      completeStatus: result.status,
+      ...(result.status === "error" ? { error: result.error } : {}),
+    },
+  );
+
+  if (result.status === "registered") {
+    const resolved = await resolveRegisteredNetworkPollPayload(
+      draft.agentId,
+      payload,
+    );
+    if (resolved.status === "registered") {
+      await prisma.networkRegistrationDraft.update({
+        where: { id: draft.id },
+        data: { status: "COMPLETED", error: null },
+      });
+    }
+    return resolved;
   }
 
   if (result.status === "error") {
@@ -716,6 +783,8 @@ export async function fulfillNetworkRegistrationDraft(params: {
       status: "registered" | "pending";
       notes: string[];
       networkSiteSuccessUrl: string;
+      agentIdentifier?: string;
+      agent?: NetworkRegistrationAgentPublicSummary;
     }
   | {
       ok: false;
@@ -735,6 +804,15 @@ export async function fulfillNetworkRegistrationDraft(params: {
     };
   }
 
+  const draftPayload = draft.payload as NetworkRegistrationPayload | null;
+  doRuntimeDebugLog("network-register", "fulfillNetworkRegistrationDraft", {
+    draftId: params.draftId,
+    userId: params.user.id,
+    draftStatus: draft.status,
+    deferOnChainPolling: params.deferOnChainPolling ?? false,
+    cardanoNetwork: draftPayload?.cardanoNetwork ?? null,
+  });
+
   const sessionEmail = params.user.email?.trim().toLowerCase();
   if (!sessionEmail || sessionEmail !== draft.email) {
     return {
@@ -749,16 +827,12 @@ export async function fulfillNetworkRegistrationDraft(params: {
   // Resume/complete paths must work after the draft TTL: an agent may already
   // exist (on-chain pending) or the draft may already be COMPLETED.
   if (draft.status === "COMPLETED" && draft.agentId) {
-    return {
-      ok: true,
+    return buildFulfilledOkResult({
       agentId: draft.agentId,
       status: "registered",
       notes: payload.notes ?? [],
-      networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
-        draft.agentId,
-        payload.agent.name,
-      ),
-    };
+      payload,
+    });
   }
 
   if (draft.agentId) {
@@ -768,25 +842,23 @@ export async function fulfillNetworkRegistrationDraft(params: {
         params.user.id,
       );
       if (once.status === "registered") {
+        const fulfilled = await buildFulfilledOkResult({
+          agentId: draft.agentId,
+          status: "registered",
+          notes: payload.notes,
+          payload,
+        });
         await prisma.networkRegistrationDraft.update({
           where: { id: draft.id },
           data: {
-            status: "COMPLETED",
+            status:
+              fulfilled.status === "registered" ? "COMPLETED" : "PROCESSING",
             agentId: draft.agentId,
             userId: params.user.id,
             error: null,
           },
         });
-        return {
-          ok: true,
-          agentId: draft.agentId,
-          status: "registered",
-          notes: payload.notes,
-          networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
-            draft.agentId,
-            payload.agent.name,
-          ),
-        };
+        return fulfilled;
       }
       if (
         once.status === "error" &&
@@ -802,39 +874,33 @@ export async function fulfillNetworkRegistrationDraft(params: {
         });
         return { ok: false, error: once.error, status: "FAILED" };
       }
-      return {
-        ok: true,
+      return buildFulfilledOkResult({
         agentId: draft.agentId,
         status: "pending",
         notes: payload.notes,
-        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
-          draft.agentId,
-          payload.agent.name,
-        ),
-      };
+        payload,
+      });
     }
 
     const complete = await pollComplete(draft.agentId, params.user.id);
     if (complete.ok) {
+      const fulfilled = await buildFulfilledOkResult({
+        agentId: draft.agentId,
+        status: complete.status,
+        notes: payload.notes,
+        payload,
+      });
       await prisma.networkRegistrationDraft.update({
         where: { id: draft.id },
         data: {
-          status: complete.status === "registered" ? "COMPLETED" : "PROCESSING",
+          status:
+            fulfilled.status === "registered" ? "COMPLETED" : "PROCESSING",
           agentId: draft.agentId,
           userId: params.user.id,
           error: null,
         },
       });
-      return {
-        ok: true,
-        agentId: draft.agentId,
-        status: complete.status,
-        notes: payload.notes,
-        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
-          draft.agentId,
-          payload.agent.name,
-        ),
-      };
+      return fulfilled;
     }
     await prisma.networkRegistrationDraft.update({
       where: { id: draft.id },
@@ -906,25 +972,22 @@ export async function fulfillNetworkRegistrationDraft(params: {
     if (fresh?.agentId) {
       const complete = await pollComplete(fresh.agentId, params.user.id);
       if (complete.ok) {
+        const fulfilled = await buildFulfilledOkResult({
+          agentId: fresh.agentId,
+          status: complete.status,
+          notes: payload.notes,
+          payload,
+        });
         await prisma.networkRegistrationDraft.update({
           where: { id: draft.id },
           data: {
             status:
-              complete.status === "registered" ? "COMPLETED" : "PROCESSING",
+              fulfilled.status === "registered" ? "COMPLETED" : "PROCESSING",
             userId: params.user.id,
             error: null,
           },
         });
-        return {
-          ok: true,
-          agentId: fresh.agentId,
-          status: complete.status,
-          notes: payload.notes,
-          networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
-            fresh.agentId,
-            payload.agent.name,
-          ),
-        };
+        return fulfilled;
       }
       return { ok: false, error: complete.error, status: "FAILED" };
     }
@@ -967,7 +1030,15 @@ export async function fulfillNetworkRegistrationDraft(params: {
     let payoutAddress = "";
     let registryNftRecipientAddress: string | undefined;
 
-    if (payload.effectiveDestination !== "managed") {
+    if (payload.effectiveDestination === "managed") {
+      const managedPayout = payload.mint.payoutAddress?.trim() ?? "";
+      const payoutError = validatePayoutAddressForNetwork(
+        managedPayout,
+        network,
+      );
+      if (payoutError) throw new Error(payoutError);
+      payoutAddress = managedPayout;
+    } else {
       const dest = payload.mint.cardanoAddress?.trim() ?? "";
       const destError = validatePayoutAddressForNetwork(dest, network);
       if (destError) throw new Error(destError);
@@ -1006,23 +1077,21 @@ export async function fulfillNetworkRegistrationDraft(params: {
         });
         return { ok: false, error: complete.error, status: "FAILED" };
       }
-      await prisma.networkRegistrationDraft.update({
-        where: { id: draft.id },
-        data: {
-          status: complete.status === "registered" ? "COMPLETED" : "PROCESSING",
-          agentId: existingAgent.id,
-        },
-      });
-      return {
-        ok: true,
+      const fulfilled = await buildFulfilledOkResult({
         agentId: existingAgent.id,
         status: complete.status,
         notes: payload.notes,
-        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
-          existingAgent.id,
-          payload.agent.name,
-        ),
-      };
+        payload,
+      });
+      await prisma.networkRegistrationDraft.update({
+        where: { id: draft.id },
+        data: {
+          status:
+            fulfilled.status === "registered" ? "COMPLETED" : "PROCESSING",
+          agentId: existingAgent.id,
+        },
+      });
+      return fulfilled;
     }
 
     // Idempotent Mainnet debit before wallet/agent setup so unpaid agents cannot
@@ -1062,8 +1131,21 @@ export async function fulfillNetworkRegistrationDraft(params: {
     );
 
     if (!started.success) {
+      doRuntimeDebugLog("network-register", "startAgentRegistration failed", {
+        draftId: draft.id,
+        userId: params.user.id,
+        network,
+        error: started.error,
+      });
       throw new Error(started.error);
     }
+
+    doRuntimeDebugLog("network-register", "startAgentRegistration ok", {
+      draftId: draft.id,
+      userId: params.user.id,
+      agentId: started.agentId,
+      network,
+    });
 
     if (params.deferOnChainPolling) {
       await prisma.networkRegistrationDraft.update({
@@ -1075,49 +1157,45 @@ export async function fulfillNetworkRegistrationDraft(params: {
           userId: params.user.id,
         },
       });
-      return {
-        ok: true,
+      return buildFulfilledOkResult({
         agentId: started.agentId,
         status: "pending",
         notes: payload.notes,
-        networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
-          started.agentId,
-          payload.agent.name,
-        ),
-      };
+        payload,
+      });
     }
 
     const complete = await pollComplete(started.agentId, params.user.id);
 
+    if (!complete.ok) {
+      await prisma.networkRegistrationDraft.update({
+        where: { id: draft.id },
+        data: {
+          agentId: started.agentId,
+          status: "FAILED",
+          error: complete.error,
+          userId: params.user.id,
+        },
+      });
+      return { ok: false, error: complete.error, status: "FAILED" };
+    }
+
+    const fulfilled = await buildFulfilledOkResult({
+      agentId: started.agentId,
+      status: complete.status,
+      notes: payload.notes,
+      payload,
+    });
     await prisma.networkRegistrationDraft.update({
       where: { id: draft.id },
       data: {
         agentId: started.agentId,
-        status:
-          complete.ok && complete.status === "registered"
-            ? "COMPLETED"
-            : complete.ok
-              ? "PROCESSING"
-              : "FAILED",
-        error: complete.ok ? null : complete.error,
+        status: fulfilled.status === "registered" ? "COMPLETED" : "PROCESSING",
+        error: null,
         userId: params.user.id,
       },
     });
-
-    if (!complete.ok) {
-      return { ok: false, error: complete.error, status: "FAILED" };
-    }
-
-    return {
-      ok: true,
-      agentId: started.agentId,
-      status: complete.status,
-      notes: payload.notes,
-      networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
-        started.agentId,
-        payload.agent.name,
-      ),
-    };
+    return fulfilled;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Registration failed";
@@ -1171,26 +1249,156 @@ async function pollComplete(
 ): Promise<
   { ok: true; status: "registered" | "pending" } | { ok: false; error: string }
 > {
-  let last: Awaited<ReturnType<typeof completeOnChainRegistration>> | null =
-    null;
-  for (let i = 0; i < COMPLETE_POLL_ATTEMPTS; i += 1) {
-    last = await completeOnChainRegistration(agentId, userId);
-    if (last.status === "registered") {
-      return { ok: true, status: "registered" };
-    }
-    if (last.status === "error") {
-      return { ok: false, error: last.error };
-    }
-    await sleep(COMPLETE_POLL_DELAY_MS);
+  doRuntimeDebugLog("network-register", "pollComplete start", {
+    agentId,
+    userId,
+    maxAttempts: COMPLETE_POLL_ATTEMPTS,
+  });
+  const result = await pollAgentRegistrationCompletion(agentId, userId, {
+    maxAttempts: COMPLETE_POLL_ATTEMPTS,
+    delayMs: COMPLETE_POLL_DELAY_MS,
+  });
+  if (result.status === "registered") {
+    return { ok: true, status: "registered" };
   }
-  if (last?.status === "pending") {
-    return { ok: true, status: "pending" };
+  if (result.status === "error") {
+    return { ok: false, error: result.error };
   }
-  return { ok: false, error: "Registration timed out" };
+  return { ok: true, status: "pending" };
+}
+
+function agentPublicSummaryFromDraft(
+  payload: NetworkRegistrationPayload,
+): NetworkRegistrationAgentPublicSummary {
+  return {
+    name: payload.agent.name,
+    description: payload.agent.description?.trim() || null,
+    apiUrl: payload.agent.apiUrl,
+    tags: payload.agent.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean),
+  };
+}
+
+async function resolveRegisteredNetworkPollPayload(
+  saasAgentId: string,
+  payload: NetworkRegistrationPayload,
+): Promise<
+  | {
+      ok: true;
+      status: "registered";
+      agentId: string;
+      agentIdentifier: string;
+      successPath: string;
+      agent: NetworkRegistrationAgentPublicSummary;
+    }
+  | { ok: true; status: "pending"; agentId: string }
+> {
+  const row = await prisma.agent.findUnique({
+    where: { id: saasAgentId },
+    select: {
+      agentIdentifier: true,
+      name: true,
+      description: true,
+      apiUrl: true,
+      tags: true,
+    },
+  });
+  const agentIdentifier = row?.agentIdentifier?.trim();
+  if (!agentIdentifier) {
+    return { ok: true, status: "pending", agentId: saasAgentId };
+  }
+  const agent: NetworkRegistrationAgentPublicSummary = row
+    ? {
+        name: row.name,
+        description: row.description,
+        apiUrl: row.apiUrl,
+        tags: row.tags,
+      }
+    : agentPublicSummaryFromDraft(payload);
+  return {
+    ok: true,
+    status: "registered",
+    agentId: saasAgentId,
+    agentIdentifier,
+    successPath: buildNetworkSiteSuccessUrl(
+      agentIdentifier,
+      payload.agent.name,
+    ),
+    agent,
+  };
+}
+
+async function buildFulfilledOkResult(params: {
+  agentId: string;
+  status: "registered" | "pending";
+  notes: string[];
+  payload: NetworkRegistrationPayload;
+}): Promise<{
+  ok: true;
+  agentId: string;
+  status: "registered" | "pending";
+  notes: string[];
+  networkSiteSuccessUrl: string;
+  agentIdentifier?: string;
+  agent?: NetworkRegistrationAgentPublicSummary;
+}> {
+  if (params.status === "pending") {
+    return {
+      ok: true,
+      agentId: params.agentId,
+      status: "pending",
+      notes: params.notes,
+      networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+        undefined,
+        params.payload.agent.name,
+      ),
+    };
+  }
+  const resolved = await resolveRegisteredNetworkPollPayload(
+    params.agentId,
+    params.payload,
+  );
+  if (resolved.status === "pending") {
+    return {
+      ok: true,
+      agentId: params.agentId,
+      status: "pending",
+      notes: params.notes,
+      networkSiteSuccessUrl: buildNetworkSiteSuccessUrl(
+        undefined,
+        params.payload.agent.name,
+      ),
+    };
+  }
+  return {
+    ok: true,
+    agentId: params.agentId,
+    status: "registered",
+    notes: params.notes,
+    networkSiteSuccessUrl: resolved.successPath,
+    agentIdentifier: resolved.agentIdentifier,
+    agent: resolved.agent,
+  };
+}
+
+export async function buildNetworkSiteSuccessUrlForSaasAgent(
+  saasAgentId: string,
+  agentName?: string,
+): Promise<string> {
+  const row = await prisma.agent.findUnique({
+    where: { id: saasAgentId },
+    select: { agentIdentifier: true },
+  });
+  return buildNetworkSiteSuccessUrl(
+    row?.agentIdentifier?.trim() || undefined,
+    agentName,
+  );
 }
 
 export function buildNetworkSiteSuccessUrl(
-  agentId: string,
+  agentIdentifier?: string,
   agentName?: string,
 ): string {
   const base =
@@ -1198,7 +1406,10 @@ export function buildNetworkSiteSuccessUrl(
     process.env.NEXT_PUBLIC_NETWORK_SITE_URL?.trim() ||
     "http://localhost:3001";
   const url = new URL("/register/success", base);
-  url.searchParams.set("agentId", agentId);
+  const trimmedId = agentIdentifier?.trim();
+  if (trimmedId) {
+    url.searchParams.set("agentIdentifier", trimmedId);
+  }
   const trimmedName = agentName?.trim();
   if (trimmedName) {
     url.searchParams.set("agentName", trimmedName);
@@ -1208,7 +1419,6 @@ export function buildNetworkSiteSuccessUrl(
 
 export function buildNetworkSiteContinueUrl(
   draftId: string,
-  agentId: string,
   agentName: string,
   pollToken?: string,
 ): string {
@@ -1217,7 +1427,6 @@ export function buildNetworkSiteContinueUrl(
     process.env.NEXT_PUBLIC_NETWORK_SITE_URL?.trim() ||
     "http://localhost:3001";
   const url = new URL("/register/success", base);
-  url.searchParams.set("agentId", agentId);
   url.searchParams.set("draftId", draftId);
   const trimmedName = agentName.trim();
   if (trimmedName) {

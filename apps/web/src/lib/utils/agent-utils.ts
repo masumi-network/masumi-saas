@@ -76,7 +76,7 @@ const REGISTRATION_STATUS_KEYS: Record<
   Agent["registrationState"],
   RegistrationStatusKey
 > = {
-  RegistrationRequested: "pending",
+  RegistrationRequested: "registering",
   RegistrationInitiated: "registering",
   RegistrationConfirmed: "registered",
   RegistrationFailed: "registrationFailed",

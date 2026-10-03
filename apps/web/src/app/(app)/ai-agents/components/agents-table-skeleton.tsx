@@ -11,10 +11,15 @@ import {
 
 export function AgentsTableSkeleton() {
   return (
-    <HorizontalScrollArea className="rounded-md border">
+    <HorizontalScrollArea className="rounded-xl border border-border/80">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
+            <TableHead className="w-10 p-0">
+              <div className="flex h-12 items-center pl-4">
+                <Skeleton className="size-4" />
+              </div>
+            </TableHead>
             <TableHead>
               <Skeleton className="h-4 w-14" />
             </TableHead>
@@ -44,6 +49,9 @@ export function AgentsTableSkeleton() {
         <TableBody>
           {Array.from({ length: 5 }).map((_, i) => (
             <TableRow key={i}>
+              <TableCell className="w-10">
+                <Skeleton className="h-4 w-4" />
+              </TableCell>
               <TableCell className="max-w-52">
                 <div className="space-y-1">
                   <Skeleton className="h-4 w-32" />

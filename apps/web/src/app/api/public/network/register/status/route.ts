@@ -27,13 +27,24 @@ const pendingSchema = z.object({
   agentId: z.string(),
 });
 
+const agentSummarySchema = z.object({
+  name: z.string(),
+  description: z.string().nullable(),
+  apiUrl: z.string(),
+  tags: z.array(z.string()),
+});
+
 const registeredSchema = z.object({
   success: z.literal(true),
   status: z.literal("registered"),
   agentId: z.string(),
+  agentIdentifier: z
+    .string()
+    .describe("On-chain Masumi network agent identifier"),
   successPath: z
     .string()
     .describe("Absolute URL on the masumi.network marketing site"),
+  agent: agentSummarySchema,
 });
 
 app.openapi(
@@ -103,7 +114,9 @@ app.openapi(
               success: true as const,
               status: "registered" as const,
               agentId: result.agentId,
+              agentIdentifier: result.agentIdentifier,
               successPath: result.successPath,
+              agent: result.agent,
             },
             200,
           )
