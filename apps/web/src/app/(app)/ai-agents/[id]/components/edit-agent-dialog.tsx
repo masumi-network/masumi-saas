@@ -350,8 +350,6 @@ export function EditAgentDialog({
                     onClearError={() => form.clearErrors("icon")}
                     disabled={isSaving}
                     translations={{
-                      icon: tRegister("icon"),
-                      iconTooltip: tRegister("iconTooltip"),
                       iconDescription: tRegister("iconDescription"),
                       iconSearchPlaceholder: tRegister("iconSearchPlaceholder"),
                       iconSearchEmpty: tRegister("iconSearchEmpty"),
