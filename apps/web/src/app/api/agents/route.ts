@@ -19,6 +19,7 @@ import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
   consumeCreditIfRequired,
   createCreditReference,
+  refundConsumedCredit,
 } from "@/lib/credits/service";
 import {
   createIntegrationConnection,
@@ -521,19 +522,24 @@ app.openapi(
         }
       }
 
+      const creditReference = createCreditReference("agent-register");
+      const creditMetadata = {
+        name,
+        apiUrl: resolvedApiUrl,
+        network,
+        authMethod: authContext.authMethod,
+        runtimeProvider: selectedRuntimeProvider,
+      };
+
       await consumeCreditIfRequired({
         userId: user.id,
         reason: "agent_register",
-        reference: createCreditReference("agent-register"),
+        reference: creditReference,
         network,
-        metadata: {
-          name,
-          apiUrl: resolvedApiUrl,
-          network,
-          authMethod: authContext.authMethod,
-          runtimeProvider: selectedRuntimeProvider,
-        },
+        metadata: creditMetadata,
       });
+
+      let shouldRefundRegistrationCredit = true;
 
       const params: RegisterAgentParams = {
         id: agentId,
@@ -562,49 +568,73 @@ app.openapi(
           : {}),
       };
 
-      const result = await startAgentRegistration(
-        {
-          user: {
-            id: user.id,
-            name: user.name ?? null,
-            email: user.email ?? null,
-          },
-          activeOrganizationId,
-          network,
-        },
-        params,
-      );
-
-      if (result.success) {
-        scheduleAgentRegistrationCompletion(result.agentId, user.id);
-        const agent = await prisma.agent.findFirst({
-          where: { id: result.agentId, userId: user.id },
-          include: { agentReference: true },
-        });
-        if (!agent) {
-          throw new ApiError(500, "Failed to load created agent");
-        }
-        const sourcesByAgentId = await loadSupportedPaymentSourcesMap([
-          agent.id,
-        ]);
-        const data = shapeAgentForApi(
-          agent,
-          sourcesByAgentId.get(agent.id) ?? null,
-        );
-        // Prisma types are looser than the OpenAPI response schema. Cast.
-        type StartRegistrationData = z.infer<
-          typeof startRegistrationSuccessSchema
-        >["data"];
-        return c.json(
+      let result: Awaited<ReturnType<typeof startAgentRegistration>>;
+      try {
+        result = await startAgentRegistration(
           {
-            success: true as const,
-            data: data as unknown as StartRegistrationData,
-            agentId: result.agentId,
+            user: {
+              id: user.id,
+              name: user.name ?? null,
+              email: user.email ?? null,
+            },
+            activeOrganizationId,
+            network,
           },
-          200,
+          params,
         );
+      } catch (registrationError) {
+        if (shouldRefundRegistrationCredit) {
+          await refundConsumedCredit({
+            userId: user.id,
+            reason: "agent_register",
+            reference: creditReference,
+            network,
+            metadata: creditMetadata,
+          });
+          shouldRefundRegistrationCredit = false;
+        }
+        throw registrationError;
       }
-      throw new ApiError(400, result.error);
+
+      if (!result.success) {
+        await refundConsumedCredit({
+          userId: user.id,
+          reason: "agent_register",
+          reference: creditReference,
+          network,
+          metadata: creditMetadata,
+        });
+        shouldRefundRegistrationCredit = false;
+        throw new ApiError(400, result.error);
+      }
+
+      shouldRefundRegistrationCredit = false;
+
+      scheduleAgentRegistrationCompletion(result.agentId, user.id);
+      const agent = await prisma.agent.findFirst({
+        where: { id: result.agentId, userId: user.id },
+        include: { agentReference: true },
+      });
+      if (!agent) {
+        throw new ApiError(500, "Failed to load created agent");
+      }
+      const sourcesByAgentId = await loadSupportedPaymentSourcesMap([agent.id]);
+      const data = shapeAgentForApi(
+        agent,
+        sourcesByAgentId.get(agent.id) ?? null,
+      );
+      // Prisma types are looser than the OpenAPI response schema. Cast.
+      type StartRegistrationData = z.infer<
+        typeof startRegistrationSuccessSchema
+      >["data"];
+      return c.json(
+        {
+          success: true as const,
+          data: data as unknown as StartRegistrationData,
+          agentId: result.agentId,
+        },
+        200,
+      );
     } catch (error) {
       if (error instanceof ApiError) throw error;
       if (isPaymentNodeConfigError(error)) {

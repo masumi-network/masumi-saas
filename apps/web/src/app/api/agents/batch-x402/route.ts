@@ -15,7 +15,10 @@ import {
   security,
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
-import { resourceUrlDuplicateKey } from "@/lib/x402/resource-url-duplicate-key";
+import {
+  canonicalX402ResourceUrl,
+  resourceUrlDuplicateKey,
+} from "@/lib/x402/resource-url-duplicate-key";
 import {
   BATCH_X402_REGISTRATION_MAX_URLS,
   findRegisteredX402ResourceUrlKeys,
@@ -140,9 +143,13 @@ app.openapi(
       const seen = new Set<string>();
       for (const item of registrations) {
         const trimmed = item.resourceUrl.trim();
-        const key = trimmed.toLowerCase();
-        if (!trimmed || seen.has(key)) continue;
-        seen.add(key);
+        if (!trimmed) continue;
+        const duplicateKey = resourceUrlDuplicateKey(trimmed);
+        const dedupeKey = duplicateKey ?? `invalid:${trimmed.toLowerCase()}`;
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+        const canonicalResourceUrl =
+          canonicalX402ResourceUrl(trimmed) ?? trimmed;
         const mergedTags = new Set<string>();
         for (const tag of item.tags ?? []) {
           const t = tag.trim();
@@ -153,7 +160,7 @@ app.openapi(
         }
         dedupedRegistrations.push({
           ...item,
-          resourceUrl: trimmed,
+          resourceUrl: canonicalResourceUrl,
           tags: mergedTags.size > 0 ? [...mergedTags] : item.tags,
         });
       }

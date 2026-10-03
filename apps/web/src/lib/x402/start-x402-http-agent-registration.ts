@@ -9,6 +9,7 @@ import { X402_RESOURCE_URL_BLOCKED_STATES } from "@/lib/agents/registration-stat
 import {
   consumeCreditIfRequired,
   createCreditReference,
+  refundConsumedCredit,
 } from "@/lib/credits/service";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
@@ -218,20 +219,23 @@ export async function startX402HttpAgentRegistration(
     };
   }
 
+  const creditReference = createCreditReference("agent-register");
+  const creditMetadata = {
+    name: resolvedName,
+    apiUrl: prepared.data.resourceUrl,
+    network,
+    authMethod: input.authMethod ?? "session",
+    runtimeProvider: "DIRECT_MIP",
+    registrationKind: "X402_HTTP",
+  };
+
   try {
     await consumeCreditIfRequired({
       userId: user.id,
       reason: "agent_register",
-      reference: createCreditReference("agent-register"),
+      reference: creditReference,
       network,
-      metadata: {
-        name: resolvedName,
-        apiUrl: prepared.data.resourceUrl,
-        network,
-        authMethod: input.authMethod ?? "session",
-        runtimeProvider: "DIRECT_MIP",
-        registrationKind: "X402_HTTP",
-      },
+      metadata: creditMetadata,
     });
   } catch (error) {
     const message =
@@ -244,40 +248,70 @@ export async function startX402HttpAgentRegistration(
     };
   }
 
-  const result = await startAgentRegistration(ctx, {
-    name: resolvedName,
-    description: resolvedDescription,
-    apiUrl: prepared.data.resourceUrl,
-    runtimeProvider: "DIRECT_MIP",
-    integrationConnectionId: null,
-    providerConfig: null,
-    tags,
-    icon: input.icon?.trim() || null,
-    agentPricing,
-    payoutAddress: "",
-    supportedPaymentSources: resolvedSupportedPaymentSources,
-    exampleOutputs: [],
-    capabilityName: "Masumi",
-    capabilityVersion: "1.0",
-    termsOfUseUrl: null,
-    privacyPolicyUrl: null,
-    otherUrl: null,
-    registryEntryType: "X402",
-    x402Manifest: prepared.data.x402Manifest,
-  });
+  let shouldRefundRegistrationCredit = true;
+  try {
+    const result = await startAgentRegistration(ctx, {
+      name: resolvedName,
+      description: resolvedDescription,
+      apiUrl: prepared.data.resourceUrl,
+      runtimeProvider: "DIRECT_MIP",
+      integrationConnectionId: null,
+      providerConfig: null,
+      tags,
+      icon: input.icon?.trim() || null,
+      agentPricing,
+      payoutAddress: "",
+      supportedPaymentSources: resolvedSupportedPaymentSources,
+      exampleOutputs: [],
+      capabilityName: "Masumi",
+      capabilityVersion: "1.0",
+      termsOfUseUrl: null,
+      privacyPolicyUrl: null,
+      otherUrl: null,
+      registryEntryType: "X402",
+      x402Manifest: prepared.data.x402Manifest,
+    });
 
-  if (!result.success) {
+    if (!result.success) {
+      await refundConsumedCredit({
+        userId: user.id,
+        reason: "agent_register",
+        reference: creditReference,
+        network,
+        metadata: creditMetadata,
+      });
+      shouldRefundRegistrationCredit = false;
+      return {
+        ok: false,
+        resourceUrl: prepared.data.resourceUrl,
+        code: "registration",
+        error: result.error,
+      };
+    }
+
+    shouldRefundRegistrationCredit = false;
+    return {
+      ok: true,
+      agentId: result.agentId,
+      resourceUrl: prepared.data.resourceUrl,
+    };
+  } catch (error) {
+    if (shouldRefundRegistrationCredit) {
+      await refundConsumedCredit({
+        userId: user.id,
+        reason: "agent_register",
+        reference: creditReference,
+        network,
+        metadata: creditMetadata,
+      });
+    }
+    const message =
+      error instanceof Error ? error.message : "Registration failed.";
     return {
       ok: false,
       resourceUrl: prepared.data.resourceUrl,
       code: "registration",
-      error: result.error,
+      error: message,
     };
   }
-
-  return {
-    ok: true,
-    agentId: result.agentId,
-    resourceUrl: prepared.data.resourceUrl,
-  };
 }
