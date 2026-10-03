@@ -1,16 +1,24 @@
 import { createRoute } from "@hono/zod-openapi";
 import { getCookie } from "hono/cookie";
 
+import { scheduleAgentRegistrationCompletion } from "@/lib/agents/drive-registration-completion";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { maxAgentRegistrationsForBalance } from "@/lib/credits/agent-registration-quota";
+import {
+  getCreditBalance,
+  InsufficientCreditsError,
+} from "@/lib/credits/service";
 import { parseNetwork } from "@/lib/schemas";
 import {
   insufficientCreditsResponse,
   security,
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
+import { resourceUrlDuplicateKey } from "@/lib/x402/resource-url-duplicate-key";
 import {
   BATCH_X402_REGISTRATION_MAX_URLS,
+  findRegisteredX402ResourceUrlKeys,
   startX402HttpAgentRegistration,
 } from "@/lib/x402/start-x402-http-agent-registration";
 import { z } from "@/lib/zod-openapi";
@@ -56,7 +64,7 @@ const batchX402BodySchema = z
 
 const batchX402ResultItemSchema = z.object({
   resourceUrl: z.string(),
-  status: z.enum(["started", "skipped_duplicate", "failed"]),
+  status: z.enum(["started", "skipped_duplicate", "failed", "not_attempted"]),
   agentId: z.string().optional(),
   error: z.string().optional(),
 });
@@ -68,6 +76,8 @@ const batchX402SuccessSchema = z.object({
     started: z.number().int(),
     skippedDuplicate: z.number().int(),
     failed: z.number().int(),
+    notAttempted: z.number().int(),
+    stoppedReason: z.enum(["insufficient_credits"]).optional(),
   }),
 });
 
@@ -155,6 +165,37 @@ app.openapi(
         );
       }
 
+      if (network === "Mainnet") {
+        const balance = await getCreditBalance(user.id);
+        const affordable = maxAgentRegistrationsForBalance({
+          network,
+          creditsRemaining: balance.creditsRemaining,
+          maxPerBatch: BATCH_X402_REGISTRATION_MAX_URLS,
+        });
+        if (affordable === 0) {
+          throw new InsufficientCreditsError(balance.creditsRemaining);
+        }
+        let creditConsumingCount = dedupedRegistrations.length;
+        if (skipExisting !== false) {
+          const registeredKeys = await findRegisteredX402ResourceUrlKeys({
+            userId: user.id,
+            organizationId: activeOrganizationId,
+            network,
+            resourceUrls: dedupedRegistrations.map((item) => item.resourceUrl),
+          });
+          creditConsumingCount = dedupedRegistrations.filter((item) => {
+            const key = resourceUrlDuplicateKey(item.resourceUrl);
+            return key != null && !registeredKeys.has(key);
+          }).length;
+        }
+        if (creditConsumingCount > affordable) {
+          throw new ApiError(
+            400,
+            `This batch needs ${creditConsumingCount} Mainnet credits (1 per new agent) but you only have ${balance.creditsRemaining}. Reduce new registrations to ${affordable} or fewer.`,
+          );
+        }
+      }
+
       const ctx = {
         user: {
           id: user.id,
@@ -169,10 +210,15 @@ app.openapi(
       let started = 0;
       let skippedDuplicate = 0;
       let failed = 0;
+      let notAttempted = 0;
+      let stoppedReason: "insufficient_credits" | undefined;
 
       const useProbeMetadataAutofill = autofillMetadata !== false;
+      const notAttemptedMessage =
+        "Batch stopped: insufficient credits for this registration.";
 
-      for (const item of dedupedRegistrations) {
+      for (let i = 0; i < dedupedRegistrations.length; i++) {
+        const item = dedupedRegistrations[i]!;
         const outcome = await startX402HttpAgentRegistration({
           ctx,
           resourceUrl: item.resourceUrl,
@@ -187,6 +233,7 @@ app.openapi(
 
         if (outcome.ok) {
           started += 1;
+          scheduleAgentRegistrationCompletion(outcome.agentId, user.id);
           results.push({
             resourceUrl: outcome.resourceUrl,
             status: "started",
@@ -213,8 +260,21 @@ app.openapi(
         });
 
         if (outcome.code === "credits") {
+          stoppedReason = "insufficient_credits";
+          for (const remaining of dedupedRegistrations.slice(i + 1)) {
+            notAttempted += 1;
+            results.push({
+              resourceUrl: remaining.resourceUrl,
+              status: "not_attempted",
+              error: notAttemptedMessage,
+            });
+          }
           break;
         }
+      }
+
+      if (started === 0 && stoppedReason === "insufficient_credits") {
+        throw new InsufficientCreditsError(0);
       }
 
       return c.json(
@@ -225,6 +285,8 @@ app.openapi(
             started,
             skippedDuplicate,
             failed,
+            notAttempted,
+            ...(stoppedReason ? { stoppedReason } : {}),
           },
         },
         200,

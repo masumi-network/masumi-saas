@@ -28,7 +28,10 @@ import { X402RegistryChainPicker } from "@/components/x402/x402-registry-chain-p
 import { useChainRegistryIcons } from "@/hooks/use-chain-registry-icons";
 import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
+import { maxAgentRegistrationsForBalance } from "@/lib/credits/agent-registration-quota";
+import { formatCreditAmount } from "@/lib/credits/format";
 import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
+import { useCreditBalance } from "@/lib/hooks/use-credit-balance";
 import { cn } from "@/lib/utils";
 import {
   batchRowMetadataToTags,
@@ -50,6 +53,7 @@ const MAX_JSON_IMPORT_BYTES = 5 * 1024 * 1024;
 function mergeImportedResourceUrls(
   existingText: string,
   importedUrls: string[],
+  maxUrls: number,
 ): { text: string; addedCount: number } {
   const { urls: existingUrls } = parseBatchResourceUrlsInput(existingText);
   const seen = new Set(existingUrls.map((url) => url.toLowerCase()));
@@ -59,7 +63,7 @@ function mergeImportedResourceUrls(
   for (const url of importedUrls) {
     const key = url.toLowerCase();
     if (seen.has(key)) continue;
-    if (merged.length >= MAX_BATCH_RESOURCE_URLS) break;
+    if (merged.length >= maxUrls) break;
     seen.add(key);
     merged.push(url);
     addedCount += 1;
@@ -89,7 +93,7 @@ type ProbeRowState = {
 
 type BatchResultRow = {
   resourceUrl: string;
-  status: "started" | "skipped_duplicate" | "failed";
+  status: "started" | "skipped_duplicate" | "failed" | "not_attempted";
   agentId?: string;
   error?: string;
 };
@@ -222,6 +226,18 @@ export function BatchRegisterX402Dialog({
     "eip155:8453",
   ] as const);
   const { addPendingRegistration } = useAgentCompletion();
+  const { data: creditBalance, isPending: creditsPending } = useCreditBalance();
+
+  const creditsRemaining = creditBalance?.creditsRemaining ?? 0;
+  const registrationQuota = useMemo(
+    () =>
+      maxAgentRegistrationsForBalance({
+        network,
+        creditsRemaining,
+        maxPerBatch: MAX_BATCH_RESOURCE_URLS,
+      }),
+    [creditsRemaining, network],
+  );
 
   const [step, setStep] = useState<BatchStep>("paste");
   const [urlText, setUrlText] = useState("");
@@ -235,6 +251,8 @@ export function BatchRegisterX402Dialog({
     started: number;
     skippedDuplicate: number;
     failed: number;
+    notAttempted?: number;
+    stoppedReason?: "insufficient_credits";
   } | null>(null);
 
   const reset = useCallback(() => {
@@ -272,13 +290,35 @@ export function BatchRegisterX402Dialog({
   const runProbes = useCallback(
     async (textOverride?: string) => {
       const source = textOverride ?? urlText;
-      const { urls, invalidLines } = parseBatchResourceUrlsInput(source);
-      if (urls.length === 0) {
+      const { urls: parsedUrls, invalidLines } =
+        parseBatchResourceUrlsInput(source);
+      if (parsedUrls.length === 0) {
         toast.error(t("noValidUrls"));
         return;
       }
       if (invalidLines.length > 0) {
         toast.warning(t("invalidLinesSkipped", { count: invalidLines.length }));
+      }
+
+      if (network === "Mainnet" && creditsPending) {
+        toast.error(t("creditsQuotaLoading"));
+        return;
+      }
+
+      let urls = parsedUrls;
+      if (urls.length > registrationQuota) {
+        urls = urls.slice(0, registrationQuota);
+        toast.warning(
+          t("creditsQuotaUrlCap", {
+            max: registrationQuota,
+            credits: formatCreditAmount(creditsRemaining),
+          }),
+        );
+      }
+
+      if (network === "Mainnet" && registrationQuota === 0) {
+        toast.error(t("insufficientCredits"));
+        return;
       }
 
       setStep("review");
@@ -358,7 +398,16 @@ export function BatchRegisterX402Dialog({
       );
       setIsProbing(false);
     },
-    [autofillMetadata, extraTags, network, t, urlText],
+    [
+      autofillMetadata,
+      creditsPending,
+      creditsRemaining,
+      extraTags,
+      network,
+      registrationQuota,
+      t,
+      urlText,
+    ],
   );
 
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
@@ -393,6 +442,7 @@ export function BatchRegisterX402Dialog({
       const { text: nextText, addedCount } = mergeImportedResourceUrls(
         urlText,
         parsed.urls,
+        registrationQuota,
       );
       setUrlText(nextText);
 
@@ -402,9 +452,7 @@ export function BatchRegisterX402Dialog({
       }
 
       if (parsed.truncated) {
-        toast.warning(
-          t("importJsonTruncated", { max: MAX_BATCH_RESOURCE_URLS }),
-        );
+        toast.warning(t("importJsonTruncated", { max: registrationQuota }));
       }
 
       toast.success(
@@ -413,7 +461,7 @@ export function BatchRegisterX402Dialog({
           : t("importJsonSuccess", { count: addedCount, fileName: file.name }),
       );
     },
-    [t, urlText],
+    [registrationQuota, t, urlText],
   );
   useEffect(() => {
     if (!open) {
@@ -432,17 +480,46 @@ export function BatchRegisterX402Dialog({
   }, [autoProbeOnOpen, initialExtraTags, initialUrlText, open, runProbes]);
 
   const toggleRow = (resourceUrl: string, selected: boolean) => {
-    setRows((prev) =>
-      prev.map((row) =>
+    setRows((prev) => {
+      if (selected && network === "Mainnet") {
+        const selectedOk = prev.filter(
+          (row) => row.selected && row.status === "ok",
+        ).length;
+        const target = prev.find((row) => row.resourceUrl === resourceUrl);
+        if (
+          target?.status === "ok" &&
+          !target.selected &&
+          selectedOk >= registrationQuota
+        ) {
+          toast.error(
+            t("creditsQuotaExceededSelection", { max: registrationQuota }),
+          );
+          return prev;
+        }
+      }
+      return prev.map((row) =>
         row.resourceUrl === resourceUrl ? { ...row, selected } : row,
-      ),
-    );
+      );
+    });
   };
 
   const selectAllCompatible = (selected: boolean) => {
-    setRows((prev) =>
-      prev.map((row) => (row.status === "ok" ? { ...row, selected } : row)),
-    );
+    setRows((prev) => {
+      if (!selected) {
+        return prev.map((row) =>
+          row.status === "ok" ? { ...row, selected: false } : row,
+        );
+      }
+      let slots = registrationQuota;
+      return prev.map((row) => {
+        if (row.status !== "ok") return row;
+        if (slots > 0) {
+          slots -= 1;
+          return { ...row, selected: true };
+        }
+        return { ...row, selected: false };
+      });
+    });
   };
 
   const removeRow = (resourceUrl: string) => {
@@ -461,12 +538,19 @@ export function BatchRegisterX402Dialog({
   };
 
   const submitBatch = useCallback(async () => {
-    const selectedRows = rows.filter(
+    let selectedRows = rows.filter(
       (row) => row.selected && row.status === "ok",
     );
     if (selectedRows.length === 0) {
       toast.error(t("nothingSelected"));
       return;
+    }
+
+    if (network === "Mainnet" && selectedRows.length > registrationQuota) {
+      selectedRows = selectedRows.slice(0, registrationQuota);
+      toast.warning(
+        t("creditsQuotaExceededSelection", { max: registrationQuota }),
+      );
     }
 
     setIsSubmitting(true);
@@ -495,10 +579,22 @@ export function BatchRegisterX402Dialog({
           started: number;
           skippedDuplicate: number;
           failed: number;
+          notAttempted?: number;
+          stoppedReason?: "insufficient_credits";
         };
+        creditsRemaining?: number;
         error?: string;
         message?: string;
       };
+
+      if (res.status === 402) {
+        toast.error(
+          typeof json.error === "string"
+            ? json.error
+            : t("insufficientCredits"),
+        );
+        return;
+      }
 
       if (!res.ok || json.success !== true || !json.results || !json.summary) {
         toast.error(
@@ -521,16 +617,30 @@ export function BatchRegisterX402Dialog({
       setSummary(json.summary);
       setStep("results");
       onSuccess();
-      toast.success(
-        t("submitSuccess", {
-          started: json.summary.started,
-          failed: json.summary.failed,
-        }),
-      );
+      if (json.summary.stoppedReason === "insufficient_credits") {
+        toast.warning(
+          t("submitStoppedCredits", { started: json.summary.started }),
+        );
+      } else {
+        toast.success(
+          t("submitSuccess", {
+            started: json.summary.started,
+            failed: json.summary.failed,
+          }),
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
-  }, [addPendingRegistration, autofillMetadata, onSuccess, rows, t]);
+  }, [
+    addPendingRegistration,
+    autofillMetadata,
+    network,
+    onSuccess,
+    registrationQuota,
+    rows,
+    t,
+  ]);
 
   const evmNetworkLabel = evmNetworkForCardanoPaymentNetwork(network);
 
@@ -602,6 +712,18 @@ export function BatchRegisterX402Dialog({
                     onCardanoNetworkChange={setNetwork}
                     chainIconSlugs={x402RegistryChainIconSlugs}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    {network === "Mainnet"
+                      ? creditsPending
+                        ? t("creditsQuotaLoading")
+                        : t("creditsQuotaMainnet", {
+                            max: registrationQuota,
+                            credits: formatCreditAmount(creditsRemaining),
+                          })
+                      : t("creditsQuotaPreprod", {
+                          max: MAX_BATCH_RESOURCE_URLS,
+                        })}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -642,14 +764,14 @@ export function BatchRegisterX402Dialog({
                     value={urlText}
                     onChange={(e) => setUrlText(e.target.value)}
                     placeholder={t("urlsPlaceholder", {
-                      max: MAX_BATCH_RESOURCE_URLS,
+                      max: registrationQuota,
                     })}
                     rows={5}
                     spellCheck={false}
                     className="min-h-[120px] resize-y font-mono text-xs leading-relaxed"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {t("urlsHint", { max: MAX_BATCH_RESOURCE_URLS })}{" "}
+                    {t("urlsHint", { max: registrationQuota })}{" "}
                     {t("importJsonHint")}
                   </p>
                 </div>
@@ -847,6 +969,18 @@ export function BatchRegisterX402Dialog({
                     skipped: summary.skippedDuplicate,
                     failed: summary.failed,
                   })}
+                  {(summary.notAttempted ?? 0) > 0 ? (
+                    <p className="mt-2 text-muted-foreground">
+                      {t("resultsNotAttemptedCount", {
+                        count: summary.notAttempted ?? 0,
+                      })}
+                    </p>
+                  ) : null}
+                  {summary.stoppedReason === "insufficient_credits" ? (
+                    <p className="mt-2 text-muted-foreground">
+                      {t("resultsStoppedCredits")}
+                    </p>
+                  ) : null}
                 </div>
                 <ul className="max-h-[min(40vh,280px)] space-y-2 overflow-y-auto">
                   {results.map((row) => (
@@ -865,9 +999,13 @@ export function BatchRegisterX402Dialog({
                           ? t("resultStarted", { id: row.agentId ?? "" })
                           : row.status === "skipped_duplicate"
                             ? t("resultSkippedDuplicate")
-                            : t("resultFailed", {
-                                error: row.error ?? t("unknownError"),
-                              })}
+                            : row.status === "not_attempted"
+                              ? t("resultNotAttempted", {
+                                  error: row.error ?? t("unknownError"),
+                                })
+                              : t("resultFailed", {
+                                  error: row.error ?? t("unknownError"),
+                                })}
                       </p>
                     </li>
                   ))}
@@ -913,7 +1051,11 @@ export function BatchRegisterX402Dialog({
                   type="button"
                   variant="primary"
                   className="group gap-2"
-                  disabled={parsedPreview.urls.length === 0}
+                  disabled={
+                    parsedPreview.urls.length === 0 ||
+                    (network === "Mainnet" &&
+                      (creditsPending || registrationQuota === 0))
+                  }
                   onClick={() => void runProbes()}
                 >
                   {tRegister("continue")}
@@ -931,7 +1073,10 @@ export function BatchRegisterX402Dialog({
                   variant="primary"
                   className="group gap-2"
                   disabled={
-                    isProbing || isSubmitting || selectedCompatibleCount === 0
+                    isProbing ||
+                    isSubmitting ||
+                    selectedCompatibleCount === 0 ||
+                    (network === "Mainnet" && registrationQuota === 0)
                   }
                   onClick={() => void submitBatch()}
                 >

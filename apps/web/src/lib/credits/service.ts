@@ -6,9 +6,9 @@ import prisma from "@masumi/database/client";
 import { serverLog } from "@/lib/server/logger";
 
 import { parseNetwork } from "../schemas/api-query";
+import { CREDIT_COST, INITIAL_CREDIT_GRANT } from "./constants";
 
-export const CREDIT_COST = 1;
-const INITIAL_CREDIT_GRANT = 20;
+export { CREDIT_COST } from "./constants";
 
 export type CreditLedgerReason =
   | "initial_grant"

@@ -11,6 +11,7 @@ import {
   startAgentRegistration,
   validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
+import { scheduleAgentRegistrationCompletion } from "@/lib/agents/drive-registration-completion";
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -575,6 +576,7 @@ app.openapi(
       );
 
       if (result.success) {
+        scheduleAgentRegistrationCompletion(result.agentId, user.id);
         const agent = await prisma.agent.findFirst({
           where: { id: result.agentId, userId: user.id },
           include: { agentReference: true },
