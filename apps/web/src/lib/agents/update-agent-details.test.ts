@@ -128,6 +128,7 @@ beforeEach(() => {
     Capability: { name: "Masumi", version: "1.0" },
     Author: { name: "Author" },
     AgentPricing: { pricingType: "Free" },
+    updatedAt: "2026-01-01T00:00:00.000Z",
   });
   getRegistryByAgentIdentifierMock.mockResolvedValue({
     Metadata: {
@@ -223,9 +224,48 @@ describe("updateAgentDetails", () => {
       "Preprod",
       V2_AGENT_IDENTIFIER,
       "addr_test1wqsmartcontract",
-      { allowSameIdentifierSuccess: true },
+      {
+        allowSameIdentifierSuccess: true,
+        registryRowUpdatedBefore: expect.any(String),
+      },
     );
     expect(transactionMock).toHaveBeenCalledOnce();
+  });
+
+  it("continues edit when on-chain metadata parse returns 422", async () => {
+    agentFindFirstMock.mockResolvedValue(registeredAgent());
+    getRegistryByAgentIdentifierMock.mockRejectedValue(
+      new Error("422: Agent metadata is invalid or malformed"),
+    );
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "New name",
+        description: "New description",
+        tags: "ai, research",
+        apiUrl: "https://agent.example.com/mip",
+        capabilityName: "Masumi",
+        capabilityVersion: "2.0",
+        icon: "bot",
+      },
+    });
+
+    expect(result.success).toBe(true);
+    expect(buildUpdateAgentInputMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        onChainMetadata: expect.objectContaining({
+          agentIdentifier: V2_AGENT_IDENTIFIER,
+          Metadata: expect.objectContaining({
+            name: "Old name",
+            apiBaseUrl: "https://old.example.com/mip",
+            metadataVersion: 2,
+          }),
+        }),
+      }),
+    );
+    expect(updateAgentMock).toHaveBeenCalledOnce();
   });
 
   it("returns error when update lock cannot be acquired", async () => {
@@ -285,11 +325,11 @@ describe("updateAgentDetails", () => {
       success: false,
       error: "We couldn't apply your changes. Please try again.",
     });
+    expect(transactionMock).toHaveBeenCalledOnce();
     expect(agentUpdateMock).toHaveBeenCalledWith({
       where: { id: "agent-1" },
       data: { registrationState: "RegistrationConfirmed" },
     });
-    expect(transactionMock).not.toHaveBeenCalled();
   });
 
   it("marks UpdateFailed when the payment node reports update failure", async () => {

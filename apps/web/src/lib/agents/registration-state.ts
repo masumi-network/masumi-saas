@@ -2,6 +2,46 @@ import type { RegistrationState } from "@masumi/database/client";
 
 import type { RegistryRequestState } from "@/lib/payment-node/schemas";
 
+/** AgentReference.metadata key: payment-node registry row updatedAt when edit lock was taken. */
+export const REGISTRY_UPDATE_BASELINE_AT_KEY = "registryUpdateBaselineAt";
+
+export function readRegistryUpdateBaseline(
+  metadata: Record<string, unknown> | null | undefined,
+): string | undefined {
+  const value = metadata?.[REGISTRY_UPDATE_BASELINE_AT_KEY];
+  return typeof value === "string" ? value : undefined;
+}
+
+export function withRegistryUpdateBaseline(
+  metadata: Record<string, unknown>,
+  baselineUpdatedAt: string,
+): Record<string, unknown> {
+  return { ...metadata, [REGISTRY_UPDATE_BASELINE_AT_KEY]: baselineUpdatedAt };
+}
+
+export function withoutRegistryUpdateBaseline(
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
+  const next = { ...metadata };
+  delete next[REGISTRY_UPDATE_BASELINE_AT_KEY];
+  return next;
+}
+
+export function isRegistryRowUpdatedAfter(
+  entryUpdatedAt: string,
+  baselineUpdatedAt: string | undefined,
+): boolean {
+  if (!baselineUpdatedAt) {
+    return false;
+  }
+  const entryMs = Date.parse(entryUpdatedAt);
+  const baselineMs = Date.parse(baselineUpdatedAt);
+  if (Number.isNaN(entryMs) || Number.isNaN(baselineMs)) {
+    return entryUpdatedAt > baselineUpdatedAt;
+  }
+  return entryMs > baselineMs;
+}
+
 /** Registry rows awaiting a metadata update (e.g. verification anchors). */
 export const REGISTRY_UPDATE_PENDING_STATES = [
   "UpdateRequested",
@@ -57,6 +97,29 @@ export function resolveRegistrationStateAfterSync(params: {
 }): RegistrationState {
   const mappedState = registrationStateFromRegistryEntry(params.registryState);
 
+  const abandonedLock =
+    params.updatedAt &&
+    isAbandonedRegistryUpdate({
+      registrationState: params.previousState,
+      updatedAt: params.updatedAt,
+      now: params.now,
+    });
+
+  if (abandonedLock) {
+    if (
+      params.registryState === "UpdateFailed" ||
+      params.registryState === "RegistrationFailed"
+    ) {
+      return mappedState;
+    }
+    if (
+      params.registryState === "RegistrationConfirmed" ||
+      params.registryState === "UpdateConfirmed"
+    ) {
+      return "RegistrationConfirmed";
+    }
+  }
+
   if (
     (REGISTRY_UPDATE_PENDING_STATES as readonly string[]).includes(
       params.previousState,
@@ -64,19 +127,6 @@ export function resolveRegistrationStateAfterSync(params: {
     params.registryState === "RegistrationConfirmed"
   ) {
     return params.previousState;
-  }
-
-  if (
-    params.updatedAt &&
-    isAbandonedRegistryUpdate({
-      registrationState: params.previousState,
-      updatedAt: params.updatedAt,
-      now: params.now,
-    }) &&
-    (params.registryState === "UpdateRequested" ||
-      params.registryState === "UpdateInitiated")
-  ) {
-    return "RegistrationConfirmed";
   }
 
   return mappedState;

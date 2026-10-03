@@ -246,10 +246,16 @@ export type UpdateAgentInput = z.infer<typeof updateAgentInputSchema>;
 export const registryAgentOnChainMetadataSchema = z
   .object({
     name: z.string(),
-    apiBaseUrl: z.string(),
+    apiBaseUrl: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     image: z.string().optional(),
-    metadataVersion: z.coerce.number().int().min(1).max(2),
+    metadataVersion: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(2)
+      .optional()
+      .default(2),
     Tags: z.array(z.string()).optional(),
     ExampleOutputs: z
       .array(

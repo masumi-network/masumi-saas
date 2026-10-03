@@ -1065,7 +1065,7 @@
         "deregistering": "登録を解除する",
         "deregistered": "登録抹消済み",
         "deregistrationFailed": "失敗した",
-        "updateRequested": "更新リクエスト済み",
+        "updateRequested": "更新待ち",
         "updateInitiated": "更新中",
         "updateFailed": "更新失敗"
       },
@@ -1382,6 +1382,8 @@
       },
       "Details": {
         "overview": "概要",
+        "registrationStatusLabel": "Registration status",
+        "registrationStatusPendingHint": "On-chain registration or update in progress. Refresh to sync the latest state.",
         "edit": "編集",
         "backToAgents": "エージェントに戻る",
         "backToDashboard": "ダッシュボードに戻る",

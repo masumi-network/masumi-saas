@@ -29,7 +29,8 @@ type BuildUpdateAgentInputParams = {
   onChainMetadata: RegistryAgentIdentifierMetadata;
   storedRegistration?: StoredRegistrationPayload | null;
   agentIcon?: string | null;
-  verifications: Verification[];
+  /** Omit when unknown so payment-node keeps existing verification rows. */
+  verifications?: Verification[] | null;
 };
 
 function resolveLegal(
@@ -54,6 +55,19 @@ function isV2RegistryMetadata(
   metadata: RegistryAgentIdentifierMetadata["Metadata"],
 ): boolean {
   return (metadata.metadataVersion ?? 1) >= 2;
+}
+
+function resolveApiBaseUrl(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): string {
+  const fromMetadata = metadata.apiBaseUrl?.trim();
+  if (fromMetadata) return fromMetadata;
+  const fromEntry = registryEntry.apiBaseUrl?.trim();
+  if (fromEntry) return fromEntry;
+  const fromX402 = registryEntry.x402ResourcesUrl?.trim();
+  if (fromX402) return fromX402;
+  return "";
 }
 
 export function buildUpdateAgentInput(
@@ -103,7 +117,7 @@ export function buildUpdateAgentInput(
       ? { smartContractAddress: params.smartContractAddress }
       : {}),
     name: metadata.name ?? registryEntry.name,
-    apiBaseUrl: metadata.apiBaseUrl ?? registryEntry.apiBaseUrl ?? "",
+    apiBaseUrl: resolveApiBaseUrl(metadata, registryEntry),
     description: metadata.description ?? registryEntry.description ?? "",
     ...(image ? { image } : {}),
     Tags:
@@ -124,7 +138,9 @@ export function buildUpdateAgentInput(
     ...(resolveLegal(storedRegistration, metadata)
       ? { Legal: resolveLegal(storedRegistration, metadata) }
       : {}),
-    verifications: params.verifications,
+    ...(params.verifications !== undefined
+      ? { verifications: params.verifications }
+      : {}),
   };
 
   if (isV2) {

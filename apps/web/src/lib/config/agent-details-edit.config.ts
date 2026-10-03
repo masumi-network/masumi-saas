@@ -1,10 +1,10 @@
 /**
  * Registry metadata edits submit an on-chain update via the payment node.
- * Enable when the payment-service holder wallet reliably funds update txs.
+ * Enabled by default; set NEXT_PUBLIC_DISABLE_AGENT_DETAILS_EDIT=true to hide edit UI.
  */
 export function isAgentDetailsEditEnabled(): boolean {
   return (
-    process.env.NEXT_PUBLIC_ENABLE_AGENT_DETAILS_EDIT?.trim().toLowerCase() ===
+    process.env.NEXT_PUBLIC_DISABLE_AGENT_DETAILS_EDIT?.trim().toLowerCase() !==
     "true"
   );
 }

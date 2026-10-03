@@ -1708,7 +1708,7 @@
         "deregistering": "Deregistering",
         "deregistered": "Deregistered",
         "deregistrationFailed": "Failed",
-        "updateRequested": "Update Requested",
+        "updateRequested": "Update pending",
         "updateInitiated": "Updating",
         "updateFailed": "Update Failed"
       },
@@ -2025,6 +2025,8 @@
       },
       "Details": {
         "overview": "Overview",
+        "registrationStatusLabel": "Registration status",
+        "registrationStatusPendingHint": "On-chain registration or update in progress. Refresh to sync the latest state.",
         "edit": "Edit",
         "backToAgents": "Back to agents",
         "backToDashboard": "Back to dashboard",

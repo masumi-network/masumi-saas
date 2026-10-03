@@ -3,8 +3,14 @@ import "server-only";
 import prisma from "@masumi/database/client";
 
 import {
+  buildOnChainMetadataFromRegistryEntry,
+  shouldUseRegistryMetadataFallback,
+} from "@/lib/agents/build-on-chain-metadata-fallback";
+import {
   isUpdateRequestedStale,
   STALE_UPDATE_REQUESTED_MS,
+  withoutRegistryUpdateBaseline,
+  withRegistryUpdateBaseline,
 } from "@/lib/agents/registration-state";
 import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
 import { paymentNodeConfig } from "@/lib/payment-node/config";
@@ -267,18 +273,63 @@ export async function updateAgentDetails(params: {
     return { success: false, error: "Registry entry not found" };
   }
 
-  const onChainMetadata = await adminClient.getRegistryByAgentIdentifier({
-    agentIdentifier: agent.agentIdentifier,
-    network,
-  });
+  let onChainMetadata;
+  try {
+    onChainMetadata = await adminClient.getRegistryByAgentIdentifier({
+      agentIdentifier: agent.agentIdentifier,
+      network,
+    });
+  } catch (error) {
+    if (shouldUseRegistryMetadataFallback(error)) {
+      console.warn(
+        "[Registry] Using registry row fallback for edit metadata (on-chain parse failed):",
+        {
+          agentId: params.agentId,
+          agentIdentifier: agent.agentIdentifier,
+          network,
+          error: error instanceof Error ? error.message : error,
+        },
+      );
+      onChainMetadata = buildOnChainMetadataFromRegistryEntry({
+        agentIdentifier: agent.agentIdentifier,
+        registryEntry,
+        agentApiUrl: agent.apiUrl,
+        agentIcon: agent.icon,
+        storedRegistration: refMeta.registrationPayload ?? null,
+      });
+    } else {
+      console.error("[Registry] Failed to load on-chain metadata for edit:", {
+        agentId: params.agentId,
+        userId: params.userId,
+        agentIdentifier: agent.agentIdentifier,
+        network,
+        error,
+      });
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "On-chain registry metadata could not be loaded",
+      };
+    }
+  }
   if (!onChainMetadata) {
-    return {
-      success: false,
-      error: "On-chain registry metadata could not be loaded",
-    };
+    onChainMetadata = buildOnChainMetadataFromRegistryEntry({
+      agentIdentifier: agent.agentIdentifier,
+      registryEntry,
+      agentApiUrl: agent.apiUrl,
+      agentIcon: agent.icon,
+      storedRegistration: refMeta.registrationPayload ?? null,
+    });
   }
 
-  const verifications = getOnChainVerifications(onChainMetadata) ?? [];
+  const onChainVerifications = getOnChainVerifications(onChainMetadata);
+  const verifications =
+    onChainVerifications ??
+    (registryEntry.verifications != null
+      ? registryEntry.verifications
+      : undefined);
 
   const updateBody = applyUserOverrides(
     buildUpdateAgentInput({
@@ -297,6 +348,7 @@ export async function updateAgentDetails(params: {
   );
 
   const previousAgentIdentifier = agent.agentIdentifier;
+  const registryRowUpdatedBefore = registryEntry.updatedAt;
 
   const staleUpdateRequestedBefore = new Date(
     Date.now() - STALE_UPDATE_REQUESTED_MS,
@@ -325,18 +377,38 @@ export async function updateAgentDetails(params: {
     };
   }
 
+  await prisma.agentReference.update({
+    where: { agentId: agent.id },
+    data: {
+      metadata: withRegistryUpdateBaseline(
+        refMeta as Record<string, unknown>,
+        registryRowUpdatedBefore,
+      ),
+    },
+  });
+
   try {
     await adminClient.updateAgent(updateBody);
   } catch (error) {
-    await prisma.agent.update({
-      where: { id: agent.id },
-      data: {
-        registrationState:
-          registryEntry.state === "UpdateFailed"
-            ? "UpdateFailed"
-            : "RegistrationConfirmed",
-      },
-    });
+    await prisma.$transaction([
+      prisma.agent.update({
+        where: { id: agent.id },
+        data: {
+          registrationState:
+            registryEntry.state === "UpdateFailed"
+              ? "UpdateFailed"
+              : "RegistrationConfirmed",
+        },
+      }),
+      prisma.agentReference.update({
+        where: { agentId: agent.id },
+        data: {
+          metadata: withoutRegistryUpdateBaseline(
+            refMeta as Record<string, unknown>,
+          ),
+        },
+      }),
+    ]);
     console.error("[Registry] Agent details update request failed:", {
       agentId: params.agentId,
       userId: params.userId,
@@ -357,7 +429,10 @@ export async function updateAgentDetails(params: {
     network,
     previousAgentIdentifier,
     smartContractAddress,
-    { allowSameIdentifierSuccess: true },
+    {
+      allowSameIdentifierSuccess: true,
+      registryRowUpdatedBefore,
+    },
   );
 
   if ("error" in pollResult) {
@@ -387,10 +462,20 @@ export async function updateAgentDetails(params: {
     }
 
     try {
-      await prisma.agent.update({
-        where: { id: agent.id },
-        data: { registrationState },
-      });
+      await prisma.$transaction([
+        prisma.agent.update({
+          where: { id: agent.id },
+          data: { registrationState },
+        }),
+        prisma.agentReference.update({
+          where: { agentId: agent.id },
+          data: {
+            metadata: withoutRegistryUpdateBaseline(
+              refMeta as Record<string, unknown>,
+            ),
+          },
+        }),
+      ]);
     } catch (error) {
       console.error(
         "[Registry] Failed to reset registrationState after poll error:",
@@ -446,11 +531,11 @@ export async function updateAgentDetails(params: {
     prisma.agentReference.update({
       where: { agentId: agent.id },
       data: {
-        metadata: {
-          ...refMeta,
+        metadata: withoutRegistryUpdateBaseline({
+          ...(refMeta as Record<string, unknown>),
           agentIdentifier: pollResult.agentIdentifier,
           registrationPayload: nextRegistrationPayload,
-        },
+        }),
       },
     }),
   ]);

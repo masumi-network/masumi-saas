@@ -36,6 +36,7 @@ import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
 import { zodResolver } from "@/lib/form-zod-resolver";
 import { agentMetadataSchema } from "@/lib/schemas/agent";
 import { cn } from "@/lib/utils";
+import { extractErrorMessage } from "@/lib/utils/extract-error";
 
 type EditAgentFormValues = {
   name: string;
@@ -302,7 +303,7 @@ export function EditAgentDialog({
       });
 
       if (!result.success) {
-        toast.error(result.error ?? t("error"));
+        toast.error(extractErrorMessage(result.error, t("error")));
         return;
       }
 

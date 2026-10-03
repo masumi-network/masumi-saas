@@ -1065,7 +1065,7 @@
         "deregistering": "Désinscription",
         "deregistered": "Désenregistré",
         "deregistrationFailed": "Échoué",
-        "updateRequested": "Mise à jour demandée",
+        "updateRequested": "Mise à jour en attente",
         "updateInitiated": "Mise à jour en cours",
         "updateFailed": "Échec de la mise à jour"
       },
@@ -1382,6 +1382,8 @@
       },
       "Details": {
         "overview": "Aperçu",
+        "registrationStatusLabel": "Registration status",
+        "registrationStatusPendingHint": "On-chain registration or update in progress. Refresh to sync the latest state.",
         "edit": "Modifier",
         "backToAgents": "Retour aux agents",
         "backToDashboard": "Retour au tableau de bord",

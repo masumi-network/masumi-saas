@@ -121,4 +121,29 @@ describe("buildUpdateAgentInput", () => {
 
     expect(input.AgentPricing).toEqual({ pricingType: "Free" });
   });
+
+  it("uses x402ResourcesUrl when on-chain metadata has no apiBaseUrl", () => {
+    const input = buildUpdateAgentInput({
+      network: "Preprod",
+      agentIdentifier: "a".repeat(120),
+      registryEntry: {
+        ...registryEntry,
+        type: "X402",
+        apiBaseUrl: null,
+        x402ResourcesUrl: "https://x402.org/protected",
+      },
+      onChainMetadata: {
+        policyId: "a".repeat(56),
+        assetName: "b".repeat(64),
+        agentIdentifier: "a".repeat(120),
+        Metadata: {
+          name: "x402 agent",
+          metadataVersion: 2,
+        },
+      },
+      verifications: [],
+    });
+
+    expect(input.apiBaseUrl).toBe("https://x402.org/protected");
+  });
 });

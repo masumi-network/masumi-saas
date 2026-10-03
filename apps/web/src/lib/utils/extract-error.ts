@@ -13,6 +13,10 @@ export function extractErrorMessage(
 
     if (typeof err.message === "string") return err.message;
     if (typeof err.error === "string") return err.error;
+    if (err.error != null && typeof err.error === "object") {
+      const nested = err.error as Record<string, unknown>;
+      if (typeof nested.message === "string") return nested.message;
+    }
     if (typeof err.statusText === "string") return err.statusText;
 
     if (err.data && typeof err.data === "object") {

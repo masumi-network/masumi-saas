@@ -302,6 +302,7 @@ export function AgentPageContent({
           agent={agent}
           backHref={backHref}
           backLabel={backLabel}
+          onRefreshRegistrationStatus={syncAndRefetch}
         />
         {agentVerificationUiEnabled ? (
           <PendingWalletAcceptanceBanner
@@ -319,7 +320,6 @@ export function AgentPageContent({
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
           onDeregisterClick={() => setIsDeregisterDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
-          onRefreshStatus={syncAndRefetch}
           onVerificationDialogClosed={() =>
             setPendingBannerRefreshKey((key) => key + 1)
           }

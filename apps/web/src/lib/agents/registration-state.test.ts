@@ -65,12 +65,24 @@ describe("resolveRegistrationStateAfterSync", () => {
     ).toBe("UpdateRequested");
   });
 
-  it("releases abandoned UpdateRequested when the node is still queued", () => {
+  it("keeps node update queue visible when the lock is abandoned", () => {
     const now = 1_000_000_000_000;
     expect(
       resolveRegistrationStateAfterSync({
         previousState: "UpdateRequested",
         registryState: "UpdateRequested",
+        updatedAt: new Date(now - REGISTRY_UPDATE_ABANDONED_MS),
+        now,
+      }),
+    ).toBe("UpdateRequested");
+  });
+
+  it("releases abandoned UpdateRequested when the node never left RegistrationConfirmed", () => {
+    const now = 1_000_000_000_000;
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "RegistrationConfirmed",
         updatedAt: new Date(now - REGISTRY_UPDATE_ABANDONED_MS),
         now,
       }),

@@ -1,6 +1,7 @@
 "use client";
 
 import type { AgentPricing } from "@/lib/utils";
+import { extractErrorMessage } from "@/lib/utils/extract-error";
 
 import type {
   Agent,
@@ -38,9 +39,13 @@ class AgentApiClient {
       const data = (await response.json()) as ApiResponse<T>;
 
       if (!response.ok) {
+        const apiError =
+          data && typeof data === "object" && "error" in data
+            ? (data as { error?: unknown }).error
+            : undefined;
         return {
           success: false,
-          error: data.success === false ? data.error : "Request failed",
+          error: extractErrorMessage(apiError, "Request failed"),
         };
       }
 

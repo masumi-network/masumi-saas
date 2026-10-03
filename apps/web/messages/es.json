@@ -1065,7 +1065,7 @@
         "deregistering": "Darse de baja",
         "deregistered": "dado de baja",
         "deregistrationFailed": "Fallido",
-        "updateRequested": "Actualización solicitada",
+        "updateRequested": "Actualización pendiente",
         "updateInitiated": "Actualizando",
         "updateFailed": "Actualización fallida"
       },
@@ -1382,6 +1382,8 @@
       },
       "Details": {
         "overview": "Descripción general",
+        "registrationStatusLabel": "Registration status",
+        "registrationStatusPendingHint": "On-chain registration or update in progress. Refresh to sync the latest state.",
         "edit": "Editar",
         "backToAgents": "Volver a agentes",
         "backToDashboard": "Volver al tablero",

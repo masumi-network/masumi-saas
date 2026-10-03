@@ -1,11 +1,24 @@
 "use server";
 
-import prisma from "@masumi/database/client";
+import prisma, { type RegistrationState } from "@masumi/database/client";
 import { cookies } from "next/headers";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { completeOnChainRegistration } from "@/lib/agent-registration";
-import { resolveRegistrationStateAfterSync } from "@/lib/agents/registration-state";
+import {
+  isAbandonedRegistryUpdate,
+  isRegistryRowUpdatedAfter,
+  isRegistryVerificationUpdatePending,
+  readRegistryUpdateBaseline,
+  resolveRegistrationStateAfterSync,
+  withoutRegistryUpdateBaseline,
+} from "@/lib/agents/registration-state";
+import {
+  agentDisplayFieldsDiffer,
+  agentDisplayFieldsFromRegistryEntry,
+  mergeRegistrationPayloadFromRegistry,
+  shouldSyncAgentDisplayFromRegistry,
+} from "@/lib/agents/sync-agent-display-from-registry";
 import {
   getWalletOwnedAgentForUser,
   listWalletOwnedAgentsForUser,
@@ -209,11 +222,37 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     if (!entry) return { success: true as const };
 
     const previousState = agent.registrationState;
-    const registrationState = resolveRegistrationStateAfterSync({
-      previousState,
-      registryState: entry.state,
-      updatedAt: agent.updatedAt,
-    });
+    const existingMeta =
+      (agent.agentReference.metadata as Record<string, unknown> | null) ?? {};
+    const updateBaseline = readRegistryUpdateBaseline(existingMeta);
+
+    let registrationState: RegistrationState;
+
+    if (
+      entry.state === "UpdateRequested" ||
+      entry.state === "UpdateInitiated"
+    ) {
+      registrationState = entry.state;
+    } else {
+      registrationState = resolveRegistrationStateAfterSync({
+        previousState,
+        registryState: entry.state,
+        updatedAt: agent.updatedAt,
+      });
+
+      if (
+        isRegistryVerificationUpdatePending(previousState) &&
+        entry.state === "RegistrationConfirmed" &&
+        updateBaseline &&
+        !isRegistryRowUpdatedAfter(entry.updatedAt, updateBaseline) &&
+        isAbandonedRegistryUpdate({
+          registrationState: previousState,
+          updatedAt: agent.updatedAt,
+        })
+      ) {
+        registrationState = "RegistrationConfirmed";
+      }
+    }
     const status =
       entry.state === "RegistrationConfirmed"
         ? "ACTIVE"
@@ -221,33 +260,96 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
           ? "DEREGISTERED"
           : agent.agentReference.status;
 
-    const existingMeta =
-      (agent.agentReference.metadata as Record<string, unknown> | null) ?? {};
-    const metadata = entry.agentIdentifier
+    let metadata: Record<string, unknown> = entry.agentIdentifier
       ? { ...existingMeta, agentIdentifier: entry.agentIdentifier }
-      : existingMeta;
+      : { ...existingMeta };
+    if (
+      registrationState === "RegistrationConfirmed" &&
+      isRegistryVerificationUpdatePending(previousState)
+    ) {
+      metadata = withoutRegistryUpdateBaseline(metadata);
+    }
 
-    await prisma.$transaction([
-      prisma.agent.update({
-        where: { id: agentId },
-        data: {
-          registrationState,
-          ...(entry.agentIdentifier && {
-            agentIdentifier: entry.agentIdentifier,
-          }),
+    const agentIdentifierChanged =
+      Boolean(entry.agentIdentifier) &&
+      entry.agentIdentifier !== agent.agentIdentifier;
+    const registryDisplayFields = shouldSyncAgentDisplayFromRegistry(
+      entry,
+      agentIdentifierChanged,
+    )
+      ? agentDisplayFieldsFromRegistryEntry(entry)
+      : null;
+    const agentDisplayChanged =
+      registryDisplayFields !== null &&
+      agentDisplayFieldsDiffer(
+        {
+          name: agent.name,
+          description: agent.description,
+          tags: agent.tags,
+          apiUrl: agent.apiUrl,
         },
-      }),
-      prisma.agentReference.update({
-        where: { agentId },
-        data: {
-          status,
-          metadata,
-          ...(entry.state === "RegistrationConfirmed" && {
-            registeredAt: new Date(),
-          }),
-        },
-      }),
-    ]);
+        registryDisplayFields,
+      );
+    if (agentDisplayChanged) {
+      metadata = mergeRegistrationPayloadFromRegistry(metadata, entry);
+    }
+
+    const registrationStateChanged = registrationState !== previousState;
+    const referenceStatusChanged = status !== agent.agentReference.status;
+    const referenceMetadataChanged =
+      JSON.stringify(metadata) !== JSON.stringify(existingMeta);
+    const shouldSetRegisteredAt =
+      entry.state === "RegistrationConfirmed" &&
+      agent.agentReference.registeredAt == null;
+
+    const transactionOps = [];
+
+    if (
+      registrationStateChanged ||
+      agentIdentifierChanged ||
+      agentDisplayChanged
+    ) {
+      transactionOps.push(
+        prisma.agent.update({
+          where: { id: agentId },
+          data: {
+            ...(registrationStateChanged ? { registrationState } : {}),
+            ...(agentIdentifierChanged && entry.agentIdentifier
+              ? { agentIdentifier: entry.agentIdentifier }
+              : {}),
+            ...(agentDisplayChanged && registryDisplayFields
+              ? {
+                  name: registryDisplayFields.name,
+                  description: registryDisplayFields.description,
+                  tags: registryDisplayFields.tags,
+                  apiUrl: registryDisplayFields.apiUrl,
+                }
+              : {}),
+          },
+        }),
+      );
+    }
+
+    if (
+      referenceStatusChanged ||
+      referenceMetadataChanged ||
+      shouldSetRegisteredAt
+    ) {
+      transactionOps.push(
+        prisma.agentReference.update({
+          where: { agentId },
+          data: {
+            ...(referenceStatusChanged ? { status } : {}),
+            ...(referenceMetadataChanged ? { metadata } : {}),
+            ...(shouldSetRegisteredAt ? { registeredAt: new Date() } : {}),
+          },
+        }),
+      );
+    }
+
+    if (transactionOps.length > 0) {
+      await prisma.$transaction(transactionOps);
+    }
     if (registrationState !== previousState) {
       if (registrationState === "RegistrationConfirmed") {
         await recordAgentActivityEvent(agentId, "RegistrationConfirmed");

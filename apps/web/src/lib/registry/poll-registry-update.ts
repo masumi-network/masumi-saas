@@ -1,3 +1,4 @@
+import { isRegistryRowUpdatedAfter } from "@/lib/agents/registration-state";
 import type { createAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
 import type { PaymentNodeNetwork } from "@/lib/payment-node/schemas";
 
@@ -21,9 +22,41 @@ function sleep(ms: number): Promise<void> {
 }
 
 export type PollRegistryUpdateOptions = {
-  /** When true, UpdateConfirmed with unchanged identifier succeeds without on-chain verifications. */
+  /** When true, unchanged identifier can succeed after an in-flight update or row refresh. */
   allowSameIdentifierSuccess?: boolean;
+  /** Registry row `updatedAt` before `updateAgent`; used to detect metadata-only completions. */
+  registryRowUpdatedBefore?: string;
 };
+
+function isSameIdentifierUpdateComplete(
+  entry: {
+    state: string;
+    agentIdentifier: string | null;
+    updatedAt: string;
+  },
+  previousAgentIdentifier: string,
+  options: PollRegistryUpdateOptions | undefined,
+  sawUpdateInFlight: boolean,
+): entry is { agentIdentifier: string; updatedAt: string; state: string } {
+  if (!options?.allowSameIdentifierSuccess || !entry.agentIdentifier) {
+    return false;
+  }
+  if (entry.agentIdentifier !== previousAgentIdentifier) {
+    return false;
+  }
+  if (!UPDATE_SUCCESS_STATES.has(entry.state)) {
+    return false;
+  }
+
+  if (entry.state === "UpdateConfirmed") {
+    return true;
+  }
+
+  return (
+    sawUpdateInFlight ||
+    isRegistryRowUpdatedAfter(entry.updatedAt, options.registryRowUpdatedBefore)
+  );
+}
 
 export async function pollRegistryUpdate(
   adminClient: ReturnType<typeof createAdminPaymentNodeClient>,
@@ -40,6 +73,7 @@ export async function pollRegistryUpdate(
       ReturnType<typeof createAdminPaymentNodeClient>["getRegistryById"]
     >
   > | null = null;
+  let sawUpdateInFlight = false;
 
   while (Date.now() < deadline) {
     let entry;
@@ -75,6 +109,13 @@ export async function pollRegistryUpdate(
     }
 
     if (
+      entry.state === "UpdateRequested" ||
+      entry.state === "UpdateInitiated"
+    ) {
+      sawUpdateInFlight = true;
+    }
+
+    if (
       UPDATE_SUCCESS_STATES.has(entry.state) &&
       entry.agentIdentifier &&
       entry.agentIdentifier !== previousAgentIdentifier
@@ -83,14 +124,22 @@ export async function pollRegistryUpdate(
     }
 
     if (
+      isSameIdentifierUpdateComplete(
+        entry,
+        previousAgentIdentifier,
+        options,
+        sawUpdateInFlight,
+      )
+    ) {
+      return { agentIdentifier: entry.agentIdentifier };
+    }
+
+    if (
       entry.state === "UpdateConfirmed" &&
       entry.agentIdentifier &&
-      entry.agentIdentifier === previousAgentIdentifier
+      entry.agentIdentifier === previousAgentIdentifier &&
+      !options?.allowSameIdentifierSuccess
     ) {
-      if (options?.allowSameIdentifierSuccess) {
-        return { agentIdentifier: entry.agentIdentifier };
-      }
-
       try {
         const onChain = await adminClient.getRegistryByAgentIdentifier({
           agentIdentifier: entry.agentIdentifier,
