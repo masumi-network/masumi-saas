@@ -37,6 +37,7 @@ import {
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
 import { BatchRegisterX402Dialog } from "./batch-register-x402-dialog";
+import { MainnetCreditsRequiredNotice } from "./mainnet-credits-required-notice";
 import { RegisterAgentDialog } from "./register-agent-dialog";
 
 const VALID_SECTIONS = ["manage", "discovery"] as const;
@@ -304,6 +305,7 @@ export function AgentsContent() {
 
         {activeSection === "manage" ? (
           <div className="space-y-4">
+            <MainnetCreditsRequiredNotice />
             <div className="flex items-center gap-2 sm:gap-3">
               <div
                 onClick={() => searchInputRef.current?.focus()}

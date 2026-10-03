@@ -1208,6 +1208,13 @@
         "close": "Close",
         "done": "Done"
       },
+      "CreditsGate": {
+        "title": "Mainnet credits required",
+        "description": "You have {credits} credits left. Each new agent registration on Mainnet costs 1 credit.",
+        "buyCredits": "Buy credits",
+        "registerBlocked": "Add credits on Mainnet to register agents.",
+        "apiInsufficientCredits": "Not enough Mainnet credits to register this agent."
+      },
       "Register": {
         "title": "Enregistrer un nouvel agent",
         "formDescription": "Cela enregistre votre agent sur le réseau Masumi pour que d'autres puissent le découvrir et le payer.",

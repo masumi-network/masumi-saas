@@ -47,6 +47,7 @@ import { parseBatchResourceUrlsFromJson } from "@/lib/x402/parse-batch-resource-
 import { resourceUrlDuplicateKey } from "@/lib/x402/resource-url-duplicate-key";
 
 import { BatchX402ResourceRowActions } from "./batch-x402-resource-row-actions";
+import { MainnetCreditsRequiredNotice } from "./mainnet-credits-required-notice";
 
 const MAX_JSON_IMPORT_BYTES = 5 * 1024 * 1024;
 
@@ -703,6 +704,7 @@ export function BatchRegisterX402Dialog({
 
             {step === "paste" ? (
               <>
+                <MainnetCreditsRequiredNotice />
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium">
                     {tRegister("x402Chain")}

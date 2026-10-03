@@ -4,11 +4,8 @@ import { getCookie } from "hono/cookie";
 import { scheduleAgentRegistrationCompletion } from "@/lib/agents/drive-registration-completion";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
-import { maxAgentRegistrationsForBalance } from "@/lib/credits/agent-registration-quota";
-import {
-  getCreditBalance,
-  InsufficientCreditsError,
-} from "@/lib/credits/service";
+import { assertMainnetCreditsForNewRegistrations } from "@/lib/credits/apply-mainnet-registration-credit-gate";
+import { InsufficientCreditsError } from "@/lib/credits/service";
 import { parseNetwork } from "@/lib/schemas";
 import {
   insufficientCreditsResponse,
@@ -172,36 +169,26 @@ app.openapi(
         );
       }
 
-      if (network === "Mainnet") {
-        const balance = await getCreditBalance(user.id);
-        const affordable = maxAgentRegistrationsForBalance({
+      let creditConsumingCount = dedupedRegistrations.length;
+      if (skipExisting !== false) {
+        const registeredKeys = await findRegisteredX402ResourceUrlKeys({
+          userId: user.id,
+          organizationId: activeOrganizationId,
           network,
-          creditsRemaining: balance.creditsRemaining,
-          maxPerBatch: BATCH_X402_REGISTRATION_MAX_URLS,
+          resourceUrls: dedupedRegistrations.map((item) => item.resourceUrl),
         });
-        if (affordable === 0) {
-          throw new InsufficientCreditsError(balance.creditsRemaining);
-        }
-        let creditConsumingCount = dedupedRegistrations.length;
-        if (skipExisting !== false) {
-          const registeredKeys = await findRegisteredX402ResourceUrlKeys({
-            userId: user.id,
-            organizationId: activeOrganizationId,
-            network,
-            resourceUrls: dedupedRegistrations.map((item) => item.resourceUrl),
-          });
-          creditConsumingCount = dedupedRegistrations.filter((item) => {
-            const key = resourceUrlDuplicateKey(item.resourceUrl);
-            return key != null && !registeredKeys.has(key);
-          }).length;
-        }
-        if (creditConsumingCount > affordable) {
-          throw new ApiError(
-            400,
-            `This batch needs ${creditConsumingCount} Mainnet credits (1 per new agent) but you only have ${balance.creditsRemaining}. Reduce new registrations to ${affordable} or fewer.`,
-          );
-        }
+        creditConsumingCount = dedupedRegistrations.filter((item) => {
+          const key = resourceUrlDuplicateKey(item.resourceUrl);
+          return key != null && !registeredKeys.has(key);
+        }).length;
       }
+
+      await assertMainnetCreditsForNewRegistrations({
+        userId: user.id,
+        network,
+        registrationsNeeded: creditConsumingCount,
+        maxPerBatch: BATCH_X402_REGISTRATION_MAX_URLS,
+      });
 
       const ctx = {
         user: {

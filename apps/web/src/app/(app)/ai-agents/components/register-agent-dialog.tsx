@@ -75,6 +75,7 @@ import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
 import { zodResolver } from "@/lib/form-zod-resolver";
+import { useMainnetRegistrationCreditsGate } from "@/lib/hooks/use-mainnet-registration-credits-gate";
 import { useX402Networks } from "@/lib/hooks/use-x402-networks";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { normalizePayoutAddress } from "@/lib/payment-node/payout-address";
@@ -96,6 +97,7 @@ import {
 } from "@/lib/x402/resource-autofill";
 
 import { AgentIconPicker } from "./agent-icon-picker";
+import { MainnetCreditsRequiredNotice } from "./mainnet-credits-required-notice";
 import { type AgentPriceField, PricingFields } from "./pricing-fields";
 import { RegisterAgentReviewSection } from "./register-agent-review-section";
 import {
@@ -347,8 +349,10 @@ export function RegisterAgentDialog({
   onBeginBatchX402Registration,
 }: RegisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Register");
+  const tCreditsGate = useTranslations("App.Agents.CreditsGate");
   const { addPendingRegistration } = useAgentCompletion();
   const { network, setNetwork } = usePaymentNetwork();
+  const mainnetCreditsGate = useMainnetRegistrationCreditsGate();
   const selectedX402Caip2 = evmNetworkForCardanoPaymentNetwork(network);
   const x402RegistryChainIconSlugs = useChainRegistryIcons([
     ...X402_REGISTRY_CAIP2_IDS,
@@ -1056,6 +1060,10 @@ export function RegisterAgentDialog({
   };
 
   const goToReview = () => {
+    if (mainnetCreditsGate.isBlocked) {
+      toast.error(tCreditsGate("registerBlocked"));
+      return;
+    }
     void form.handleSubmit((data) => {
       if (!assertRegistrationPreflight(data)) return;
       setReviewValues(data);
@@ -1070,6 +1078,10 @@ export function RegisterAgentDialog({
 
   const handleConfirmRegistration = () => {
     if (!reviewValues || isLoading) return;
+    if (mainnetCreditsGate.isBlocked) {
+      toast.error(tCreditsGate("registerBlocked"));
+      return;
+    }
     void onSubmit(reviewValues);
   };
 
@@ -1227,7 +1239,11 @@ export function RegisterAgentDialog({
         }
         finalizeSuccessfulSubmit();
       } else {
-        toast.error(json.error || t("error"));
+        const message =
+          res.status === 402
+            ? tCreditsGate("apiInsufficientCredits")
+            : json.error || t("error");
+        toast.error(message);
         setIsLoading(false);
       }
     } catch (error) {
@@ -1353,6 +1369,7 @@ export function RegisterAgentDialog({
                   }}
                 >
                   <DialogBody ref={registerDialogBodyRef} className="space-y-8">
+                    <MainnetCreditsRequiredNotice />
                     <FormField
                       control={form.control}
                       name="registrationKind"
@@ -2090,7 +2107,11 @@ export function RegisterAgentDialog({
                       <Button
                         type="button"
                         variant="primary"
-                        disabled={isLoading}
+                        disabled={
+                          isLoading ||
+                          mainnetCreditsGate.isBlocked ||
+                          mainnetCreditsGate.isPending
+                        }
                         className="group gap-2"
                         onClick={goToReview}
                       >
@@ -2130,6 +2151,7 @@ export function RegisterAgentDialog({
               </div>
 
               <DialogBody className="space-y-8">
+                <MainnetCreditsRequiredNotice />
                 <RegisterAgentReviewSection
                   values={reviewValues}
                   tags={tags}
@@ -2187,7 +2209,12 @@ export function RegisterAgentDialog({
                   <Button
                     type="button"
                     variant="primary"
-                    disabled={isLoading || !reviewValues}
+                    disabled={
+                      isLoading ||
+                      !reviewValues ||
+                      mainnetCreditsGate.isBlocked ||
+                      mainnetCreditsGate.isPending
+                    }
                     className="group gap-2"
                     onClick={handleConfirmRegistration}
                   >
