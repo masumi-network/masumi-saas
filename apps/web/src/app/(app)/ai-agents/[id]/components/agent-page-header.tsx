@@ -22,6 +22,7 @@ import {
 import { type Agent } from "@/lib/api/agent.client";
 import { cn } from "@/lib/utils";
 
+import { AgentRegistryVersionBadge } from "../../components/agent-registry-version-badge";
 import {
   getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
@@ -108,6 +109,9 @@ export function AgentPageHeader({
             <h1 className="min-w-0 max-w-full truncate text-page-title font-semibold tracking-tight">
               {agent.name}
             </h1>
+            <AgentRegistryVersionBadge
+              agentIdentifier={agent.agentIdentifier}
+            />
             <Badge
               variant={registrationBadgeVariant}
               className={cn(

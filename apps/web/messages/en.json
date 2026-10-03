@@ -1587,6 +1587,8 @@
       "searchPlaceholder": "Search agents...",
       "searchShortcut": "F",
       "registerAgent": "Register Agent",
+      "registryVersionV1": "V1",
+      "registryVersionV1Aria": "Legacy V1 registry agent",
       "noAgents": "No agents found. Register your first agent to get started.",
       "noAgentsMatchingSearch": "No agents found matching your search",
       "loadMore": "Load more",

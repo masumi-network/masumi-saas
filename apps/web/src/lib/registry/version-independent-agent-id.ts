@@ -43,6 +43,20 @@ export function isV2RegistryAssetName(assetName: string): boolean {
   return assetName.length === V2_REGISTRY_ASSET_NAME_HEX_LENGTH;
 }
 
+/** True when the agent has an on-chain id that is not V2 (64-hex asset name). */
+export function isLegacyV1RegistryAgent(
+  agentIdentifier: string | null | undefined,
+): boolean {
+  if (!agentIdentifier?.trim()) {
+    return false;
+  }
+  try {
+    return !isV2RegistryAssetName(extractAssetName(agentIdentifier));
+  } catch {
+    return true;
+  }
+}
+
 /**
  * Stable identity across registry metadata version bumps.
  * For V2 asset names: policyId + root hash (nonce and version stripped).

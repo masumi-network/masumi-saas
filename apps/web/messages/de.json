@@ -1022,6 +1022,8 @@
       "searchPlaceholder": "Suchagenten...",
       "searchShortcut": "F",
       "registerAgent": "Agent registrieren",
+      "registryVersionV1": "V1",
+      "registryVersionV1Aria": "Legacy-V1-Registry-Agent",
       "noAgents": "Keine Agenten gefunden. Registrieren Sie Ihren ersten Agenten, um loszulegen.",
       "noAgentsMatchingSearch": "Es wurden keine Agenten gefunden, die Ihrer Suche entsprechen",
       "loadMore": "Mehr laden",

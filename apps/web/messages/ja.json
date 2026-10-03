@@ -1022,6 +1022,8 @@
       "searchPlaceholder": "エージェントを検索...",
       "searchShortcut": "F",
       "registerAgent": "エージェントを登録する",
+      "registryVersionV1": "V1",
+      "registryVersionV1Aria": "レガシー V1 レジストリエージェント",
       "noAgents": "エージェントが見つかりませんでした。まずは最初のエージェントを登録してください。",
       "noAgentsMatchingSearch": "検索に一致するエージェントは見つかりませんでした",
       "loadMore": "さらにロードする",

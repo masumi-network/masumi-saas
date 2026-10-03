@@ -1022,6 +1022,8 @@
       "searchPlaceholder": "Agentes de búsqueda...",
       "searchShortcut": "F",
       "registerAgent": "Registrar agente",
+      "registryVersionV1": "V1",
+      "registryVersionV1Aria": "Agente de registro V1 heredado",
       "noAgents": "No se encontraron agentes. Registre a su primer agente para comenzar.",
       "noAgentsMatchingSearch": "No se encontraron agentes que coincidan con su búsqueda",
       "loadMore": "Cargar más",
