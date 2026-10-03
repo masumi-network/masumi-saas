@@ -163,7 +163,7 @@ export function X402RegistryChainPicker({
               caip2Id={selectedChain.caip2Id}
               name={selectedChain.name}
               iconSlug={
-                chainIconSlugs.get(selectedChain.caip2Id) ?? selectedChain.icon
+                chainIconSlugs?.get(selectedChain.caip2Id) ?? selectedChain.icon
               }
               className="min-w-0 [&_span]:line-clamp-none"
             />

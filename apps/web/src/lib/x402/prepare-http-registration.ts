@@ -4,6 +4,7 @@ import {
   evmNetworkForCardanoPaymentNetwork,
   probeX402HttpResource,
   type X402AgentManifest,
+  type X402HttpProbeRow,
 } from "@masumi/payment-source-x402";
 import type { SupportedPaymentSource } from "@masumi/payment-source-x402/payment-source";
 
@@ -11,6 +12,7 @@ import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
 export type PreparedX402HttpRegistration = {
   resourceUrl: string;
+  probeRow: X402HttpProbeRow;
   x402Manifest: X402AgentManifest;
   supportedPaymentSources: SupportedPaymentSource[];
 };
@@ -41,6 +43,7 @@ export async function prepareX402HttpRegistration(input: {
       ok: true,
       data: {
         resourceUrl: probe.row.resource,
+        probeRow: probe.row,
         x402Manifest,
         supportedPaymentSources,
       },

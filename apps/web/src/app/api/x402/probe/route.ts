@@ -5,6 +5,7 @@ import {
   probeX402HttpResource,
 } from "@masumi/payment-source-x402";
 
+import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import { parseNetwork } from "@/lib/schemas";
 import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
@@ -61,9 +62,15 @@ app.openapi(
   }),
   async (c) => {
     try {
-      await getAuthenticatedOrThrow(c.req.raw);
+      const authContext = await getAuthenticatedOrThrow(c.req.raw);
       const { resourceUrl, network: networkBody } = c.req.valid("json");
       const network = parseNetwork(networkBody ?? undefined);
+
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "agents",
+        action: "read",
+        network,
+      });
       const evmNetwork = evmNetworkForCardanoPaymentNetwork(network);
       if (!CARDANO_NETWORK_BY_EVM[evmNetwork]) {
         throw new ApiError(400, "Unsupported registry network for x402 probe.");
