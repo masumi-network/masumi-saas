@@ -326,10 +326,7 @@ export async function updateAgentDetails(params: {
 
   const onChainVerifications = getOnChainVerifications(onChainMetadata);
   const verifications =
-    onChainVerifications ??
-    (registryEntry.verifications != null
-      ? registryEntry.verifications
-      : undefined);
+    onChainVerifications ?? registryEntry.verifications ?? undefined;
 
   const updateBody = applyUserOverrides(
     buildUpdateAgentInput({

@@ -30,7 +30,7 @@ type BuildUpdateAgentInputParams = {
   storedRegistration?: StoredRegistrationPayload | null;
   agentIcon?: string | null;
   /** Omit when unknown so payment-node keeps existing verification rows. */
-  verifications?: Verification[] | null;
+  verifications?: Verification[];
 };
 
 function resolveLegal(
