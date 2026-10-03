@@ -16,6 +16,7 @@ import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { assertMainnetCreditsForNewRegistrations } from "@/lib/credits/apply-mainnet-registration-credit-gate";
 import {
   consumeCreditIfRequired,
   createCreditReference,
@@ -521,6 +522,12 @@ app.openapi(
           throw new ApiError(400, payoutAddressError);
         }
       }
+
+      await assertMainnetCreditsForNewRegistrations({
+        userId: user.id,
+        network,
+        registrationsNeeded: 1,
+      });
 
       const creditReference = createCreditReference("agent-register");
       const creditMetadata = {
