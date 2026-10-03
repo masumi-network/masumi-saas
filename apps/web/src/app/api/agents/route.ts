@@ -46,6 +46,7 @@ import {
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
 import { prepareX402HttpRegistration } from "@/lib/x402/prepare-http-registration";
+import { findExistingX402HttpAgentByResourceUrl } from "@/lib/x402/start-x402-http-agent-registration";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
@@ -340,6 +341,19 @@ app.openapi(
         x402Manifest = prepared.data.x402Manifest;
         x402CanonicalResourceUrl = prepared.data.resourceUrl;
         resolvedSupportedPaymentSources = prepared.data.supportedPaymentSources;
+
+        const existingX402 = await findExistingX402HttpAgentByResourceUrl({
+          userId: user.id,
+          organizationId: activeOrganizationId,
+          network,
+          resourceUrl: x402CanonicalResourceUrl,
+        });
+        if (existingX402) {
+          throw new ApiError(
+            409,
+            "An agent for this resource URL is already registered.",
+          );
+        }
       }
 
       const selectedRuntimeProvider = isX402HttpRegistration
