@@ -78,6 +78,8 @@ class AgentApiClient {
         | "DeregistrationConfirmed"
         | "DeregistrationFailed";
       registrationStateIn?: string[];
+      agentType?: "standard" | "x402";
+      pricingType?: "free" | "fixed" | "dynamic";
       search?: string;
     },
     options?: {
@@ -101,6 +103,12 @@ class AgentApiClient {
       filters.registrationStateIn.length > 0
     ) {
       params.set("registrationStateIn", filters.registrationStateIn.join(","));
+    }
+    if (filters?.agentType) {
+      params.set("agentType", filters.agentType);
+    }
+    if (filters?.pricingType) {
+      params.set("pricingType", filters.pricingType);
     }
     if (filters?.search?.trim()) {
       params.set("search", filters.search.trim());

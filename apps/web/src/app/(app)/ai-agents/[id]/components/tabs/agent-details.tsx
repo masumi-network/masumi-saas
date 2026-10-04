@@ -37,12 +37,14 @@ import {
 import { type Agent } from "@/lib/api/agent.client";
 import { isAgentDetailsEditEnabled } from "@/lib/config/agent-details-edit.config";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
+import { usePaymentNodeSupportedX402Networks } from "@/lib/hooks/use-x402-networks";
 import { agentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
-import { formatPricingDisplay, shortenAddress } from "@/lib/utils";
+import { shortenAddress } from "@/lib/utils";
 
 import {
+  agentHasX402Options,
+  AgentPriceTableCell,
   AgentX402Options,
-  shouldShowAgentX402Options,
 } from "../../../components/agent-x402-options";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 import { AgentPayoutAddressDialog } from "../agent-payout-address-dialog";
@@ -102,6 +104,10 @@ export function AgentDetails({
     showVerificationCta && Boolean(onVerificationSuccess);
 
   const [isPayoutDialogOpen, setIsPayoutDialogOpen] = useState(false);
+  const { networks: x402Networks } = usePaymentNodeSupportedX402Networks({
+    silentErrors: true,
+    allEnvironments: true,
+  });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const requiresPayoutAddress = agentPricingRequiresPayoutAddress(
     agent.pricing,
@@ -307,7 +313,11 @@ export function AgentDetails({
                 <p className="text-xs font-medium text-muted-foreground">
                   {t("price")}
                 </p>
-                <p className="text-sm">{formatPricingDisplay(agent.pricing)}</p>
+                <AgentPriceTableCell
+                  pricing={agent.pricing}
+                  supportedPaymentSources={agent.supportedPaymentSources}
+                  networks={x402Networks}
+                />
               </div>
             </div>
 
@@ -428,10 +438,7 @@ export function AgentDetails({
           </CardContent>
         </Card>
 
-        {shouldShowAgentX402Options(
-          agent.supportedPaymentSources,
-          agent.pricing as { pricingType?: string } | null,
-        ) ? (
+        {agentHasX402Options(agent.supportedPaymentSources) ? (
           <AgentX402Options sources={agent.supportedPaymentSources} />
         ) : null}
 
@@ -476,7 +483,7 @@ export function AgentDetails({
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">
-              {t("metadata")}
+              {t("recordActivity")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">

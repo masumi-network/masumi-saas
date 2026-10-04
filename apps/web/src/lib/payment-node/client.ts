@@ -77,6 +77,7 @@ import {
   submitPaymentResultInputSchema,
   updateApiKeyInputSchema,
   walletStatusSchema,
+  x402AgentPaymentActivityOutputSchema,
 } from "./schemas";
 import {
   paymentNodeX402NetworkListSchema,
@@ -969,6 +970,7 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       startDate?: string | null; // ISO date 2024-01-01
       endDate?: string | null;
       timeZone?: string;
+      paymentRail?: "cardano" | "x402";
     }): Promise<PaymentIncomeOutput> {
       return requestParse(
         base,
@@ -982,9 +984,36 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
             startDate: params.startDate ?? null,
             endDate: params.endDate ?? null,
             timeZone: params.timeZone ?? "Etc/UTC",
+            paymentRail: params.paymentRail ?? "cardano",
           },
         },
         paymentIncomeOutputSchema,
+      );
+    },
+
+    /** x402 payment attempts for one registry agent (READ, agent-scoped). */
+    async getX402AgentPaymentActivity(params: {
+      network: PaymentNodeNetwork;
+      agentIdentifier: string;
+      startDate?: string | null;
+      endDate?: string | null;
+      take?: number;
+    }) {
+      return requestParse(
+        base,
+        apiKey,
+        `/payment/x402-activity`,
+        {
+          method: "POST",
+          body: {
+            network: params.network,
+            agentIdentifier: params.agentIdentifier,
+            startDate: params.startDate ?? null,
+            endDate: params.endDate ?? null,
+            take: params.take ?? 50,
+          },
+        },
+        x402AgentPaymentActivityOutputSchema,
       );
     },
 

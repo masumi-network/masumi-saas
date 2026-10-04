@@ -232,6 +232,8 @@ export const agentsListQuerySchema = z.object({
   take: z.coerce.number().int().min(1).max(50).optional().default(10),
   registrationState: z.string().optional(),
   registrationStateIn: z.string().optional(),
+  agentType: z.enum(["standard", "x402"]).optional(),
+  pricingType: z.enum(["free", "fixed", "dynamic"]).optional(),
   search: z.string().optional(),
   network: z.enum(["Mainnet", "Preprod"]).optional(),
 });

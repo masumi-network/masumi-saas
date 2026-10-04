@@ -18,6 +18,7 @@ import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import { consumeCreditIfRequired } from "@/lib/credits/service";
 import { doRuntimeDebugLog } from "@/lib/debug/do-runtime-log";
 import { getKycStatusForUser } from "@/lib/network-registration/kyc-status";
+import { isPermanentNetworkRegistrationError } from "@/lib/network-registration/permanent-registration-error";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
 import { getNetworkRegisterCapabilities } from "@/lib/payment-node/registry-capabilities";
@@ -399,17 +400,6 @@ async function tryReuseNetworkRegistrationDraft(params: {
   };
 }
 
-function isPermanentNetworkRegistrationError(error: string): boolean {
-  const lower = error.toLowerCase();
-  return (
-    lower.includes("rejected") ||
-    lower.includes("failed on the network") ||
-    lower.includes("not found") ||
-    lower.includes("missing registration") ||
-    lower.includes("invalid")
-  );
-}
-
 async function getOrCreateNetworkRegistrationDraftForTicket(params: {
   body: NetworkRegisterCompleteBody;
   userId: string;
@@ -759,8 +749,9 @@ export async function pollNetworkRegistrationStatus(params: {
         where: { id: draft.id },
         data: { status: "FAILED", error: result.error },
       });
+      return { ok: false, error: result.error, status: 400 };
     }
-    return { ok: false, error: result.error, status: 400 };
+    return { ok: true, status: "pending", agentId: draft.agentId };
   }
 
   return { ok: true, status: "pending", agentId: draft.agentId };
