@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { createPaymentSchemaOutput } from "@/lib/x402/schemas";
 
+import { formatPaymentNodeResponseError } from "./format-response-error";
 import { findRegistryInboxById } from "./registry-inbox-lookup";
 import type {
   AddWalletToSourceInput,
@@ -190,15 +191,10 @@ async function requestParse<T>(
     json = null;
   }
   if (!res.ok || json === null) {
-    const errObj = json && "error" in json ? json.error : null;
-    const msg =
-      (errObj && typeof errObj === "object" && "message" in errObj
-        ? (errObj as { message: string }).message
-        : null) ||
-      (typeof errObj === "string" ? errObj : null) ||
-      (json && "message" in json && json.message) ||
-      res.statusText ||
-      "Payment node request failed";
+    const msg = formatPaymentNodeResponseError(
+      json,
+      res.statusText || "Payment node request failed",
+    );
     console.error(
       "[Payment Node] Request failed:",
       res.status,
@@ -463,11 +459,20 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       if (res.status === 404) return null;
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        throw new Error((json as { error?: string }).error ?? res.statusText);
+        const msg = formatPaymentNodeResponseError(json, res.statusText);
+        throw new Error(`${res.status}: ${msg}`);
       }
       const json = (await res.json()) as PaymentNodeResponse<unknown>;
       if (json.status === "success" && "data" in json && json.data != null) {
-        return registryAgentIdentifierMetadataSchema.parse(json.data);
+        const parsed = registryAgentIdentifierMetadataSchema.safeParse(
+          json.data,
+        );
+        if (!parsed.success) {
+          throw new Error(
+            "On-chain registry metadata did not match the expected shape",
+          );
+        }
+        return parsed.data;
       }
       return null;
     },
@@ -487,7 +492,8 @@ export function createPaymentNodeClient(baseUrl: string, apiKey: string) {
       if (res.status === 404) return null;
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        throw new Error((json as { error?: string }).error ?? res.statusText);
+        const msg = formatPaymentNodeResponseError(json, res.statusText);
+        throw new Error(`${res.status}: ${msg}`);
       }
       const json = (await res.json()) as PaymentNodeResponse<unknown>;
       if (json.status === "success" && "data" in json && json.data != null) {

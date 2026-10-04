@@ -10,6 +10,8 @@ const buildAgentPricingMock = vi.fn();
 const startAgentRegistrationMock = vi.fn();
 const validateAgentRegistrationPaymentSourcesPreflightMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
+const getCreditBalanceMock = vi.fn();
+const refundConsumedCreditMock = vi.fn();
 const shapeAgentForApiMock = vi.fn();
 const loadSupportedPaymentSourcesMapMock = vi.fn();
 const agentFindFirstMock = vi.fn();
@@ -51,12 +53,18 @@ vi.mock("@/lib/agent-registration", () => ({
     validateAgentRegistrationPaymentSourcesPreflightMock,
 }));
 
+vi.mock("@/lib/agents/drive-registration-completion", () => ({
+  scheduleAgentRegistrationCompletion: vi.fn(),
+}));
+
 vi.mock("@/lib/agents/wallet-ownership", () => ({
   listWalletOwnedAgentsForUser: listWalletOwnedAgentsForUserMock,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
   consumeCreditIfRequired: consumeCreditIfRequiredMock,
+  getCreditBalance: getCreditBalanceMock,
+  refundConsumedCredit: refundConsumedCreditMock,
   createCreditReference: () => "agent-register:test",
 }));
 
@@ -189,6 +197,11 @@ describe("/api/agents POST", () => {
       pricingType: "Fixed",
       prices: [{ amount: "5", currency: "USD" }],
     });
+    getCreditBalanceMock.mockResolvedValue({
+      creditsRemaining: 20,
+      updatedAt: new Date("2026-04-13T10:00:00.000Z"),
+    });
+    refundConsumedCreditMock.mockResolvedValue(undefined);
     consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),

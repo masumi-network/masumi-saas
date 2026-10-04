@@ -10146,6 +10146,779 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "Agents"
+        ],
+        "summary": "Update agent details",
+        "description": "Updates editable registry metadata for a registered V2 agent (name, description, tags, API URL, capability, legal URLs, example outputs, icon). Pricing and payout address are not changed.",
+        "security": [
+          {
+            "apiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "Agent ID (CUID)",
+              "example": "cmlf6gswz0000x1uctad958tq"
+            },
+            "required": true,
+            "description": "Agent ID (CUID)",
+            "name": "agentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 250
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 250
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      }
+                    ]
+                  },
+                  "tags": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "apiUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://agent.example.com/mip",
+                    "description": "Agent API base URL. In production it must use HTTPS and resolve only to public internet addresses; localhost and private-network targets are rejected."
+                  },
+                  "capabilityName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 250
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      }
+                    ]
+                  },
+                  "capabilityVersion": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 250
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      }
+                    ]
+                  },
+                  "exampleOutputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "url": {
+                          "type": "string",
+                          "minLength": 1,
+                          "format": "uri"
+                        },
+                        "mimeType": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "mimeType"
+                      ]
+                    }
+                  },
+                  "termsOfUseUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 250,
+                        "format": "uri"
+                      }
+                    ]
+                  },
+                  "privacyPolicyUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 250,
+                        "format": "uri"
+                      }
+                    ]
+                  },
+                  "otherUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          ""
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 250,
+                        "format": "uri"
+                      }
+                    ]
+                  },
+                  "icon": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "name",
+                  "tags",
+                  "apiUrl"
+                ],
+                "example": {
+                  "name": "Research assistant",
+                  "description": "Helps with literature review",
+                  "apiUrl": "https://agent.example.com/mip",
+                  "tags": "research, nlp",
+                  "icon": "bot",
+                  "termsOfUseUrl": "https://example.com/terms",
+                  "privacyPolicyUrl": "https://example.com/privacy",
+                  "otherUrl": "",
+                  "capabilityName": "Masumi",
+                  "capabilityVersion": "1.0",
+                  "exampleOutputs": [
+                    {
+                      "name": "Sample output",
+                      "url": "https://example.com/sample.json",
+                      "mimeType": "application/json"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated agent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "userId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "apiUrl": {
+                          "type": "string",
+                          "description": "Agent API base URL. In production it must be a public HTTPS endpoint.",
+                          "example": "https://agent.example.com/mip"
+                        },
+                        "organizationId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "registrationState": {
+                          "type": "string"
+                        },
+                        "verificationStatus": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "PENDING",
+                            "VERIFIED",
+                            "REVOKED",
+                            "EXPIRED",
+                            null
+                          ]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "metadata": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "icon": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "agentIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "networkIdentifier": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "pricing": {
+                          "nullable": true
+                        },
+                        "payoutAddress": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "supportedPaymentSources": {
+                          "type": "array",
+                          "nullable": true,
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "chain": {
+                                    "type": "string",
+                                    "enum": [
+                                      "Cardano"
+                                    ]
+                                  },
+                                  "network": {
+                                    "type": "string",
+                                    "enum": [
+                                      "Mainnet",
+                                      "Preprod"
+                                    ]
+                                  },
+                                  "paymentSourceType": {
+                                    "type": "string",
+                                    "enum": [
+                                      "Web3CardanoV1",
+                                      "Web3CardanoV2"
+                                    ]
+                                  },
+                                  "address": {
+                                    "type": "string",
+                                    "maxLength": 250
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "chain",
+                                  "network",
+                                  "paymentSourceType",
+                                  "address",
+                                  "pricing"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "chain": {
+                                    "type": "string",
+                                    "enum": [
+                                      "EVM"
+                                    ]
+                                  },
+                                  "network": {
+                                    "type": "string",
+                                    "pattern": "^eip155:\\d+$"
+                                  },
+                                  "paymentSourceType": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "enum": [
+                                      "Web3CardanoV1",
+                                      "Web3CardanoV2",
+                                      null
+                                    ]
+                                  },
+                                  "address": {
+                                    "type": "string",
+                                    "pattern": "^0x[a-fA-F0-9]{40}$"
+                                  },
+                                  "scheme": {
+                                    "type": "string",
+                                    "enum": [
+                                      "Exact"
+                                    ]
+                                  },
+                                  "payTo": {
+                                    "type": "string",
+                                    "pattern": "^0x[a-fA-F0-9]{40}$"
+                                  },
+                                  "resource": {
+                                    "type": "string",
+                                    "maxLength": 500,
+                                    "format": "uri"
+                                  },
+                                  "extra": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "nullable": true
+                                    }
+                                  },
+                                  "pricing": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Fixed"
+                                            ]
+                                          },
+                                          "fixed": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "amount": {
+                                                  "type": "string",
+                                                  "maxLength": 19,
+                                                  "pattern": "^\\d+$"
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset",
+                                                "amount"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType",
+                                          "fixed"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Dynamic"
+                                            ]
+                                          },
+                                          "dynamic": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "asset": {
+                                                  "type": "string",
+                                                  "maxLength": 250
+                                                },
+                                                "decimals": {
+                                                  "type": "integer",
+                                                  "minimum": 0,
+                                                  "maximum": 255
+                                                }
+                                              },
+                                              "required": [
+                                                "asset"
+                                              ]
+                                            },
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "pricingType": {
+                                            "type": "string",
+                                            "enum": [
+                                              "Free"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "pricingType"
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "chain",
+                                  "network",
+                                  "scheme",
+                                  "payTo",
+                                  "pricing"
+                                ]
+                              }
+                            ]
+                          },
+                          "minItems": 1,
+                          "maxItems": 25
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "veridianCredentialId": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "userId",
+                        "name",
+                        "description",
+                        "apiUrl",
+                        "organizationId",
+                        "registrationState",
+                        "verificationStatus",
+                        "tags",
+                        "metadata",
+                        "icon",
+                        "agentIdentifier",
+                        "networkIdentifier",
+                        "createdAt",
+                        "updatedAt",
+                        "veridianCredentialId"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "example": {
+                    "success": true,
+                    "data": {
+                      "id": "cmlf6gswz0000x1uctad958tq",
+                      "userId": "clu01exampleuser0001",
+                      "name": "Research assistant",
+                      "description": "Helps with literature review",
+                      "apiUrl": "https://agent.example.com/mip",
+                      "organizationId": null,
+                      "registrationState": "RegistrationConfirmed",
+                      "verificationStatus": "VERIFIED",
+                      "tags": [
+                        "research",
+                        "nlp"
+                      ],
+                      "metadata": null,
+                      "icon": "bot",
+                      "agentIdentifier": "policy1.assetname1",
+                      "networkIdentifier": "Preprod",
+                      "pricing": {
+                        "pricingType": "Fixed",
+                        "prices": [
+                          {
+                            "amount": "5",
+                            "currency": "USD"
+                          }
+                        ]
+                      },
+                      "createdAt": "2025-01-15T12:00:00.000Z",
+                      "updatedAt": "2025-01-20T08:30:00.000Z",
+                      "veridianCredentialId": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/agents/{agentId}/test-verification-endpoint": {

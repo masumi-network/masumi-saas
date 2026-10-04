@@ -3,9 +3,11 @@ import type {
   PaymentNodeNetwork,
   RegistryAgentIdentifierMetadata,
   RegistryEntry,
+  RegistryEntryType,
   UpdateAgentInput,
 } from "@/lib/payment-node/schemas";
 import type { Verification } from "@/lib/payment-node/verification-schemas";
+import { resolveRegistryEntryType } from "@/lib/registry/resolve-registry-entry-type";
 
 type StoredRegistrationPayload = {
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
@@ -29,7 +31,8 @@ type BuildUpdateAgentInputParams = {
   onChainMetadata: RegistryAgentIdentifierMetadata;
   storedRegistration?: StoredRegistrationPayload | null;
   agentIcon?: string | null;
-  verifications: Verification[];
+  /** Omit when unknown so payment-node keeps existing verification rows. */
+  verifications?: Verification[];
 };
 
 function resolveLegal(
@@ -50,11 +53,69 @@ function resolveLegal(
   };
 }
 
+function isV2RegistryMetadata(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+): boolean {
+  return (metadata.metadataVersion ?? 1) >= 2;
+}
+
+function resolveStandardApiBaseUrl(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): string {
+  const fromMetadata = metadata.apiBaseUrl?.trim();
+  if (fromMetadata) return fromMetadata;
+  return registryEntry.apiBaseUrl?.trim() ?? "";
+}
+
+function resolveX402ResourcesUrl(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): string {
+  const fromEntry = registryEntry.x402ResourcesUrl?.trim();
+  if (fromEntry) return fromEntry;
+  return registryEntry.apiBaseUrl?.trim() ?? "";
+}
+
+function resolveOpenApiSpecUrl(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): string {
+  return registryEntry.openApiSpecUrl?.trim() ?? "";
+}
+
+function buildRegistryEndpointFields(
+  entryType: RegistryEntryType,
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): Pick<
+  UpdateAgentInput,
+  "type" | "apiBaseUrl" | "x402ResourcesUrl" | "openApiSpecUrl"
+> {
+  if (entryType === "X402") {
+    return {
+      type: "X402",
+      x402ResourcesUrl: resolveX402ResourcesUrl(metadata, registryEntry),
+    };
+  }
+  if (entryType === "OpenApi") {
+    return {
+      type: "OpenApi",
+      openApiSpecUrl: resolveOpenApiSpecUrl(metadata, registryEntry),
+    };
+  }
+  return {
+    apiBaseUrl: resolveStandardApiBaseUrl(metadata, registryEntry),
+  };
+}
+
 export function buildUpdateAgentInput(
   params: BuildUpdateAgentInputParams,
 ): UpdateAgentInput {
   const { registryEntry, onChainMetadata, storedRegistration } = params;
   const metadata = onChainMetadata.Metadata;
+  const entryType = resolveRegistryEntryType(registryEntry);
+  const isV2 = isV2RegistryMetadata(metadata);
   const image =
     metadata.image ?? resolveAgentRegistryImage(params.agentIcon) ?? undefined;
 
@@ -89,14 +150,14 @@ export function buildUpdateAgentInput(
       undefined,
   };
 
-  return {
+  const base: UpdateAgentInput = {
     network: params.network,
     agentIdentifier: params.agentIdentifier,
     ...(params.smartContractAddress
       ? { smartContractAddress: params.smartContractAddress }
       : {}),
     name: metadata.name ?? registryEntry.name,
-    apiBaseUrl: metadata.apiBaseUrl ?? registryEntry.apiBaseUrl ?? "",
+    ...buildRegistryEndpointFields(entryType, metadata, registryEntry),
     description: metadata.description ?? registryEntry.description ?? "",
     ...(image ? { image } : {}),
     Tags:
@@ -105,8 +166,8 @@ export function buildUpdateAgentInput(
         : registryEntry.Tags,
     ExampleOutputs: exampleOutputs,
     Capability: {
-      name: capability.name,
-      version: capability.version,
+      name: capability.name ?? "unknown",
+      version: capability.version ?? "1.0.0",
     },
     Author: {
       name: author.name,
@@ -117,9 +178,19 @@ export function buildUpdateAgentInput(
     ...(resolveLegal(storedRegistration, metadata)
       ? { Legal: resolveLegal(storedRegistration, metadata) }
       : {}),
+    ...(params.verifications !== undefined
+      ? { verifications: params.verifications }
+      : {}),
+  };
+
+  if (isV2) {
+    return base;
+  }
+
+  return {
+    ...base,
     AgentPricing: (metadata.AgentPricing ??
       storedRegistration?.agentPricing ??
       registryEntry.AgentPricing) as UpdateAgentInput["AgentPricing"],
-    verifications: params.verifications,
   };
 }

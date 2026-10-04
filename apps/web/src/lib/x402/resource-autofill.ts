@@ -21,7 +21,7 @@ function titleCaseSegment(value: string): string {
     .join(" ");
 }
 
-function suggestedNameFromResourceUrl(resourceUrl: string): string {
+export function suggestedNameFromResourceUrl(resourceUrl: string): string {
   try {
     const url = new URL(resourceUrl);
     const host = url.hostname.replace(/^www\./i, "");
@@ -36,6 +36,18 @@ function suggestedNameFromResourceUrl(resourceUrl: string): string {
   } catch {
     return "x402 HTTP resource";
   }
+}
+
+export function buildMinimalX402ResourceMetadata(resourceUrl: string): {
+  name: string;
+  description: string;
+  tags: string[];
+} {
+  return {
+    name: suggestedNameFromResourceUrl(resourceUrl),
+    description: "",
+    tags: ["x402"],
+  };
 }
 
 export function buildX402ResourceAutofill(row: X402ProbeRowSnapshot): {

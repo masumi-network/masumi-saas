@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import {
   useFieldArray,
@@ -75,6 +75,7 @@ import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
 import { zodResolver } from "@/lib/form-zod-resolver";
+import { useMainnetRegistrationCreditsGate } from "@/lib/hooks/use-mainnet-registration-credits-gate";
 import { useX402Networks } from "@/lib/hooks/use-x402-networks";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { normalizePayoutAddress } from "@/lib/payment-node/payout-address";
@@ -85,12 +86,18 @@ import {
 import { cn } from "@/lib/utils";
 import { evmNetworkForCardanoPaymentNetwork } from "@/lib/x402/evm-config";
 import {
+  hasMultipleX402ResourceUrlsInInput,
+  MAX_BATCH_RESOURCE_URLS,
+  parseBatchResourceUrlsInput,
+} from "@/lib/x402/parse-batch-resource-urls";
+import {
   buildX402ResourceAutofill,
   resolveX402AutofillPresetIcon,
   type X402ProbeRowSnapshot,
 } from "@/lib/x402/resource-autofill";
 
 import { AgentIconPicker } from "./agent-icon-picker";
+import { MainnetCreditsRequiredNotice } from "./mainnet-credits-required-notice";
 import { type AgentPriceField, PricingFields } from "./pricing-fields";
 import { RegisterAgentReviewSection } from "./register-agent-review-section";
 import {
@@ -210,6 +217,10 @@ interface RegisterAgentDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onBeginBatchX402Registration?: (payload: {
+    urlText: string;
+    extraTags: string;
+  }) => void;
 }
 
 type PricingMode = "Free" | "Fixed" | "Dynamic";
@@ -335,10 +346,13 @@ export function RegisterAgentDialog({
   open,
   onClose,
   onSuccess,
+  onBeginBatchX402Registration,
 }: RegisterAgentDialogProps) {
   const t = useTranslations("App.Agents.Register");
+  const tCreditsGate = useTranslations("App.Agents.CreditsGate");
   const { addPendingRegistration } = useAgentCompletion();
   const { network, setNetwork } = usePaymentNetwork();
+  const mainnetCreditsGate = useMainnetRegistrationCreditsGate();
   const selectedX402Caip2 = evmNetworkForCardanoPaymentNetwork(network);
   const x402RegistryChainIconSlugs = useChainRegistryIcons([
     ...X402_REGISTRY_CAIP2_IDS,
@@ -484,8 +498,8 @@ export function RegisterAgentDialog({
     )
     .superRefine((data, ctx) => {
       if (data.registrationKind === "X402_HTTP") {
-        const resourceUrl = data.x402ResourceUrl?.trim() ?? "";
-        if (!resourceUrl) {
+        const raw = data.x402ResourceUrl?.trim() ?? "";
+        if (!raw) {
           ctx.addIssue({
             code: "custom",
             message: t("x402ResourceUrlRequired"),
@@ -493,19 +507,29 @@ export function RegisterAgentDialog({
           });
           return;
         }
-        try {
-          const url = new URL(resourceUrl);
-          if (url.protocol !== "http:" && url.protocol !== "https:") {
-            ctx.addIssue({
-              code: "custom",
-              message: t("apiUrlProtocol"),
-              path: ["x402ResourceUrl"],
-            });
-          }
-        } catch {
+        const parsed = parseBatchResourceUrlsInput(raw);
+        if (parsed.urls.length === 0) {
           ctx.addIssue({
             code: "custom",
             message: t("x402ResourceUrlInvalid"),
+            path: ["x402ResourceUrl"],
+          });
+          return;
+        }
+        if (hasMultipleX402ResourceUrlsInInput(raw)) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("x402MultipleResourcesBlocked"),
+            path: ["x402ResourceUrl"],
+          });
+          return;
+        }
+        if (parsed.urls.length > MAX_BATCH_RESOURCE_URLS) {
+          ctx.addIssue({
+            code: "custom",
+            message: t("x402ResourceUrlBatchMax", {
+              max: MAX_BATCH_RESOURCE_URLS,
+            }),
             path: ["x402ResourceUrl"],
           });
         }
@@ -665,6 +689,20 @@ export function RegisterAgentDialog({
     watchedX402ResourceUrl ?? "",
     500,
   );
+  const x402ParsedResourceUrls = useMemo(
+    () => parseBatchResourceUrlsInput(watchedX402ResourceUrl ?? "").urls,
+    [watchedX402ResourceUrl],
+  );
+  const x402BatchResourceMode = useMemo(
+    () => hasMultipleX402ResourceUrlsInInput(watchedX402ResourceUrl ?? ""),
+    [watchedX402ResourceUrl],
+  );
+  const x402ProbeTargetUrl =
+    x402ParsedResourceUrls.length === 1 ? x402ParsedResourceUrls[0] : "";
+  const debouncedX402ProbeTargetUrl = useDebouncedValue(
+    x402ProbeTargetUrl,
+    500,
+  );
 
   const runtimeProvider = useWatch({
     control: form.control,
@@ -816,6 +854,38 @@ export function RegisterAgentDialog({
           setX402ProbeRow(null);
           return next;
         }
+
+        const registeredCheck = await fetch(
+          "/api/agents/x402-registered-check",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ resourceUrls: [trimmed] }),
+          },
+        );
+        const registeredJson = (await registeredCheck
+          .json()
+          .catch(() => ({}))) as {
+          registeredResourceKeys?: string[];
+        };
+        if (!isCurrentProbe()) {
+          return { status: "idle" };
+        }
+        if (
+          registeredCheck.ok &&
+          (registeredJson.registeredResourceKeys?.length ?? 0) > 0
+        ) {
+          const next: X402ProbeViewState = {
+            status: "invalid",
+            key,
+            message: t("x402ResourceAlreadyRegistered"),
+          };
+          setX402Probe(next);
+          setX402ProbeRow(null);
+          return next;
+        }
+
         const next: X402ProbeViewState = { status: "valid", key };
         setX402Probe(next);
         setX402ProbeRow(json.row ?? { resource: trimmed });
@@ -840,8 +910,17 @@ export function RegisterAgentDialog({
   useEffect(() => {
     if (!open || registrationKind !== "X402_HTTP") return;
 
-    const liveResourceUrl = (watchedX402ResourceUrl ?? "").trim();
-    const resourceUrl = debouncedX402ResourceUrl.trim();
+    if (x402BatchResourceMode) {
+      lastAutoProbeKeyRef.current = null;
+      x402ProbeGenerationRef.current += 1;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Batch mode skips single-URL probe.
+      setX402Probe({ status: "idle" });
+      setX402ProbeRow(null);
+      return;
+    }
+
+    const liveResourceUrl = x402ProbeTargetUrl.trim();
+    const resourceUrl = debouncedX402ProbeTargetUrl.trim();
 
     if (!liveResourceUrl) {
       lastAutoProbeKeyRef.current = null;
@@ -869,8 +948,9 @@ export function RegisterAgentDialog({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Debounced live 402 probe on URL input.
     void runX402ResourceProbe(resourceUrl);
   }, [
-    debouncedX402ResourceUrl,
-    watchedX402ResourceUrl,
+    debouncedX402ProbeTargetUrl,
+    x402BatchResourceMode,
+    x402ProbeTargetUrl,
     open,
     registrationKind,
     network,
@@ -980,6 +1060,10 @@ export function RegisterAgentDialog({
   };
 
   const goToReview = () => {
+    if (mainnetCreditsGate.isBlocked) {
+      toast.error(tCreditsGate("registerBlocked"));
+      return;
+    }
     void form.handleSubmit((data) => {
       if (!assertRegistrationPreflight(data)) return;
       setReviewValues(data);
@@ -994,6 +1078,10 @@ export function RegisterAgentDialog({
 
   const handleConfirmRegistration = () => {
     if (!reviewValues || isLoading) return;
+    if (mainnetCreditsGate.isBlocked) {
+      toast.error(tCreditsGate("registerBlocked"));
+      return;
+    }
     void onSubmit(reviewValues);
   };
 
@@ -1052,7 +1140,11 @@ export function RegisterAgentDialog({
       const body = {
         registrationKind: data.registrationKind,
         ...(data.registrationKind === "X402_HTTP"
-          ? { x402ResourceUrl: data.x402ResourceUrl?.trim() }
+          ? {
+              x402ResourceUrl:
+                parseBatchResourceUrlsInput(data.x402ResourceUrl?.trim() ?? "")
+                  .urls[0] ?? data.x402ResourceUrl?.trim(),
+            }
           : {}),
         runtimeProvider: data.runtimeProvider,
         name: data.name,
@@ -1147,7 +1239,11 @@ export function RegisterAgentDialog({
         }
         finalizeSuccessfulSubmit();
       } else {
-        toast.error(json.error || t("error"));
+        const message =
+          res.status === 402
+            ? tCreditsGate("apiInsufficientCredits")
+            : json.error || t("error");
+        toast.error(message);
         setIsLoading(false);
       }
     } catch (error) {
@@ -1163,6 +1259,20 @@ export function RegisterAgentDialog({
     setCloseConfirmReason(null);
     resetSuccessfulSubmitState();
     onClose();
+  };
+
+  const openBatchX402Registration = () => {
+    if (!onBeginBatchX402Registration) {
+      toast.error(t("x402BatchUnavailable"));
+      return;
+    }
+    const urlText = form.getValues("x402ResourceUrl")?.trim() ?? "";
+    const extraTags =
+      tags.join(", ").trim() ||
+      form.getValues("tags")?.trim() ||
+      "x402, base, bazaar";
+    onBeginBatchX402Registration({ urlText, extraTags });
+    performClose();
   };
 
   const registrationHasDraft = useCallback((): boolean => {
@@ -1206,13 +1316,14 @@ export function RegisterAgentDialog({
     }
   };
 
-  const x402ResourceUrlTrimmed = (watchedX402ResourceUrl ?? "").trim();
+  const x402ResourceUrlTrimmed = x402ProbeTargetUrl.trim();
   const x402ProbeKeyForField = buildX402ResourceProbeKey(
     network,
     x402ResourceUrlTrimmed,
   );
   const showX402ResourceProbeStatus =
     registrationKind === "X402_HTTP" &&
+    !x402BatchResourceMode &&
     x402Probe.status !== "idle" &&
     x402Probe.key === x402ProbeKeyForField &&
     isProbeableResourceUrl(x402ResourceUrlTrimmed);
@@ -1258,6 +1369,7 @@ export function RegisterAgentDialog({
                   }}
                 >
                   <DialogBody ref={registerDialogBodyRef} className="space-y-8">
+                    <MainnetCreditsRequiredNotice />
                     <FormField
                       control={form.control}
                       name="registrationKind"
@@ -1353,12 +1465,32 @@ export function RegisterAgentDialog({
                         name="x402ResourceUrl"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("x402ResourceUrl")}</FormLabel>
+                            <div className="flex items-center justify-between gap-3">
+                              <FormLabel className="mb-0">
+                                {t("x402ResourceUrl")}
+                              </FormLabel>
+                              <Button
+                                type="button"
+                                variant="link"
+                                className={cn(
+                                  "h-auto shrink-0 px-0 py-0 text-sm font-medium",
+                                  x402BatchResourceMode
+                                    ? "text-primary underline-offset-4 hover:underline"
+                                    : "text-muted-foreground hover:text-foreground",
+                                )}
+                                onClick={openBatchX402Registration}
+                              >
+                                {t("x402RegisterMultiple")}
+                              </Button>
+                            </div>
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
                               <FormControl>
                                 <div className="relative flex-1">
                                   <Input
-                                    type="url"
+                                    type="text"
+                                    inputMode="url"
+                                    autoComplete="off"
+                                    spellCheck={false}
                                     placeholder={t(
                                       "x402ResourceUrlPlaceholder",
                                     )}
@@ -1369,26 +1501,35 @@ export function RegisterAgentDialog({
                                       x402ProbeGenerationRef.current += 1;
                                       lastAutoProbeKeyRef.current = null;
                                       setX402ProbeRow(null);
+                                      if (
+                                        hasMultipleX402ResourceUrlsInInput(
+                                          event.target.value,
+                                        )
+                                      ) {
+                                        form.clearErrors("x402ResourceUrl");
+                                      }
                                     }}
                                   />
-                                  <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center">
-                                    <div className="pointer-events-auto flex items-center justify-center">
-                                      <FieldProbeIndicator
-                                        status={
-                                          showX402ResourceProbeStatus
-                                            ? x402Probe.status
-                                            : "idle"
-                                        }
-                                        checkingLabel={t("x402ProbeChecking")}
-                                        validLabel={t("x402ProbeValid")}
-                                        invalidMessage={
-                                          x402Probe.status === "invalid"
-                                            ? x402Probe.message
-                                            : undefined
-                                        }
-                                      />
+                                  {!x402BatchResourceMode ? (
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center">
+                                      <div className="pointer-events-auto flex items-center justify-center">
+                                        <FieldProbeIndicator
+                                          status={
+                                            showX402ResourceProbeStatus
+                                              ? x402Probe.status
+                                              : "idle"
+                                          }
+                                          checkingLabel={t("x402ProbeChecking")}
+                                          validLabel={t("x402ProbeValid")}
+                                          invalidMessage={
+                                            x402Probe.status === "invalid"
+                                              ? x402Probe.message
+                                              : undefined
+                                          }
+                                        />
+                                      </div>
                                     </div>
-                                  </div>
+                                  ) : null}
                                 </div>
                               </FormControl>
                               <Button
@@ -1396,6 +1537,7 @@ export function RegisterAgentDialog({
                                 variant="outline"
                                 className="h-11 shrink-0 gap-2"
                                 disabled={
+                                  x402BatchResourceMode ||
                                   !x402CanAutofillMetadata ||
                                   x402ResourceProbeInFlight ||
                                   x402AutofillInProgress
@@ -1410,7 +1552,20 @@ export function RegisterAgentDialog({
                                 {t("x402AutofillMetadata")}
                               </Button>
                             </div>
-                            <FormMessage />
+                            {x402BatchResourceMode ? (
+                              <p className="text-sm text-destructive">
+                                {t("x402MultipleResourcesDetectedPrefix")}{" "}
+                                <button
+                                  type="button"
+                                  className="font-medium underline-offset-4 hover:underline"
+                                  onClick={openBatchX402Registration}
+                                >
+                                  {t("x402RegisterMultipleInstead")}
+                                </button>
+                              </p>
+                            ) : (
+                              <FormMessage />
+                            )}
                           </FormItem>
                         )}
                       />
@@ -1952,7 +2107,11 @@ export function RegisterAgentDialog({
                       <Button
                         type="button"
                         variant="primary"
-                        disabled={isLoading}
+                        disabled={
+                          isLoading ||
+                          mainnetCreditsGate.isBlocked ||
+                          mainnetCreditsGate.isPending
+                        }
                         className="group gap-2"
                         onClick={goToReview}
                       >
@@ -1992,6 +2151,7 @@ export function RegisterAgentDialog({
               </div>
 
               <DialogBody className="space-y-8">
+                <MainnetCreditsRequiredNotice />
                 <RegisterAgentReviewSection
                   values={reviewValues}
                   tags={tags}
@@ -2049,7 +2209,12 @@ export function RegisterAgentDialog({
                   <Button
                     type="button"
                     variant="primary"
-                    disabled={isLoading || !reviewValues}
+                    disabled={
+                      isLoading ||
+                      !reviewValues ||
+                      mainnetCreditsGate.isBlocked ||
+                      mainnetCreditsGate.isPending
+                    }
                     className="group gap-2"
                     onClick={handleConfirmRegistration}
                   >

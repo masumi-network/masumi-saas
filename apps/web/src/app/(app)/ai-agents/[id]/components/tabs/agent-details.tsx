@@ -5,6 +5,7 @@ import {
   DollarSign,
   Fingerprint,
   Link2,
+  Pencil,
   ShieldCheck,
   Tag,
   Tags,
@@ -13,13 +14,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
-import { RefreshButton } from "@/components/ui/refresh-button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -31,20 +31,16 @@ import { useFormatDate } from "@/hooks/use-format-date";
 import { useKycStatusWithPolling } from "@/hooks/use-kyc-status-with-polling";
 import {
   canDeregisterAgent,
+  canEditAgentDetails,
   isRegistrationConfirmedOnNetwork,
-  isRegistrationUiPending,
 } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
+import { isAgentDetailsEditEnabled } from "@/lib/config/agent-details-edit.config";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 import { usePaymentNodeSupportedX402Networks } from "@/lib/hooks/use-x402-networks";
 import { agentPricingRequiresPayoutAddress } from "@/lib/schemas/agent";
-import { cn, shortenAddress } from "@/lib/utils";
+import { shortenAddress } from "@/lib/utils";
 
-import {
-  getRegistrationStatusBadgeClassName,
-  getRegistrationStatusBadgeVariant,
-  getRegistrationStatusDisplayKey,
-} from "../../../components/agent-utils";
 import {
   agentHasX402Options,
   AgentPriceTableCell,
@@ -53,13 +49,13 @@ import {
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
 import { AgentPayoutAddressDialog } from "../agent-payout-address-dialog";
 import { AgentVerificationOverviewLine } from "../agent-verification-overview-line";
+import { EditAgentDialog } from "../edit-agent-dialog";
 
 interface AgentDetailsProps {
   agent: Agent;
   onDeleteClick: () => void;
   onDeregisterClick: () => void;
   onVerificationSuccess?: () => void | Promise<void>;
-  onRefreshStatus?: () => void | Promise<void>;
   onVerificationDialogClosed?: () => void;
   onAgentUpdated?: (agent: Agent) => void;
   onViewVerificationTab?: () => void;
@@ -72,7 +68,6 @@ export function AgentDetails({
   onDeleteClick,
   onDeregisterClick,
   onVerificationSuccess,
-  onRefreshStatus,
   onVerificationDialogClosed,
   onAgentUpdated,
   onViewVerificationTab,
@@ -90,7 +85,6 @@ export function AgentDetails({
   }, []);
   const t = useTranslations("App.Agents.Details");
   const tRegister = useTranslations("App.Agents.Register");
-  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tVerification = useTranslations("App.Agents.Details.Verification");
   const { formatDate, formatRelativeDate } = useFormatDate();
   const agentVerificationEnabled = isAgentVerificationFlowEnabled();
@@ -103,27 +97,8 @@ export function AgentDetails({
   const isRegistrationConfirmed = isRegistrationConfirmedOnNetwork(
     agent.registrationState,
   );
-  const registrationBadgeVariant = isRegistrationConfirmed
-    ? ("success" as const)
-    : getRegistrationStatusBadgeVariant(agent.registrationState);
   const showVerificationCta =
     agentVerificationEnabled && !isVerified && isRegistrationConfirmed;
-
-  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
-
-  const handleRefreshStatus = useCallback(async () => {
-    if (!onRefreshStatus) return;
-    setIsRefreshingStatus(true);
-    try {
-      await onRefreshStatus();
-    } finally {
-      setIsRefreshingStatus(false);
-    }
-  }, [onRefreshStatus]);
-
-  const showRegistrationRefresh =
-    Boolean(onRefreshStatus) &&
-    isRegistrationUiPending(agent.registrationState);
 
   const showVerificationBanner =
     showVerificationCta && Boolean(onVerificationSuccess);
@@ -133,10 +108,19 @@ export function AgentDetails({
     silentErrors: true,
     allEnvironments: true,
   });
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const requiresPayoutAddress = agentPricingRequiresPayoutAddress(
     agent.pricing,
   );
   const showPayoutAddressBanner = requiresPayoutAddress && !agent.payoutAddress;
+  const showEditButton =
+    isAgentDetailsEditEnabled() &&
+    canEditAgentDetails({
+      registrationState: agent.registrationState,
+      agentIdentifier: agent.agentIdentifier,
+      updatedAt: new Date(agent.updatedAt),
+      now: now || undefined,
+    });
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -231,33 +215,22 @@ export function AgentDetails({
 
       <div className="flex flex-col gap-6">
         <Card className="overflow-hidden gap-0 py-0">
-          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
             <CardTitle className="text-base font-semibold">
               {t("overview")}
             </CardTitle>
-            <div className="flex shrink-0 items-center gap-1">
-              <Badge
-                variant={registrationBadgeVariant}
-                className={cn(
-                  "shrink-0",
-                  getRegistrationStatusBadgeClassName(agent.registrationState),
-                )}
+            {showEditButton ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5"
+                onClick={() => setIsEditDialogOpen(true)}
               >
-                {tRegistrationStatus(
-                  getRegistrationStatusDisplayKey(agent.registrationState),
-                )}
-              </Badge>
-              {showRegistrationRefresh ? (
-                <RefreshButton
-                  onRefresh={handleRefreshStatus}
-                  isRefreshing={isRefreshingStatus}
-                  buttonVariant="ghost"
-                  size="sm"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  aria-label={t("refresh")}
-                />
-              ) : null}
-            </div>
+                <Pencil className="h-3.5 w-3.5" />
+                {t("edit")}
+              </Button>
+            ) : null}
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             {/* Description (short) */}
@@ -488,6 +461,15 @@ export function AgentDetails({
             onUpdated={(updatedAgent) => onAgentUpdated?.(updatedAgent)}
           />
         ) : null}
+
+        {showEditButton ? (
+          <EditAgentDialog
+            agent={agent}
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            onUpdated={(updatedAgent) => onAgentUpdated?.(updatedAgent)}
+          />
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -546,6 +528,7 @@ export function AgentDetails({
         const showDangerZone =
           pendingOver2Min ||
           agent.registrationState === "RegistrationConfirmed" ||
+          agent.registrationState === "UpdateFailed" ||
           agent.registrationState === "DeregistrationConfirmed" ||
           agent.registrationState === "RegistrationFailed" ||
           agent.registrationState === "DeregistrationFailed";

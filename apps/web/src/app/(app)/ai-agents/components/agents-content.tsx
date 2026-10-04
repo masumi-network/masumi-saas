@@ -36,6 +36,8 @@ import {
 } from "./agents-filters-popover";
 import { AgentsTable } from "./agents-table";
 import { AgentsTableSkeleton } from "./agents-table-skeleton";
+import { BatchRegisterX402Dialog } from "./batch-register-x402-dialog";
+import { MainnetCreditsRequiredNotice } from "./mainnet-credits-required-notice";
 import { RegisterAgentDialog } from "./register-agent-dialog";
 
 const VALID_SECTIONS = ["manage", "discovery"] as const;
@@ -61,6 +63,13 @@ export function AgentsContent() {
   const { network } = usePaymentNetwork();
   const searchParams = useSearchParams();
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
+  const [isBatchX402DialogOpen, setIsBatchX402DialogOpen] = useState(false);
+  const [batchX402InitialUrlText, setBatchX402InitialUrlText] = useState<
+    string | undefined
+  >();
+  const [batchX402InitialExtraTags, setBatchX402InitialExtraTags] = useState<
+    string | undefined
+  >();
   const [searchQuery, setSearchQuery] = useState("");
   const sectionParam = searchParams.get("section");
   const activeSection = VALID_SECTIONS.includes(
@@ -296,6 +305,7 @@ export function AgentsContent() {
 
         {activeSection === "manage" ? (
           <div className="space-y-4">
+            <MainnetCreditsRequiredNotice />
             <div className="flex items-center gap-2 sm:gap-3">
               <div
                 onClick={() => searchInputRef.current?.focus()}
@@ -372,15 +382,13 @@ export function AgentsContent() {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-border/80">
-                    <AgentsTable
-                      agents={agents}
-                      onAgentClick={(agent) => {
-                        router.push(`/ai-agents/${agent.id}`);
-                      }}
-                      onDeleteSuccess={handleDeleteSuccess}
-                    />
-                  </div>
+                  <AgentsTable
+                    agents={agents}
+                    onAgentClick={(agent) => {
+                      router.push(`/ai-agents/${agent.id}`);
+                    }}
+                    onDeleteSuccess={handleDeleteSuccess}
+                  />
                 )}
 
                 {nextCursor ? (
@@ -407,6 +415,23 @@ export function AgentsContent() {
         open={isRegisterDialogOpen}
         onClose={() => setIsRegisterDialogOpen(false)}
         onSuccess={handleRegisterSuccess}
+        onBeginBatchX402Registration={({ urlText, extraTags }) => {
+          setIsRegisterDialogOpen(false);
+          setBatchX402InitialUrlText(urlText);
+          setBatchX402InitialExtraTags(extraTags);
+          setIsBatchX402DialogOpen(true);
+        }}
+      />
+      <BatchRegisterX402Dialog
+        open={isBatchX402DialogOpen}
+        onClose={() => {
+          setIsBatchX402DialogOpen(false);
+          setBatchX402InitialUrlText(undefined);
+          setBatchX402InitialExtraTags(undefined);
+        }}
+        onSuccess={handleRegisterSuccess}
+        initialUrlText={batchX402InitialUrlText}
+        initialExtraTags={batchX402InitialExtraTags}
       />
     </>
   );

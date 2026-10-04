@@ -15,11 +15,15 @@ describe("registration status display", () => {
     );
   });
 
-  it("maps registry update lifecycle to pending", () => {
-    expect(getRegistrationStatusKey("UpdateRequested")).toBe("pending");
-    expect(getRegistrationStatusKey("UpdateInitiated")).toBe("pending");
-    expect(getRegistrationStatusDisplayKey("UpdateRequested")).toBe("pending");
-    expect(getRegistrationStatusDisplayKey("UpdateInitiated")).toBe("pending");
+  it("maps registry update lifecycle to update-specific labels", () => {
+    expect(getRegistrationStatusKey("UpdateRequested")).toBe("updateRequested");
+    expect(getRegistrationStatusKey("UpdateInitiated")).toBe("updateInitiated");
+    expect(getRegistrationStatusDisplayKey("UpdateRequested")).toBe(
+      "updateRequested",
+    );
+    expect(getRegistrationStatusDisplayKey("UpdateInitiated")).toBe(
+      "updateInitiated",
+    );
   });
 
   it("maps settled registration to registered", () => {
