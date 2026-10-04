@@ -141,7 +141,6 @@ function applyUserOverrides(
 function buildAgentMetadataJson(
   existingMetadata: string | null,
   body: UpdateAgentDetailsBody,
-  previousApiUrl: string,
 ): string | null {
   let parsed: z.infer<typeof agentMetadataSchema> = {};
   if (existingMetadata) {
@@ -168,17 +167,6 @@ function buildAgentMetadataJson(
   }
   if (body.exampleOutputs !== undefined)
     next.exampleOutputs = body.exampleOutputs;
-  if (parsed.registryEntryType === "X402" && parsed.x402Manifest) {
-    const manifest = parsed.x402Manifest;
-    next.x402Manifest = {
-      ...manifest,
-      resources: manifest.resources.map((resource) =>
-        resource.resource === previousApiUrl
-          ? { ...resource, resource: body.apiUrl.trim() }
-          : resource,
-      ),
-    };
-  }
 
   const cleaned: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(next)) {
@@ -342,6 +330,16 @@ export async function updateAgentDetails(params: {
     return { success: false, error: "Registry entry not found" };
   }
 
+  if (
+    resolveRegistryEntryType(registryEntry) === "X402" &&
+    params.body.apiUrl.trim() !== agent.apiUrl.trim()
+  ) {
+    return {
+      success: false,
+      error: "The resource URL of a registered x402 agent cannot be changed.",
+    };
+  }
+
   let onChainMetadata;
   try {
     onChainMetadata = await adminClient.getRegistryByAgentIdentifier({
@@ -498,11 +496,7 @@ export async function updateAgentDetails(params: {
     existingPayload: refMeta.registrationPayload,
     updateBody,
   });
-  const metadataJson = buildAgentMetadataJson(
-    agent.metadata,
-    params.body,
-    agent.apiUrl,
-  );
+  const metadataJson = buildAgentMetadataJson(agent.metadata, params.body);
   const refMetadataWithBaseline = withRegistryUpdateBaseline(
     refMeta as Record<string, unknown>,
     registryRowUpdatedBefore,

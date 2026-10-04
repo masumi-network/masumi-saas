@@ -443,6 +443,10 @@ export function EditAgentDialog({
                       <FormLabel>{tRegister("apiUrl")}</FormLabel>
                       <FormControl>
                         <Input
+                          readOnly={
+                            parseAgentMetadata(agent).registryEntryType ===
+                            "X402"
+                          }
                           placeholder={tRegister("apiUrlPlaceholder")}
                           {...field}
                           className="h-11 font-mono text-sm"
