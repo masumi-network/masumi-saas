@@ -562,10 +562,11 @@ app.openapi(
         metadata: creditMetadata,
       });
 
-      let shouldRefundRegistrationCredit = true;
+      // Fix the id up front so a throw can tell whether the agent row exists.
+      const registrationAgentId = agentId ?? randomUUID();
 
       const params: RegisterAgentParams = {
-        id: agentId,
+        id: registrationAgentId,
         name,
         description: description?.trim() || null,
         apiUrl: resolvedApiUrl,
@@ -606,7 +607,13 @@ app.openapi(
           params,
         );
       } catch (registrationError) {
-        if (shouldRefundRegistrationCredit) {
+        // Once the agent row exists, complete-registration can still submit it
+        // on-chain, so the credit must stay consumed.
+        const persistedAgent = await prisma.agent.findUnique({
+          where: { id: registrationAgentId },
+          select: { id: true },
+        });
+        if (!persistedAgent) {
           await refundConsumedCredit({
             userId: user.id,
             reason: "agent_register",
@@ -614,7 +621,6 @@ app.openapi(
             network,
             metadata: creditMetadata,
           });
-          shouldRefundRegistrationCredit = false;
         }
         throw registrationError;
       }
@@ -627,11 +633,8 @@ app.openapi(
           network,
           metadata: creditMetadata,
         });
-        shouldRefundRegistrationCredit = false;
         throw new ApiError(400, result.error);
       }
-
-      shouldRefundRegistrationCredit = false;
 
       scheduleAgentRegistrationCompletion(result.agentId, user.id);
       const agent = await prisma.agent.findFirst({
