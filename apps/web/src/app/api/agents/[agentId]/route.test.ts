@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAuthenticatedOrThrowMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
@@ -65,9 +65,10 @@ function patch() {
   });
 }
 
-describe("/api/agents/{agentId} PATCH credit refunds", () => {
+describe("/api/agents/{agentId} PATCH", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("NEXT_PUBLIC_ENABLE_AGENT_DETAILS_EDIT", "true");
     getAuthenticatedOrThrowMock.mockResolvedValue({
       user: { id: "user-1" },
       authMethod: "session",
@@ -78,6 +79,20 @@ describe("/api/agents/{agentId} PATCH credit refunds", () => {
     });
     consumeCreditIfRequiredMock.mockResolvedValue({ creditsRemaining: 1 });
     refundConsumedCreditMock.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("returns 403 and consumes no credit when editing is disabled", async () => {
+    vi.stubEnv("NEXT_PUBLIC_ENABLE_AGENT_DETAILS_EDIT", undefined);
+
+    const response = await patch();
+
+    expect(response.status).toBe(403);
+    expect(consumeCreditIfRequiredMock).not.toHaveBeenCalled();
+    expect(updateAgentDetailsMock).not.toHaveBeenCalled();
   });
 
   it("refunds the credit when the update fails before the registry call", async () => {

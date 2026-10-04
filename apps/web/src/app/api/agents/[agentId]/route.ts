@@ -8,6 +8,7 @@ import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { isAgentDetailsEditEnabled } from "@/lib/config/agent-details-edit.config";
 import {
   consumeCreditIfRequired,
   createCreditReference,
@@ -205,6 +206,9 @@ app.openapi(
   }),
   async (c) => {
     const authContext = await getAuthenticatedOrThrow(c.req.raw);
+    if (!isAgentDetailsEditEnabled()) {
+      throw new ApiError(403, "Agent details editing is not enabled.");
+    }
     const { agentId } = c.req.valid("param");
     const body = c.req.valid("json");
 
