@@ -521,6 +521,7 @@ export function AgentDetails({
         const showDangerZone =
           pendingOver2Min ||
           agent.registrationState === "RegistrationConfirmed" ||
+          agent.registrationState === "UpdateFailed" ||
           agent.registrationState === "DeregistrationConfirmed" ||
           agent.registrationState === "RegistrationFailed" ||
           agent.registrationState === "DeregistrationFailed";

@@ -135,6 +135,7 @@ describe("isAgentLiveOnRegistry", () => {
 describe("canDeregisterAgent", () => {
   it("allows only settled registration states", () => {
     expect(canDeregisterAgent("RegistrationConfirmed")).toBe(true);
+    expect(canDeregisterAgent("UpdateFailed")).toBe(true);
     expect(canDeregisterAgent("DeregistrationFailed")).toBe(true);
   });
 

@@ -237,6 +237,7 @@ export const X402_RESOURCE_URL_BLOCKED_STATES = [
 /** States where deregister is allowed (settled registration only). */
 export const AGENT_DEREGISTER_ELIGIBLE_STATES = [
   "RegistrationConfirmed",
+  "UpdateFailed",
   "DeregistrationFailed",
 ] as const satisfies readonly RegistrationState[];
 
