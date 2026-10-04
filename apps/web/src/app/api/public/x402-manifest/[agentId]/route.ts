@@ -1,6 +1,7 @@
 import prisma from "@masumi/database/client";
 import { NextResponse } from "next/server";
 
+import { X402_RESOURCE_URL_BLOCKED_STATES } from "@/lib/agents/registration-state";
 import {
   isX402RegistryAgent,
   parseAgentRegistryMetadata,
@@ -18,7 +19,14 @@ export async function GET(_request: Request, context: RouteContext) {
     where: { id: agentId },
     select: { metadata: true, registrationState: true },
   });
-  if (!agent) {
+  // Serve while the entry is on-chain or mid-lifecycle (the registry may fetch
+  // the manifest during registration); hide it once it failed or is gone.
+  if (
+    !agent ||
+    !(X402_RESOURCE_URL_BLOCKED_STATES as readonly string[]).includes(
+      agent.registrationState,
+    )
+  ) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
