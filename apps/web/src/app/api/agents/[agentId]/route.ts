@@ -1,11 +1,20 @@
 import { createRoute } from "@hono/zod-openapi";
+import prisma from "@masumi/database/client";
 import { loadSupportedPaymentSourcesForAgent } from "@masumi/payment-source-x402/supported-payment-sources";
 
 import { deleteAgentForUser } from "@/lib/agents/delete-agent";
+import { updateAgentDetails } from "@/lib/agents/update-agent-details";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import {
+  consumeCreditIfRequired,
+  createCreditReference,
+  CREDIT_COST,
+  refundConsumedCredit,
+} from "@/lib/credits/service";
+import { updateAgentDetailsBodySchema } from "@/lib/schemas/agent";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
   agentDeletedSuccessSchema,
@@ -144,5 +153,181 @@ app.openapi(
   },
 );
 
-export const { GET, DELETE } = nextHandlers(app);
+app.openapi(
+  createRoute({
+    method: "patch",
+    path: "/",
+    tags: ["Agents"],
+    summary: "Update agent details",
+    description:
+      "Updates editable registry metadata for a registered V2 agent (name, description, tags, API URL, capability, legal URLs, example outputs, icon). Pricing and payout address are not changed.",
+    security,
+    request: {
+      params: paramsSchema,
+      body: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: updateAgentDetailsBodySchema.openapi({
+              example: {
+                name: "Research assistant",
+                description: "Helps with literature review",
+                apiUrl: "https://agent.example.com/mip",
+                tags: "research, nlp",
+                icon: "bot",
+                termsOfUseUrl: "https://example.com/terms",
+                privacyPolicyUrl: "https://example.com/privacy",
+                otherUrl: "",
+                capabilityName: "Masumi",
+                capabilityVersion: "1.0",
+                exampleOutputs: [
+                  {
+                    name: "Sample output",
+                    url: "https://example.com/sample.json",
+                    mimeType: "application/json",
+                  },
+                ],
+              },
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Updated agent",
+        content: {
+          "application/json": { schema: agentDetailSuccessSchema },
+        },
+      },
+      ...stdResponses,
+    },
+  }),
+  async (c) => {
+    const authContext = await getAuthenticatedOrThrow(c.req.raw);
+    const { agentId } = c.req.valid("param");
+    const body = c.req.valid("json");
+
+    let shouldRefundUpdateCredit = false;
+    let updateCreditReference: string | null = null;
+    let updateCreditMetadata: Record<string, unknown> | null = null;
+    let updateCreditNetwork: "Mainnet" | "Preprod" | null = null;
+
+    try {
+      const existingAgent = await prisma.agent.findFirst({
+        where: { id: agentId, userId: authContext.user.id },
+        select: {
+          networkIdentifier: true,
+          agentReference: { select: { networkIdentifier: true } },
+        },
+      });
+
+      if (!existingAgent) {
+        throw new ApiError(404, "Agent not found");
+      }
+
+      const resolvedNetwork =
+        existingAgent.agentReference?.networkIdentifier ??
+        existingAgent.networkIdentifier;
+      const network = resolvedNetwork === "Mainnet" ? "Mainnet" : "Preprod";
+
+      requireNetworkedOidcApiScope(authContext, {
+        resource: "agents",
+        action: "write",
+        network,
+      });
+
+      const creditReference = createCreditReference("agent-update");
+      const creditMetadata = {
+        agentId,
+        network,
+        authMethod: authContext.authMethod,
+      };
+
+      await consumeCreditIfRequired({
+        userId: authContext.user.id,
+        reason: "agent_update",
+        reference: creditReference,
+        network,
+        costDisplayCredits: CREDIT_COST,
+        metadata: creditMetadata,
+      });
+
+      shouldRefundUpdateCredit = true;
+      updateCreditReference = creditReference;
+      updateCreditMetadata = creditMetadata;
+      updateCreditNetwork = network;
+
+      let result: Awaited<ReturnType<typeof updateAgentDetails>>;
+      try {
+        result = await updateAgentDetails({
+          userId: authContext.user.id,
+          agentId,
+          body,
+        });
+      } catch (updateError) {
+        // Registry work may have started; do not refund on unexpected throws.
+        shouldRefundUpdateCredit = false;
+        throw updateError;
+      }
+
+      if (!result.success) {
+        await refundConsumedCredit({
+          userId: authContext.user.id,
+          reason: "agent_update",
+          reference: creditReference,
+          network,
+          metadata: creditMetadata,
+        });
+        shouldRefundUpdateCredit = false;
+        throw new ApiError(400, result.error);
+      }
+
+      shouldRefundUpdateCredit = false;
+
+      const agent = await getWalletOwnedAgentForUser({
+        userId: authContext.user.id,
+        agentId,
+      });
+
+      if (!agent) {
+        throw new ApiError(404, "Agent not found");
+      }
+
+      const supportedPaymentSources =
+        await loadSupportedPaymentSourcesForAgent(agentId);
+      const data = shapeAgentForApi(agent, supportedPaymentSources);
+
+      return c.json(
+        {
+          success: true as const,
+          data: data as unknown as z.infer<
+            typeof agentDetailSuccessSchema
+          >["data"],
+        },
+        200,
+      );
+    } catch (error) {
+      if (
+        shouldRefundUpdateCredit &&
+        updateCreditReference &&
+        updateCreditNetwork
+      ) {
+        await refundConsumedCredit({
+          userId: authContext.user.id,
+          reason: "agent_update",
+          reference: updateCreditReference,
+          network: updateCreditNetwork,
+          metadata: updateCreditMetadata ?? undefined,
+        });
+      }
+      if (error instanceof ApiError) throw error;
+      rethrowIfAuthOrCreditsError(error);
+      console.error("Failed to update agent details:", error);
+      throw new ApiError(500, "Failed to update agent details");
+    }
+  },
+);
+
+export const { GET, PATCH, DELETE } = nextHandlers(app);
 export default app;

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   extractAssetName,
   extractPolicyId,
+  isLegacyV1RegistryAgent,
   versionIndependentAgentId,
 } from "./version-independent-agent-id";
 
@@ -34,6 +35,13 @@ describe("versionIndependentAgentId", () => {
   it("returns full identifier for legacy non-V2 asset names", () => {
     const legacy = POLICY_ID + "c".repeat(32);
     expect(versionIndependentAgentId(legacy)).toBe(legacy);
+  });
+
+  it("detects legacy V1 agents by asset name length", () => {
+    expect(isLegacyV1RegistryAgent(AGENT_IDENTIFIER)).toBe(false);
+    expect(isLegacyV1RegistryAgent(POLICY_ID + "c".repeat(32))).toBe(true);
+    expect(isLegacyV1RegistryAgent(null)).toBe(false);
+    expect(isLegacyV1RegistryAgent("")).toBe(false);
   });
 
   it("normalizes hex casing", () => {

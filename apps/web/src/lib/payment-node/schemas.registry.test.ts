@@ -1,6 +1,52 @@
 import { describe, expect, it } from "vitest";
 
-import { registryListResponseSchema } from "./schemas";
+import {
+  registryAgentIdentifierMetadataSchema,
+  registryListResponseSchema,
+} from "./schemas";
+
+describe("registryAgentIdentifierMetadataSchema", () => {
+  it("accepts V2 on-chain metadata with null AgentPricing", () => {
+    const parsed = registryAgentIdentifierMetadataSchema.parse({
+      policyId: "67ab0c92c4ac1610895a1c965ee50aba41a8f1513b15240723b3bd0b",
+      assetName: "000001",
+      agentIdentifier:
+        "67ab0c92c4ac1610895a1c965ee50aba41a8f1513b15240723b3bd0b000001",
+      Metadata: {
+        name: "Test agent",
+        apiBaseUrl: "https://agent.example.com/mip",
+        description: "Desc",
+        image: "https://agent.example.com/icon.png",
+        metadataVersion: 2,
+        Tags: ["ai"],
+        AgentPricing: null,
+        supportedPaymentSources: null,
+        verifications: null,
+      },
+    });
+
+    expect(parsed.Metadata.AgentPricing).toBeNull();
+    expect(parsed.Metadata.metadataVersion).toBe(2);
+  });
+
+  it("accepts X402 on-chain metadata without apiBaseUrl", () => {
+    const parsed = registryAgentIdentifierMetadataSchema.parse({
+      policyId: "67ab0c92c4ac1610895a1c965ee50aba41a8f1513b15240723b3bd0b",
+      assetName: "000001",
+      agentIdentifier:
+        "67ab0c92c4ac1610895a1c965ee50aba41a8f1513b15240723b3bd0b000001",
+      Metadata: {
+        name: "x402.org · Protected",
+        description: "Access to protected content",
+        metadataVersion: 2,
+        Tags: ["x402"],
+        AgentPricing: null,
+      },
+    });
+
+    expect(parsed.Metadata.apiBaseUrl).toBeUndefined();
+  });
+});
 
 describe("registryListResponseSchema", () => {
   it("accepts OpenApi/X402 entries with null apiBaseUrl", () => {

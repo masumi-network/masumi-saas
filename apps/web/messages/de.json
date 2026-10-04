@@ -1022,6 +1022,8 @@
       "searchPlaceholder": "Suchagenten...",
       "searchShortcut": "F",
       "registerAgent": "Agent registrieren",
+      "registryVersionV1": "V1",
+      "registryVersionV1Aria": "Legacy-V1-Registry-Agent",
       "noAgents": "Keine Agenten gefunden. Registrieren Sie Ihren ersten Agenten, um loszulegen.",
       "noAgentsMatchingSearch": "Es wurden keine Agenten gefunden, die Ihrer Suche entsprechen",
       "loadMore": "Mehr laden",
@@ -1065,7 +1067,7 @@
         "deregistering": "Abmelden",
         "deregistered": "Abgemeldet",
         "deregistrationFailed": "Fehlgeschlagen",
-        "updateRequested": "Update angefordert",
+        "updateRequested": "Update ausstehend",
         "updateInitiated": "Wird aktualisiert",
         "updateFailed": "Update fehlgeschlagen"
       },
@@ -1378,10 +1380,19 @@
         "title": "Agent bearbeiten",
         "submit": "Änderungen speichern",
         "success": "Agent erfolgreich aktualisiert!",
-        "error": "Der Agent konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+        "successPending": "Update gestartet. On-Chain-Änderungen können einige Minuten dauern.",
+        "error": "Der Agent konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+        "reviewTitle": "Änderungen prüfen",
+        "reviewDescription": "Prüfen Sie alles unten, bevor Sie bestätigen. Mit Zurück können Sie Felder ändern.",
+        "continue": "Weiter",
+        "reviewBack": "Zurück",
+        "confirmUpdate": "Update bestätigen",
+        "confirmSubmitting": "Wird aktualisiert…"
       },
       "Details": {
         "overview": "Überblick",
+        "registrationStatusLabel": "Registration status",
+        "registrationStatusPendingHint": "On-chain registration or update in progress. Refresh to sync the latest state.",
         "edit": "Bearbeiten",
         "backToAgents": "Zurück zu den Agenten",
         "backToDashboard": "Zurück zum Dashboard",

@@ -1022,6 +1022,8 @@
       "searchPlaceholder": "エージェントを検索...",
       "searchShortcut": "F",
       "registerAgent": "エージェントを登録する",
+      "registryVersionV1": "V1",
+      "registryVersionV1Aria": "レガシー V1 レジストリエージェント",
       "noAgents": "エージェントが見つかりませんでした。まずは最初のエージェントを登録してください。",
       "noAgentsMatchingSearch": "検索に一致するエージェントは見つかりませんでした",
       "loadMore": "さらにロードする",
@@ -1065,7 +1067,7 @@
         "deregistering": "登録を解除する",
         "deregistered": "登録抹消済み",
         "deregistrationFailed": "失敗した",
-        "updateRequested": "更新リクエスト済み",
+        "updateRequested": "更新待ち",
         "updateInitiated": "更新中",
         "updateFailed": "更新失敗"
       },
@@ -1378,10 +1380,19 @@
         "title": "エージェントの編集",
         "submit": "変更を保存",
         "success": "エージェントは正常に更新されました。",
-        "error": "エージェントの更新に失敗しました。もう一度試してください。"
+        "successPending": "更新を開始しました。オンチェーンの反映には数分かかる場合があります。",
+        "error": "エージェントの更新に失敗しました。もう一度試してください。",
+        "reviewTitle": "変更内容の確認",
+        "reviewDescription": "確認する前に以下をご確認ください。戻るでフィールドを変更できます。",
+        "continue": "続行",
+        "reviewBack": "戻る",
+        "confirmUpdate": "更新を確定",
+        "confirmSubmitting": "更新中…"
       },
       "Details": {
         "overview": "概要",
+        "registrationStatusLabel": "Registration status",
+        "registrationStatusPendingHint": "On-chain registration or update in progress. Refresh to sync the latest state.",
         "edit": "編集",
         "backToAgents": "エージェントに戻る",
         "backToDashboard": "ダッシュボードに戻る",

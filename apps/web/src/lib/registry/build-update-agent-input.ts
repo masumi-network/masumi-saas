@@ -29,7 +29,8 @@ type BuildUpdateAgentInputParams = {
   onChainMetadata: RegistryAgentIdentifierMetadata;
   storedRegistration?: StoredRegistrationPayload | null;
   agentIcon?: string | null;
-  verifications: Verification[];
+  /** Omit when unknown so payment-node keeps existing verification rows. */
+  verifications?: Verification[];
 };
 
 function resolveLegal(
@@ -50,11 +51,31 @@ function resolveLegal(
   };
 }
 
+function isV2RegistryMetadata(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+): boolean {
+  return (metadata.metadataVersion ?? 1) >= 2;
+}
+
+function resolveApiBaseUrl(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): string {
+  const fromMetadata = metadata.apiBaseUrl?.trim();
+  if (fromMetadata) return fromMetadata;
+  const fromEntry = registryEntry.apiBaseUrl?.trim();
+  if (fromEntry) return fromEntry;
+  const fromX402 = registryEntry.x402ResourcesUrl?.trim();
+  if (fromX402) return fromX402;
+  return "";
+}
+
 export function buildUpdateAgentInput(
   params: BuildUpdateAgentInputParams,
 ): UpdateAgentInput {
   const { registryEntry, onChainMetadata, storedRegistration } = params;
   const metadata = onChainMetadata.Metadata;
+  const isV2 = isV2RegistryMetadata(metadata);
   const image =
     metadata.image ?? resolveAgentRegistryImage(params.agentIcon) ?? undefined;
 
@@ -89,14 +110,14 @@ export function buildUpdateAgentInput(
       undefined,
   };
 
-  return {
+  const base: UpdateAgentInput = {
     network: params.network,
     agentIdentifier: params.agentIdentifier,
     ...(params.smartContractAddress
       ? { smartContractAddress: params.smartContractAddress }
       : {}),
     name: metadata.name ?? registryEntry.name,
-    apiBaseUrl: metadata.apiBaseUrl ?? registryEntry.apiBaseUrl ?? "",
+    apiBaseUrl: resolveApiBaseUrl(metadata, registryEntry),
     description: metadata.description ?? registryEntry.description ?? "",
     ...(image ? { image } : {}),
     Tags:
@@ -105,8 +126,8 @@ export function buildUpdateAgentInput(
         : registryEntry.Tags,
     ExampleOutputs: exampleOutputs,
     Capability: {
-      name: capability.name,
-      version: capability.version,
+      name: capability.name ?? "unknown",
+      version: capability.version ?? "1.0.0",
     },
     Author: {
       name: author.name,
@@ -117,9 +138,19 @@ export function buildUpdateAgentInput(
     ...(resolveLegal(storedRegistration, metadata)
       ? { Legal: resolveLegal(storedRegistration, metadata) }
       : {}),
+    ...(params.verifications !== undefined
+      ? { verifications: params.verifications }
+      : {}),
+  };
+
+  if (isV2) {
+    return base;
+  }
+
+  return {
+    ...base,
     AgentPricing: (metadata.AgentPricing ??
       storedRegistration?.agentPricing ??
       registryEntry.AgentPricing) as UpdateAgentInput["AgentPricing"],
-    verifications: params.verifications,
   };
 }

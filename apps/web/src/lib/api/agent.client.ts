@@ -1,6 +1,7 @@
 "use client";
 
 import type { AgentPricing } from "@/lib/utils";
+import { extractErrorMessage } from "@/lib/utils/extract-error";
 
 import type {
   Agent,
@@ -38,9 +39,13 @@ class AgentApiClient {
       const data = (await response.json()) as ApiResponse<T>;
 
       if (!response.ok) {
+        const apiError =
+          data && typeof data === "object" && "error" in data
+            ? (data as { error?: unknown }).error
+            : undefined;
         return {
           success: false,
-          error: data.success === false ? data.error : "Request failed",
+          error: extractErrorMessage(apiError, "Request failed"),
         };
       }
 
@@ -272,6 +277,28 @@ class AgentApiClient {
     return this.request<Agent>(`/${agentId}/payout-address`, {
       method: "PATCH",
       body: JSON.stringify({ payoutAddress }),
+    });
+  }
+
+  async updateAgent(
+    agentId: string,
+    body: {
+      name: string;
+      description?: string;
+      tags: string;
+      apiUrl: string;
+      capabilityName?: string;
+      capabilityVersion?: string;
+      exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
+      termsOfUseUrl?: string;
+      privacyPolicyUrl?: string;
+      otherUrl?: string;
+      icon?: string;
+    },
+  ): Promise<ApiResponse<Agent>> {
+    return this.request<Agent>(`/${agentId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
     });
   }
 

@@ -84,8 +84,8 @@ const REGISTRATION_STATUS_KEYS: Record<
   DeregistrationInitiated: "deregistering",
   DeregistrationConfirmed: "deregistered",
   DeregistrationFailed: "deregistrationFailed",
-  UpdateRequested: "pending",
-  UpdateInitiated: "pending",
+  UpdateRequested: "updateRequested",
+  UpdateInitiated: "updateInitiated",
   UpdateConfirmed: "registered",
   UpdateFailed: "updateFailed",
 };
@@ -114,7 +114,12 @@ export function getRegistrationStatusBadgeClassName(
   status: Agent["registrationState"],
 ): string {
   const key = getRegistrationStatusDisplayKey(status);
-  if (key === "pending" || key === "registering") {
+  if (
+    key === "pending" ||
+    key === "registering" ||
+    key === "updateRequested" ||
+    key === "updateInitiated"
+  ) {
     return "animate-badge-blink";
   }
   return "";
