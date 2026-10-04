@@ -958,6 +958,7 @@
       "registrationFailed": "登録に失敗しました",
       "deregistrationFailed": "登録解除に失敗しました",
       "registrationTimedOut": "登録がタイムアウトしました",
+      "deregistrationTimedOut": "登録解除がタイムアウトしました",
       "viewAgent": "エージェントを見る"
     },
     "UserProfile": {

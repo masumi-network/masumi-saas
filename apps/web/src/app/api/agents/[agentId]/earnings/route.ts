@@ -9,6 +9,7 @@ import {
   resolveAgentPaymentRail,
 } from "@/lib/earnings/agent-income";
 import { getUserOwnedAgentForEarnings } from "@/lib/earnings/owned-agent";
+import { addUtcCalendarDays } from "@/lib/earnings/presentation";
 import { toNetwork } from "@/lib/payment-node/format";
 import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
 import {
@@ -40,11 +41,11 @@ function periodToDateRange(period: "1d" | "7d" | "30d" | "all"): {
   endDate: string;
 } {
   if (period === "1d") {
-    const { endDate: today } = resolveAgentAnalyticsPeriod({
+    const { endDate } = resolveAgentAnalyticsPeriod({
       range: "7d",
       timeZone: "Etc/UTC",
     });
-    return { startDate: today, endDate: today };
+    return { startDate: addUtcCalendarDays(endDate, -1), endDate };
   }
 
   const { startDate, endDate } = resolveAgentAnalyticsPeriod({

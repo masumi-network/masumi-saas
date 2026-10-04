@@ -958,6 +958,7 @@
       "registrationFailed": "Registro fallido",
       "deregistrationFailed": "Error al dar de baja",
       "registrationTimedOut": "Se agotó el tiempo de registro",
+      "deregistrationTimedOut": "Se agotó el tiempo de baja del registro",
       "viewAgent": "Ver agente"
     },
     "UserProfile": {

@@ -258,18 +258,11 @@ app.openapi(
       updateCreditMetadata = creditMetadata;
       updateCreditNetwork = network;
 
-      let result: Awaited<ReturnType<typeof updateAgentDetails>>;
-      try {
-        result = await updateAgentDetails({
-          userId: authContext.user.id,
-          agentId,
-          body,
-        });
-      } catch (updateError) {
-        // Registry work may have started; do not refund on unexpected throws.
-        shouldRefundUpdateCredit = false;
-        throw updateError;
-      }
+      const result = await updateAgentDetails({
+        userId: authContext.user.id,
+        agentId,
+        body,
+      });
 
       if (!result.success) {
         await refundConsumedCredit({

@@ -232,7 +232,10 @@ export function AgentsTable({
         );
         if (result.success) {
           toast.success(tDetails("deregisterSuccess"));
-          addPendingRegistration(selectedAgentToDeregister.id);
+          addPendingRegistration(
+            selectedAgentToDeregister.id,
+            "deregistration",
+          );
           await syncAgentRegistrationStatusAction(selectedAgentToDeregister.id);
           onDeleteSuccess(); // refetch list
           setIsDeregisterDialogOpen(false);

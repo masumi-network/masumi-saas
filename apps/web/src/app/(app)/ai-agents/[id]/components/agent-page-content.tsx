@@ -260,7 +260,7 @@ export function AgentPageContent({
         const result = await agentApiClient.deregisterAgent(agent.id);
         if (result.success) {
           toast.success(t("deregisterSuccess"));
-          addPendingRegistration(agent.id);
+          addPendingRegistration(agent.id, "deregistration");
           await syncAgentRegistrationStatusAction(agent.id);
           const next = await agentApiClient.getAgent(agent.id);
           if (next.success && next.data) setAgent(next.data);

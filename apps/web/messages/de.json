@@ -958,6 +958,7 @@
       "registrationFailed": "Die Registrierung ist fehlgeschlagen",
       "deregistrationFailed": "Abmeldung fehlgeschlagen",
       "registrationTimedOut": "Zeitüberschreitung bei der Registrierung",
+      "deregistrationTimedOut": "Zeitüberschreitung bei der Abmeldung",
       "viewAgent": "Agent anzeigen"
     },
     "UserProfile": {

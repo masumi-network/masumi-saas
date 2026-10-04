@@ -958,6 +958,7 @@
       "registrationFailed": "L'inscription a échoué",
       "deregistrationFailed": "Échec de la désinscription",
       "registrationTimedOut": "L'inscription a expiré",
+      "deregistrationTimedOut": "La désinscription a expiré",
       "viewAgent": "Afficher l'agent"
     },
     "UserProfile": {

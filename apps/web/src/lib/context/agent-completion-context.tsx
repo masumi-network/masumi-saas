@@ -121,8 +121,13 @@ function saveRetryCounts(
   }
 }
 
+export type RegistrationPollGoal = "registration" | "deregistration";
+
 export type AgentCompletionContextValue = {
-  addPendingRegistration: (agentId: string) => void;
+  addPendingRegistration: (
+    agentId: string,
+    pollGoal?: RegistrationPollGoal,
+  ) => void;
   addPendingOnChainVerification: (agentId: string) => void;
 };
 
@@ -158,6 +163,9 @@ export function AgentCompletionProvider({
   onChainNotifiedKeyRef.current = onChainNotifiedKey(userId);
 
   const registrationPendingRef = useRef<Set<string>>(new Set());
+  const registrationPollGoalRef = useRef<Map<string, RegistrationPollGoal>>(
+    new Map(),
+  );
   const registrationRetryRef = useRef<Map<string, number>>(new Map());
   const registrationPollingRef = useRef(false);
   const registrationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -233,10 +241,11 @@ export function AgentCompletionProvider({
   }, [clearOnChainPolling]);
 
   const addPendingRegistration = useCallback(
-    (agentId: string) => {
+    (agentId: string, pollGoal: RegistrationPollGoal = "registration") => {
       const next = new Set(registrationPendingRef.current);
       next.add(agentId);
       registrationPendingRef.current = next;
+      registrationPollGoalRef.current.set(agentId, pollGoal);
       saveIdSet(next, registrationStorageKeyRef.current);
       startRegistrationPolling();
     },
@@ -276,15 +285,22 @@ export function AgentCompletionProvider({
             next.delete(agentId);
             registrationPendingRef.current = next;
             registrationRetryRef.current.delete(agentId);
+            const pollGoal =
+              registrationPollGoalRef.current.get(agentId) ?? "registration";
+            registrationPollGoalRef.current.delete(agentId);
             saveIdSet(next, registrationStorageKeyRef.current);
             saveRetryCounts(
               registrationRetryRef.current,
               registrationRetriesKeyRef.current,
             );
-            toast.error(tRef.current("registrationTimedOut"));
+            const timedOutKey =
+              pollGoal === "deregistration"
+                ? "deregistrationTimedOut"
+                : "registrationTimedOut";
+            toast.error(tRef.current(timedOutKey));
             addNotificationRef.current({
               type: "error",
-              titleKey: "registrationTimedOut",
+              titleKey: timedOutKey,
               link: {
                 href: `/ai-agents/${agentId}`,
                 labelKey: "viewAgent",
@@ -371,6 +387,7 @@ export function AgentCompletionProvider({
         for (const { agentId } of toRemove) {
           next.delete(agentId);
           registrationRetryRef.current.delete(agentId);
+          registrationPollGoalRef.current.delete(agentId);
         }
         registrationPendingRef.current = next;
         saveIdSet(next, registrationStorageKeyRef.current);
