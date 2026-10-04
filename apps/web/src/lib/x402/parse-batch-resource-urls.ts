@@ -1,3 +1,5 @@
+import { resourceUrlDuplicateKey } from "./resource-url-duplicate-key";
+
 const MAX_BATCH_RESOURCE_URLS = 100;
 
 export function parseBatchResourceUrlsInput(text: string): {
@@ -22,7 +24,7 @@ export function parseBatchResourceUrlsInput(text: string): {
           invalidLines.push(trimmed);
           continue;
         }
-        const key = parsed.href.toLowerCase();
+        const key = resourceUrlDuplicateKey(parsed.href)!;
         if (seen.has(key)) continue;
         seen.add(key);
         urls.push(parsed.href);

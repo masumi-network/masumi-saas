@@ -104,6 +104,9 @@ function pickNetworkAccept(
   const onNetwork = accepts.filter((a) => a?.network === network);
   if (onNetwork.length === 0) return null;
   return (
+    onNetwork.find(
+      (a) => assessSokosumiBuySideCompatibility(accepts, a).compatible,
+    ) ??
     onNetwork.find((a) => a.scheme === SOKOSUMI_SUPPORTED_SCHEME) ??
     onNetwork[0] ??
     null

@@ -46,3 +46,15 @@ describe("parseBatchResourceUrlsInput", () => {
     expect(urls).toHaveLength(100);
   });
 });
+
+it("keeps case-sensitive paths, query values, and trailing slashes distinct", () => {
+  const urls = [
+    "https://example.com/A",
+    "https://example.com/a",
+    "https://example.com/paid?id=A",
+    "https://example.com/paid?id=a",
+    "https://example.com/paid",
+    "https://example.com/paid/",
+  ];
+  expect(parseBatchResourceUrlsInput(urls.join("\n")).urls).toEqual(urls);
+});

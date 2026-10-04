@@ -1,12 +1,4 @@
-/** Strip trailing slashes from path (except bare `/`) so probe and batch dedup match. */
-function normalizeHttpResourceHref(parsed: URL): string {
-  if (parsed.pathname.length > 1 && parsed.pathname.endsWith("/")) {
-    parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/";
-  }
-  return parsed.href;
-}
-
-/** Canonical href for persistence (same normalization as duplicate key, original casing). */
+/** Canonical href for persistence (normalizes scheme and host, preserves resource path and query). */
 export function canonicalX402ResourceUrl(url: string): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -15,14 +7,13 @@ export function canonicalX402ResourceUrl(url: string): string | null {
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       return null;
     }
-    return normalizeHttpResourceHref(parsed);
+    return parsed.href;
   } catch {
     return null;
   }
 }
 
-/** Normalized key for comparing x402 resource URLs (href, lowercase). */
+/** Normalized key for comparing x402 resource URLs. */
 export function resourceUrlDuplicateKey(url: string): string | null {
-  const canonical = canonicalX402ResourceUrl(url);
-  return canonical ? canonical.toLowerCase() : null;
+  return canonicalX402ResourceUrl(url);
 }

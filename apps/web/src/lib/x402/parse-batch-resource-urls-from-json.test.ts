@@ -74,3 +74,17 @@ describe("parseBatchResourceUrlsFromJson", () => {
     expect(urls[0]).toMatch(/^https:\/\//);
   });
 });
+
+it("keeps case-sensitive paths, query values, and trailing slashes distinct", () => {
+  const urls = [
+    "https://example.com/A",
+    "https://example.com/a",
+    "https://example.com/paid?id=A",
+    "https://example.com/paid?id=a",
+    "https://example.com/paid",
+    "https://example.com/paid/",
+  ];
+  expect(parseBatchResourceUrlsFromJson(JSON.stringify(urls)).urls).toEqual(
+    urls,
+  );
+});
