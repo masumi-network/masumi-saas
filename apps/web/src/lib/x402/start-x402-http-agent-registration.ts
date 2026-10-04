@@ -26,6 +26,10 @@ import { prepareX402HttpRegistration } from "./prepare-http-registration";
 import { resourceUrlDuplicateKey } from "./resource-url-duplicate-key";
 
 export const BATCH_X402_REGISTRATION_MAX_URLS = MAX_BATCH_RESOURCE_URLS;
+/** Registrations processed at once in one batch request. */
+export const BATCH_X402_REGISTRATION_CONCURRENCY = 5;
+/** Per-URL probe timeout in a batch, so one slow host cannot stall the request. */
+export const BATCH_X402_PROBE_TIMEOUT_MS = 15_000;
 
 export type StartX402HttpAgentRegistrationInput = {
   ctx: RegisterAgentContext;
@@ -38,6 +42,7 @@ export type StartX402HttpAgentRegistrationInput = {
   authMethod?: string;
   /** When false, name/description/tags ignore probe-derived autofill defaults. */
   useProbeMetadataAutofill?: boolean;
+  probeTimeoutMs?: number;
 };
 
 export type StartX402HttpAgentRegistrationResult =
@@ -145,6 +150,7 @@ export async function startX402HttpAgentRegistration(
   const prepared = await prepareX402HttpRegistration({
     resourceUrl: trimmedResource,
     network,
+    probeTimeoutMs: input.probeTimeoutMs,
   });
   if (!prepared.ok) {
     return {

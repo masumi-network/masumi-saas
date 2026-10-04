@@ -16,7 +16,10 @@ import {
   canonicalX402ResourceUrl,
   resourceUrlDuplicateKey,
 } from "@/lib/x402/resource-url-duplicate-key";
+import { mapWithConcurrency } from "@/lib/utils/map-with-concurrency";
 import {
+  BATCH_X402_PROBE_TIMEOUT_MS,
+  BATCH_X402_REGISTRATION_CONCURRENCY,
   BATCH_X402_REGISTRATION_MAX_URLS,
   findRegisteredX402ResourceUrlKeys,
   startX402HttpAgentRegistration,
@@ -90,7 +93,7 @@ app.openapi(
     tags: ["Agents"],
     summary: "Batch register x402 HTTP resources",
     description:
-      "Probes each URL, then starts one Masumi X402 registry agent per resource (same pipeline as single X402 HTTP registration). Processes URLs in order; partial success is allowed.",
+      "Probes each URL, then starts one Masumi X402 registry agent per resource (same pipeline as single X402 HTTP registration). Processes a few URLs at a time and returns results in input order; partial success is allowed.",
     security,
     request: {
       body: {
@@ -200,72 +203,72 @@ app.openapi(
         network,
       };
 
-      const results: z.infer<typeof batchX402ResultItemSchema>[] = [];
-      let started = 0;
-      let skippedDuplicate = 0;
-      let failed = 0;
-      let notAttempted = 0;
-      let stoppedReason: "insufficient_credits" | undefined;
-
       const useProbeMetadataAutofill = autofillMetadata !== false;
       const notAttemptedMessage =
         "Batch stopped: insufficient credits for this registration.";
+      let stoppedReason: "insufficient_credits" | undefined;
 
-      for (let i = 0; i < dedupedRegistrations.length; i++) {
-        const item = dedupedRegistrations[i]!;
-        const outcome = await startX402HttpAgentRegistration({
-          ctx,
-          resourceUrl: item.resourceUrl,
-          name: item.name,
-          description: item.description,
-          tags: item.tags,
-          icon: item.icon ?? undefined,
-          skipIfDuplicate: skipExisting !== false,
-          authMethod: authContext.authMethod,
-          useProbeMetadataAutofill,
-        });
-
-        if (outcome.ok) {
-          started += 1;
-          scheduleAgentRegistrationCompletion(outcome.agentId, user.id);
-          results.push({
-            resourceUrl: outcome.resourceUrl,
-            status: "started",
-            agentId: outcome.agentId,
-          });
-          continue;
-        }
-
-        if (outcome.code === "duplicate") {
-          skippedDuplicate += 1;
-          results.push({
-            resourceUrl: outcome.resourceUrl,
-            status: "skipped_duplicate",
-            error: outcome.error,
-          });
-          continue;
-        }
-
-        failed += 1;
-        results.push({
-          resourceUrl: outcome.resourceUrl,
-          status: "failed",
-          error: outcome.error,
-        });
-
-        if (outcome.code === "credits") {
-          stoppedReason = "insufficient_credits";
-          for (const remaining of dedupedRegistrations.slice(i + 1)) {
-            notAttempted += 1;
-            results.push({
-              resourceUrl: remaining.resourceUrl,
+      type BatchResultItem = z.infer<typeof batchX402ResultItemSchema>;
+      const results = await mapWithConcurrency(
+        dedupedRegistrations,
+        BATCH_X402_REGISTRATION_CONCURRENCY,
+        async (item): Promise<BatchResultItem> => {
+          // Once credits run out, items that have not started are skipped.
+          if (stoppedReason) {
+            return {
+              resourceUrl: item.resourceUrl,
               status: "not_attempted",
               error: notAttemptedMessage,
-            });
+            };
           }
-          break;
-        }
-      }
+
+          const outcome = await startX402HttpAgentRegistration({
+            ctx,
+            resourceUrl: item.resourceUrl,
+            name: item.name,
+            description: item.description,
+            tags: item.tags,
+            icon: item.icon ?? undefined,
+            skipIfDuplicate: skipExisting !== false,
+            authMethod: authContext.authMethod,
+            useProbeMetadataAutofill,
+            probeTimeoutMs: BATCH_X402_PROBE_TIMEOUT_MS,
+          });
+
+          if (outcome.ok) {
+            scheduleAgentRegistrationCompletion(outcome.agentId, user.id);
+            return {
+              resourceUrl: outcome.resourceUrl,
+              status: "started",
+              agentId: outcome.agentId,
+            };
+          }
+
+          if (outcome.code === "duplicate") {
+            return {
+              resourceUrl: outcome.resourceUrl,
+              status: "skipped_duplicate",
+              error: outcome.error,
+            };
+          }
+
+          if (outcome.code === "credits") {
+            stoppedReason = "insufficient_credits";
+          }
+          return {
+            resourceUrl: outcome.resourceUrl,
+            status: "failed",
+            error: outcome.error,
+          };
+        },
+      );
+
+      const countStatus = (status: BatchResultItem["status"]) =>
+        results.filter((result) => result.status === status).length;
+      const started = countStatus("started");
+      const skippedDuplicate = countStatus("skipped_duplicate");
+      const failed = countStatus("failed");
+      const notAttempted = countStatus("not_attempted");
 
       if (started === 0 && stoppedReason === "insufficient_credits") {
         throw new InsufficientCreditsError(0);

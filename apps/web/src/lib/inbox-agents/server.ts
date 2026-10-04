@@ -17,6 +17,7 @@ import { createPaymentNodeClient, paymentNodeConfig } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { hydratePaymentSources } from "@/lib/payment-node/payment-source-wallets";
 import { registryInboxEntrySchema } from "@/lib/payment-node/schemas";
+import { mapWithConcurrency } from "@/lib/utils/map-with-concurrency";
 
 import {
   isWalletAddressCompatibleWithNetwork,
@@ -551,26 +552,6 @@ function getListReferenceWhere(params: {
     networkIdentifier: params.network,
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
-}
-
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  fn: (item: T, index: number) => Promise<R>,
-): Promise<R[]> {
-  if (items.length === 0) return [];
-  const results: R[] = new Array(items.length);
-  let nextIndex = 0;
-  const worker = async () => {
-    while (true) {
-      const index = nextIndex++;
-      if (index >= items.length) return;
-      results[index] = await fn(items[index], index);
-    }
-  };
-  const workerCount = Math.max(1, Math.min(concurrency, items.length));
-  await Promise.all(Array.from({ length: workerCount }, () => worker()));
-  return results;
 }
 
 export async function refreshInboxAgentReference(params: {
