@@ -70,20 +70,23 @@ function parseTags(tags: string): string[] {
 
 function buildLegalFields(
   body: UpdateAgentDetailsBody,
+  existing: UpdateAgentInput["Legal"],
 ): UpdateAgentInput["Legal"] | undefined {
-  const privacyPolicy = body.privacyPolicyUrl?.trim() || undefined;
-  const terms = body.termsOfUseUrl?.trim() || undefined;
-  const other = body.otherUrl?.trim() || undefined;
-
-  if (!privacyPolicy && !terms && !other) {
-    return undefined;
+  const next = { ...existing };
+  const fields = [
+    ["privacyPolicyUrl", "privacyPolicy"],
+    ["termsOfUseUrl", "terms"],
+    ["otherUrl", "other"],
+  ] as const;
+  let changed = false;
+  for (const [input, field] of fields) {
+    if (body[input] === undefined) continue;
+    changed = true;
+    const value = body[input].trim();
+    if (value) next[field] = value;
+    else delete next[field];
   }
-
-  return {
-    ...(privacyPolicy ? { privacyPolicy } : {}),
-    ...(terms ? { terms } : {}),
-    ...(other ? { other } : {}),
-  };
+  return changed || existing ? next : undefined;
 }
 
 function applyRegistryUrlOverride(
@@ -95,7 +98,7 @@ function applyRegistryUrlOverride(
 > {
   const trimmed = apiUrl.trim();
   if (entryType === "X402") {
-    return { type: "X402", x402ResourcesUrl: trimmed };
+    return { type: "X402" };
   }
   if (entryType === "OpenApi") {
     return { type: "OpenApi", openApiSpecUrl: trimmed };
@@ -111,7 +114,7 @@ function applyUserOverrides(
   entryType: RegistryEntryType,
 ): UpdateAgentInput {
   const image = resolveAgentRegistryImage(body.icon ?? icon);
-  const legal = buildLegalFields(body);
+  const legal = buildLegalFields(body, updateBody.Legal);
 
   return {
     ...updateBody,
@@ -138,29 +141,44 @@ function applyUserOverrides(
 function buildAgentMetadataJson(
   existingMetadata: string | null,
   body: UpdateAgentDetailsBody,
+  previousApiUrl: string,
 ): string | null {
-  let parsed: Record<string, unknown> = {};
+  let parsed: z.infer<typeof agentMetadataSchema> = {};
   if (existingMetadata) {
     try {
       const json = JSON.parse(existingMetadata) as unknown;
       const result = agentMetadataSchema.safeParse(json);
       if (result.success) {
-        parsed = result.data as Record<string, unknown>;
+        parsed = result.data;
       }
     } catch {
       parsed = {};
     }
   }
 
-  const next = {
-    ...parsed,
-    termsOfUseUrl: body.termsOfUseUrl?.trim() || undefined,
-    privacyPolicyUrl: body.privacyPolicyUrl?.trim() || undefined,
-    otherUrl: body.otherUrl?.trim() || undefined,
-    capabilityName: body.capabilityName?.trim() || undefined,
-    capabilityVersion: body.capabilityVersion?.trim() || undefined,
-    exampleOutputs: body.exampleOutputs,
-  };
+  const next: Record<string, unknown> = { ...parsed };
+  for (const key of [
+    "termsOfUseUrl",
+    "privacyPolicyUrl",
+    "otherUrl",
+    "capabilityName",
+    "capabilityVersion",
+  ] as const) {
+    if (body[key] !== undefined) next[key] = body[key].trim() || undefined;
+  }
+  if (body.exampleOutputs !== undefined)
+    next.exampleOutputs = body.exampleOutputs;
+  if (parsed.registryEntryType === "X402" && parsed.x402Manifest) {
+    const manifest = parsed.x402Manifest;
+    next.x402Manifest = {
+      ...manifest,
+      resources: manifest.resources.map((resource) =>
+        resource.resource === previousApiUrl
+          ? { ...resource, resource: body.apiUrl.trim() }
+          : resource,
+      ),
+    };
+  }
 
   const cleaned: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(next)) {
@@ -196,9 +214,9 @@ function buildNextRegistrationPayload(params: {
     authorEmail: existingPayload?.authorEmail,
     organization: existingPayload?.organization,
     contactOther: existingPayload?.contactOther,
-    termsOfUseUrl: body.termsOfUseUrl?.trim() || undefined,
-    privacyPolicyUrl: body.privacyPolicyUrl?.trim() || undefined,
-    otherUrl: body.otherUrl?.trim() || undefined,
+    termsOfUseUrl: updateBody.Legal?.terms,
+    privacyPolicyUrl: updateBody.Legal?.privacyPolicy,
+    otherUrl: updateBody.Legal?.other,
     agentPricing: existingPayload?.agentPricing ??
       updateBody.AgentPricing ?? { pricingType: "Free" },
   };
@@ -480,7 +498,11 @@ export async function updateAgentDetails(params: {
     existingPayload: refMeta.registrationPayload,
     updateBody,
   });
-  const metadataJson = buildAgentMetadataJson(agent.metadata, params.body);
+  const metadataJson = buildAgentMetadataJson(
+    agent.metadata,
+    params.body,
+    agent.apiUrl,
+  );
   const refMetadataWithBaseline = withRegistryUpdateBaseline(
     refMeta as Record<string, unknown>,
     registryRowUpdatedBefore,

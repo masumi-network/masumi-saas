@@ -260,6 +260,114 @@ describe("updateAgentDetails", () => {
     expect(updateAgentMock).toHaveBeenCalledOnce();
   });
 
+  it("preserves the x402 manifest endpoint and updates its paid resource", async () => {
+    const resource = "https://paid.example.com/new";
+    const manifestUrl =
+      "https://saas.example.com/api/public/x402-manifest/agent-1";
+    agentFindFirstMock.mockResolvedValue(
+      registeredAgent({
+        apiUrl: "https://paid.example.com/old",
+        metadata: JSON.stringify({
+          registryEntryType: "X402",
+          x402Manifest: {
+            x402Version: 2,
+            resources: [
+              {
+                resource: "https://paid.example.com/old",
+                type: "http",
+                description: "Weather",
+              },
+            ],
+          },
+        }),
+      }),
+    );
+    getRegistryByIdMock.mockResolvedValue({
+      type: "X402",
+      x402ResourcesUrl: manifestUrl,
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    buildUpdateAgentInputMock.mockReturnValue({
+      type: "X402",
+      x402ResourcesUrl: manifestUrl,
+      Capability: { name: "Masumi", version: "1" },
+      Author: { name: "Author" },
+    });
+    await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: { name: "New name", apiUrl: resource, tags: "x402" },
+    });
+    expect(updateAgentMock).toHaveBeenCalledWith(
+      expect.objectContaining({ x402ResourcesUrl: manifestUrl }),
+    );
+    const metadata = JSON.parse(agentUpdateMock.mock.calls[0][0].data.metadata);
+    expect(metadata.x402Manifest.resources).toEqual([
+      { resource, type: "http", description: "Weather" },
+    ]);
+  });
+
+  it("clears explicitly empty legal fields while preserving omitted fields", async () => {
+    agentFindFirstMock.mockResolvedValue(
+      registeredAgent({
+        metadata: JSON.stringify({
+          termsOfUseUrl: "https://example.com/terms",
+          privacyPolicyUrl: "https://example.com/privacy",
+        }),
+      }),
+    );
+    buildUpdateAgentInputMock.mockReturnValue({
+      Capability: { name: "Masumi", version: "1" },
+      Author: { name: "Author" },
+      Legal: {
+        terms: "https://example.com/terms",
+        privacyPolicy: "https://example.com/privacy",
+      },
+    });
+    await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "Name",
+        apiUrl: "https://agent.example.com",
+        tags: "ai",
+        termsOfUseUrl: "",
+      },
+    });
+    expect(updateAgentMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        Legal: { privacyPolicy: "https://example.com/privacy" },
+      }),
+    );
+    expect(JSON.parse(agentUpdateMock.mock.calls[0][0].data.metadata)).toEqual({
+      privacyPolicyUrl: "https://example.com/privacy",
+    });
+  });
+
+  it("sends empty Legal when all legal links are removed", async () => {
+    agentFindFirstMock.mockResolvedValue(registeredAgent());
+    buildUpdateAgentInputMock.mockReturnValue({
+      Capability: { name: "Masumi", version: "1" },
+      Author: { name: "Author" },
+      Legal: { terms: "https://example.com/terms" },
+    });
+    await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "Name",
+        apiUrl: "https://agent.example.com",
+        tags: "ai",
+        termsOfUseUrl: "",
+        privacyPolicyUrl: "",
+        otherUrl: "",
+      },
+    });
+    expect(updateAgentMock).toHaveBeenCalledWith(
+      expect.objectContaining({ Legal: {} }),
+    );
+  });
+
   it("returns error when update lock cannot be acquired", async () => {
     agentFindFirstMock.mockResolvedValue(registeredAgent());
     agentUpdateManyMock.mockResolvedValue({ count: 0 });
