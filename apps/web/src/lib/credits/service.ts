@@ -7,12 +7,17 @@ import { serverLog } from "@/lib/server/logger";
 
 import { parseNetwork } from "../schemas/api-query";
 import { CREDIT_COST, INITIAL_CREDIT_GRANT } from "./constants";
+import {
+  displayCreditsToStorageUnits,
+  storageUnitsToDisplayCredits,
+} from "./units";
 
 export { CREDIT_COST } from "./constants";
 
 export type CreditLedgerReason =
   | "initial_grant"
   | "agent_register"
+  | "agent_update"
   | "inbox_agent_register"
   | "payment_proxy_write"
   | "stripe_checkout"
@@ -49,10 +54,12 @@ export class CreditBalanceCapExceededError extends Error {
 export const MAX_USER_CREDITS_REMAINING = 2_000_000_000;
 
 export function wouldExceedCreditBalanceCap(
-  creditsRemaining: number,
-  creditsToAdd: number,
+  creditsRemainingStorage: number,
+  creditsToAddDisplay: number,
 ): boolean {
-  return creditsRemaining > MAX_USER_CREDITS_REMAINING - creditsToAdd;
+  const nextDisplay =
+    storageUnitsToDisplayCredits(creditsRemainingStorage) + creditsToAddDisplay;
+  return nextDisplay > MAX_USER_CREDITS_REMAINING;
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
@@ -92,7 +99,7 @@ export async function getCreditBalance(userId: string): Promise<CreditBalance> {
   });
 
   return {
-    creditsRemaining: user.creditsRemaining,
+    creditsRemaining: storageUnitsToDisplayCredits(user.creditsRemaining),
     updatedAt: user.updatedAt,
   };
 }
@@ -119,13 +126,14 @@ export async function grantInitialCreditsIfNeeded(
         select: { creditsRemaining: true },
       });
 
-      const balanceAfter = user.creditsRemaining + INITIAL_CREDIT_GRANT;
+      const grantUnits = displayCreditsToStorageUnits(INITIAL_CREDIT_GRANT);
+      const balanceAfter = user.creditsRemaining + grantUnits;
 
       await tx.user.update({
         where: { id: userId },
         data: {
           creditsRemaining: {
-            increment: INITIAL_CREDIT_GRANT,
+            increment: grantUnits,
           },
         },
       });
@@ -133,7 +141,7 @@ export async function grantInitialCreditsIfNeeded(
       await tx.creditLedgerEntry.create({
         data: {
           userId,
-          delta: INITIAL_CREDIT_GRANT,
+          delta: grantUnits,
           balanceAfter,
           reason: "initial_grant",
           reference: "signup",
@@ -153,18 +161,27 @@ export async function consumeCreditOrThrow(params: {
   reason: Exclude<CreditLedgerReason, "initial_grant">;
   reference: string;
   metadata?: CreditMetadata;
+  costDisplayCredits?: number;
 }): Promise<CreditBalance> {
+  const costDisplay = params.costDisplayCredits ?? CREDIT_COST;
+  const costUnits = displayCreditsToStorageUnits(costDisplay);
+  if (costUnits <= 0) {
+    throw new Error(
+      "consumeCreditOrThrow: costDisplayCredits must be positive",
+    );
+  }
+
   return prisma.$transaction(async (tx) => {
     const debitResult = await tx.user.updateMany({
       where: {
         id: params.userId,
         creditsRemaining: {
-          gte: CREDIT_COST,
+          gte: costUnits,
         },
       },
       data: {
         creditsRemaining: {
-          decrement: CREDIT_COST,
+          decrement: costUnits,
         },
       },
     });
@@ -174,7 +191,10 @@ export async function consumeCreditOrThrow(params: {
         where: { id: params.userId },
         select: { creditsRemaining: true },
       });
-      throw new InsufficientCreditsError(user?.creditsRemaining ?? 0);
+      throw new InsufficientCreditsError(
+        storageUnitsToDisplayCredits(user?.creditsRemaining ?? 0),
+        costDisplay,
+      );
     }
 
     const user = await tx.user.findUniqueOrThrow({
@@ -188,7 +208,7 @@ export async function consumeCreditOrThrow(params: {
     await tx.creditLedgerEntry.create({
       data: {
         userId: params.userId,
-        delta: -CREDIT_COST,
+        delta: -costUnits,
         balanceAfter: user.creditsRemaining,
         reason: params.reason,
         reference: params.reference,
@@ -199,7 +219,7 @@ export async function consumeCreditOrThrow(params: {
     });
 
     return {
-      creditsRemaining: user.creditsRemaining,
+      creditsRemaining: storageUnitsToDisplayCredits(user.creditsRemaining),
       updatedAt: user.updatedAt,
     };
   });
@@ -211,6 +231,7 @@ export async function consumeCreditIfRequired(params: {
   reference: string;
   metadata?: CreditMetadata;
   network?: string | null | undefined;
+  costDisplayCredits?: number;
 }): Promise<CreditBalance> {
   const effectiveNetwork = parseNetwork(params.network);
 
@@ -224,6 +245,7 @@ export async function consumeCreditIfRequired(params: {
     reason: params.reason,
     reference: params.reference,
     metadata: params.metadata,
+    costDisplayCredits: params.costDisplayCredits,
   });
 }
 
@@ -252,7 +274,10 @@ export async function grantCreditTopUpFromCheckoutSession(params: {
     });
 
     if (existing) {
-      return { granted: false, balanceAfter: existing.balanceAfter };
+      return {
+        granted: false,
+        balanceAfter: storageUnitsToDisplayCredits(existing.balanceAfter),
+      };
     }
 
     const before = await tx.user.findUniqueOrThrow({
@@ -263,11 +288,13 @@ export async function grantCreditTopUpFromCheckoutSession(params: {
       throw new CreditBalanceCapExceededError();
     }
 
+    const grantUnits = displayCreditsToStorageUnits(params.credits);
+
     const user = await tx.user.update({
       where: { id: params.userId },
       data: {
         creditsRemaining: {
-          increment: params.credits,
+          increment: grantUnits,
         },
       },
       select: { creditsRemaining: true },
@@ -276,7 +303,7 @@ export async function grantCreditTopUpFromCheckoutSession(params: {
     await tx.creditLedgerEntry.create({
       data: {
         userId: params.userId,
-        delta: params.credits,
+        delta: grantUnits,
         balanceAfter: user.creditsRemaining,
         reason: "stripe_checkout",
         reference: params.checkoutSessionId,
@@ -287,7 +314,10 @@ export async function grantCreditTopUpFromCheckoutSession(params: {
       },
     });
 
-    return { granted: true, balanceAfter: user.creditsRemaining };
+    return {
+      granted: true,
+      balanceAfter: storageUnitsToDisplayCredits(user.creditsRemaining),
+    };
   });
 }
 
@@ -347,8 +377,8 @@ export async function clawBackCreditTopUpFromCheckoutSession(params: {
         if (existing) {
           return {
             clawedBack: false,
-            creditsRemoved: -existing.delta,
-            balanceAfter: existing.balanceAfter,
+            creditsRemoved: storageUnitsToDisplayCredits(-existing.delta),
+            balanceAfter: storageUnitsToDisplayCredits(existing.balanceAfter),
             shortfall: 0,
           };
         }
@@ -367,12 +397,14 @@ export async function clawBackCreditTopUpFromCheckoutSession(params: {
           return {
             clawedBack: false,
             creditsRemoved: 0,
-            balanceAfter: (
-              await tx.user.findUniqueOrThrow({
-                where: { id: params.userId },
-                select: { creditsRemaining: true },
-              })
-            ).creditsRemaining,
+            balanceAfter: storageUnitsToDisplayCredits(
+              (
+                await tx.user.findUniqueOrThrow({
+                  where: { id: params.userId },
+                  select: { creditsRemaining: true },
+                })
+              ).creditsRemaining,
+            ),
             shortfall: 0,
           };
         }
@@ -390,9 +422,12 @@ export async function clawBackCreditTopUpFromCheckoutSession(params: {
           0,
         );
         const remainingGrant = Math.max(0, grant.delta - alreadyRemoved);
+        const creditsToClawBackUnits = displayCreditsToStorageUnits(
+          params.creditsToClawBack,
+        );
         const incrementalTarget = Math.max(
           0,
-          params.creditsToClawBack - alreadyRemoved,
+          creditsToClawBackUnits - alreadyRemoved,
         );
         const targetRemoval = Math.min(incrementalTarget, remainingGrant);
         if (targetRemoval <= 0) {
@@ -403,7 +438,7 @@ export async function clawBackCreditTopUpFromCheckoutSession(params: {
           return {
             clawedBack: false,
             creditsRemoved: 0,
-            balanceAfter: user.creditsRemaining,
+            balanceAfter: storageUnitsToDisplayCredits(user.creditsRemaining),
             shortfall: 0,
           };
         }
@@ -413,14 +448,14 @@ export async function clawBackCreditTopUpFromCheckoutSession(params: {
           select: { creditsRemaining: true },
         });
         const creditsRemoved = Math.min(targetRemoval, before.creditsRemaining);
-        const shortfall = targetRemoval - creditsRemoved;
+        const shortfallUnits = targetRemoval - creditsRemoved;
 
         if (creditsRemoved === 0) {
           return {
             clawedBack: false,
             creditsRemoved: 0,
-            balanceAfter: before.creditsRemaining,
-            shortfall,
+            balanceAfter: storageUnitsToDisplayCredits(before.creditsRemaining),
+            shortfall: storageUnitsToDisplayCredits(shortfallUnits),
           };
         }
 
@@ -443,7 +478,7 @@ export async function clawBackCreditTopUpFromCheckoutSession(params: {
               checkoutSessionId: params.checkoutSessionId,
               stripeEventId: params.stripeEventId,
               requestedClawback: params.creditsToClawBack,
-              shortfall,
+              shortfall: storageUnitsToDisplayCredits(shortfallUnits),
               ...(params.metadata ?? {}),
             }),
           },
@@ -451,9 +486,9 @@ export async function clawBackCreditTopUpFromCheckoutSession(params: {
 
         return {
           clawedBack: true,
-          creditsRemoved,
-          balanceAfter: user.creditsRemaining,
-          shortfall,
+          creditsRemoved: storageUnitsToDisplayCredits(creditsRemoved),
+          balanceAfter: storageUnitsToDisplayCredits(user.creditsRemaining),
+          shortfall: storageUnitsToDisplayCredits(shortfallUnits),
         };
       },
       {
@@ -510,18 +545,20 @@ export async function refundConsumedCredit(params: {
         },
         select: { delta: true },
       });
-      if (!originalDebit || originalDebit.delta !== -CREDIT_COST) return;
+      if (!originalDebit || originalDebit.delta >= 0) return;
+
+      const refundUnits = -originalDebit.delta;
 
       const user = await tx.user.update({
         where: { id: params.userId },
-        data: { creditsRemaining: { increment: CREDIT_COST } },
+        data: { creditsRemaining: { increment: refundUnits } },
         select: { creditsRemaining: true },
       });
 
       await tx.creditLedgerEntry.create({
         data: {
           userId: params.userId,
-          delta: CREDIT_COST,
+          delta: refundUnits,
           balanceAfter: user.creditsRemaining,
           reason: params.reason,
           reference: refundReference,

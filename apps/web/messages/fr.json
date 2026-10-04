@@ -1022,6 +1022,8 @@
       "searchPlaceholder": "Agents de recherche...",
       "searchShortcut": "F",
       "registerAgent": "Agent d'enregistrement",
+      "registryVersionV1": "V1",
+      "registryVersionV1Aria": "Agent de registre V1 hérité",
       "noAgents": "Aucun agent trouvé. Enregistrez votre premier agent pour commencer.",
       "noAgentsMatchingSearch": "Aucun agent trouvé correspondant à votre recherche",
       "loadMore": "Charger plus",
@@ -1065,7 +1067,7 @@
         "deregistering": "Désinscription",
         "deregistered": "Désenregistré",
         "deregistrationFailed": "Échoué",
-        "updateRequested": "Mise à jour demandée",
+        "updateRequested": "Mise à jour en attente",
         "updateInitiated": "Mise à jour en cours",
         "updateFailed": "Échec de la mise à jour"
       },
@@ -1378,10 +1380,19 @@
         "title": "Modifier l'agent",
         "submit": "Enregistrer les modifications",
         "success": "Agent mis à jour avec succès !",
-        "error": "Échec de la mise à jour de l'agent. Veuillez réessayer."
+        "successPending": "Mise à jour lancée. Les changements on-chain peuvent prendre quelques minutes.",
+        "error": "Échec de la mise à jour de l'agent. Veuillez réessayer.",
+        "reviewTitle": "Vérifier les modifications",
+        "reviewDescription": "Vérifiez tout ci-dessous avant de confirmer. Utilisez Retour pour modifier un champ.",
+        "continue": "Continuer",
+        "reviewBack": "Retour",
+        "confirmUpdate": "Confirmer la mise à jour",
+        "confirmSubmitting": "Mise à jour…"
       },
       "Details": {
         "overview": "Aperçu",
+        "registrationStatusLabel": "Registration status",
+        "registrationStatusPendingHint": "On-chain registration or update in progress. Refresh to sync the latest state.",
         "edit": "Modifier",
         "backToAgents": "Retour aux agents",
         "backToDashboard": "Retour au tableau de bord",

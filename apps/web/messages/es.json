@@ -1022,6 +1022,8 @@
       "searchPlaceholder": "Agentes de búsqueda...",
       "searchShortcut": "F",
       "registerAgent": "Registrar agente",
+      "registryVersionV1": "V1",
+      "registryVersionV1Aria": "Agente de registro V1 heredado",
       "noAgents": "No se encontraron agentes. Registre a su primer agente para comenzar.",
       "noAgentsMatchingSearch": "No se encontraron agentes que coincidan con su búsqueda",
       "loadMore": "Cargar más",
@@ -1065,7 +1067,7 @@
         "deregistering": "Darse de baja",
         "deregistered": "dado de baja",
         "deregistrationFailed": "Fallido",
-        "updateRequested": "Actualización solicitada",
+        "updateRequested": "Actualización pendiente",
         "updateInitiated": "Actualizando",
         "updateFailed": "Actualización fallida"
       },
@@ -1378,10 +1380,19 @@
         "title": "Editar agente",
         "submit": "Guardar cambios",
         "success": "¡Agente actualizado exitosamente!",
-        "error": "No se pudo actualizar el agente. Por favor inténtalo de nuevo."
+        "successPending": "Actualización iniciada. Los cambios on-chain pueden tardar unos minutos.",
+        "error": "No se pudo actualizar el agente. Por favor inténtalo de nuevo.",
+        "reviewTitle": "Revisar cambios",
+        "reviewDescription": "Comprueba todo lo siguiente antes de confirmar. Usa Atrás para cambiar cualquier campo.",
+        "continue": "Continuar",
+        "reviewBack": "Atrás",
+        "confirmUpdate": "Confirmar actualización",
+        "confirmSubmitting": "Actualizando…"
       },
       "Details": {
         "overview": "Descripción general",
+        "registrationStatusLabel": "Registration status",
+        "registrationStatusPendingHint": "On-chain registration or update in progress. Refresh to sync the latest state.",
         "edit": "Editar",
         "backToAgents": "Volver a agentes",
         "backToDashboard": "Volver al tablero",

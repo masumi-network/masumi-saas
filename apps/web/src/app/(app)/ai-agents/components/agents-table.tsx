@@ -43,6 +43,7 @@ import { cn, shortenAddress } from "@/lib/utils";
 
 import { DeleteAgentDialog } from "../[id]/components/delete-agent-dialog";
 import { DeregisterAgentDialog } from "../[id]/components/deregister-agent-dialog";
+import { AgentRegistryVersionBadge } from "./agent-registry-version-badge";
 import {
   getRegistrationStatusBadgeClassName,
   getRegistrationStatusBadgeVariant,
@@ -434,6 +435,10 @@ export function AgentsTable({
                       <span className="truncate text-sm font-medium">
                         {agent.name}
                       </span>
+                      <AgentRegistryVersionBadge
+                        agentIdentifier={agent.agentIdentifier}
+                        className="-mt-px"
+                      />
                       {agent.verificationStatus === "VERIFIED" ? (
                         <span
                           className="inline-flex shrink-0"

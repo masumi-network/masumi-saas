@@ -2,6 +2,46 @@ import type { RegistrationState } from "@masumi/database/client";
 
 import type { RegistryRequestState } from "@/lib/payment-node/schemas";
 
+/** AgentReference.metadata key: payment-node registry row updatedAt when edit lock was taken. */
+export const REGISTRY_UPDATE_BASELINE_AT_KEY = "registryUpdateBaselineAt";
+
+export function readRegistryUpdateBaseline(
+  metadata: Record<string, unknown> | null | undefined,
+): string | undefined {
+  const value = metadata?.[REGISTRY_UPDATE_BASELINE_AT_KEY];
+  return typeof value === "string" ? value : undefined;
+}
+
+export function withRegistryUpdateBaseline(
+  metadata: Record<string, unknown>,
+  baselineUpdatedAt: string,
+): Record<string, unknown> {
+  return { ...metadata, [REGISTRY_UPDATE_BASELINE_AT_KEY]: baselineUpdatedAt };
+}
+
+export function withoutRegistryUpdateBaseline(
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
+  const next = { ...metadata };
+  delete next[REGISTRY_UPDATE_BASELINE_AT_KEY];
+  return next;
+}
+
+export function isRegistryRowUpdatedAfter(
+  entryUpdatedAt: string,
+  baselineUpdatedAt: string | undefined,
+): boolean {
+  if (!baselineUpdatedAt) {
+    return false;
+  }
+  const entryMs = Date.parse(entryUpdatedAt);
+  const baselineMs = Date.parse(baselineUpdatedAt);
+  if (Number.isNaN(entryMs) || Number.isNaN(baselineMs)) {
+    return entryUpdatedAt > baselineUpdatedAt;
+  }
+  return entryMs > baselineMs;
+}
+
 /** Registry rows awaiting a metadata update (e.g. verification anchors). */
 export const REGISTRY_UPDATE_PENDING_STATES = [
   "UpdateRequested",
@@ -52,8 +92,33 @@ export function registrationStateFromRegistryEntry(
 export function resolveRegistrationStateAfterSync(params: {
   previousState: RegistrationState;
   registryState: RegistryRequestState;
+  updatedAt?: Date;
+  now?: number;
 }): RegistrationState {
   const mappedState = registrationStateFromRegistryEntry(params.registryState);
+
+  const abandonedLock =
+    params.updatedAt &&
+    isAbandonedRegistryUpdate({
+      registrationState: params.previousState,
+      updatedAt: params.updatedAt,
+      now: params.now,
+    });
+
+  if (abandonedLock) {
+    if (
+      params.registryState === "UpdateFailed" ||
+      params.registryState === "RegistrationFailed"
+    ) {
+      return mappedState;
+    }
+    if (
+      params.registryState === "RegistrationConfirmed" ||
+      params.registryState === "UpdateConfirmed"
+    ) {
+      return "RegistrationConfirmed";
+    }
+  }
 
   if (
     (REGISTRY_UPDATE_PENDING_STATES as readonly string[]).includes(
@@ -94,6 +159,30 @@ export function isRegistryVerificationUpdatePending(state: string): boolean {
  * window, and the retry re-claims the lock atomically.
  */
 export const STALE_UPDATE_REQUESTED_MS = 15 * 60 * 1000;
+
+/**
+ * After the edit poll window (120s) plus a short buffer, an in-flight update lock
+ * is treated as abandoned: on-chain metadata did not change and SaaS should not
+ * keep showing "updating".
+ */
+export const REGISTRY_UPDATE_ABANDONED_MS = 150_000;
+
+/** True when a registry update lock outlived the edit poll window. */
+export function isAbandonedRegistryUpdate(params: {
+  registrationState: string;
+  updatedAt: Date;
+  now?: number;
+}): boolean {
+  if (
+    !(REGISTRY_UPDATE_PENDING_STATES as readonly string[]).includes(
+      params.registrationState,
+    )
+  ) {
+    return false;
+  }
+  const now = params.now ?? Date.now();
+  return now - params.updatedAt.getTime() >= REGISTRY_UPDATE_ABANDONED_MS;
+}
 
 /** True when an `UpdateRequested` lock is old enough to treat as abandoned. */
 export function isUpdateRequestedStale(params: {
@@ -148,6 +237,7 @@ export const X402_RESOURCE_URL_BLOCKED_STATES = [
 /** States where deregister is allowed (settled registration only). */
 export const AGENT_DEREGISTER_ELIGIBLE_STATES = [
   "RegistrationConfirmed",
+  "UpdateFailed",
   "DeregistrationFailed",
 ] as const satisfies readonly RegistrationState[];
 
@@ -155,6 +245,45 @@ export function canDeregisterAgent(state: string): boolean {
   return (AGENT_DEREGISTER_ELIGIBLE_STATES as readonly string[]).includes(
     state,
   );
+}
+
+/** States where the owner may edit registered agent details on-chain. */
+export const AGENT_EDIT_DETAILS_ELIGIBLE_STATES = [
+  "RegistrationConfirmed",
+  "UpdateFailed",
+] as const satisfies readonly RegistrationState[];
+
+export function canEditAgentDetails(params: {
+  registrationState: string;
+  agentIdentifier: string | null;
+  updatedAt?: Date;
+  now?: number;
+}): boolean {
+  if (!params.agentIdentifier) {
+    return false;
+  }
+
+  if (
+    (AGENT_EDIT_DETAILS_ELIGIBLE_STATES as readonly string[]).includes(
+      params.registrationState,
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    params.registrationState === "UpdateRequested" &&
+    params.updatedAt &&
+    isUpdateRequestedStale({
+      registrationState: params.registrationState,
+      updatedAt: params.updatedAt,
+      now: params.now,
+    })
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 export function isAgentDeletable(params: {
