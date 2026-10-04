@@ -5,6 +5,18 @@ describe("generateSaaSAppOpenAPISpec", () => {
     vi.resetModules();
   });
 
+  it.each([
+    "/api/x402/probe",
+    "/api/agents/batch-x402",
+    "/api/agents/x402-registered-check",
+  ])("documents the POST operation at %s", async (path) => {
+    const { generateSaaSAppOpenAPISpec } =
+      await import("./saas-app-openapi-generator");
+
+    const spec = generateSaaSAppOpenAPISpec();
+    expect(spec.paths?.[path]?.post).toBeDefined();
+  });
+
   it("works when shared query schemas load before the OpenAPI generator", async () => {
     await import("@/lib/schemas/api-query");
 
