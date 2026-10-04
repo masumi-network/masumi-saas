@@ -2023,7 +2023,13 @@
         "title": "Edit Agent",
         "submit": "Save Changes",
         "success": "Agent updated successfully!",
-        "error": "Failed to update agent. Please try again."
+        "error": "Failed to update agent. Please try again.",
+        "reviewTitle": "Review changes",
+        "reviewDescription": "Check everything below before confirming. Use Back to change any field.",
+        "continue": "Continue",
+        "reviewBack": "Back",
+        "confirmUpdate": "Confirm update",
+        "confirmSubmitting": "Updating…"
       },
       "Details": {
         "overview": "Overview",

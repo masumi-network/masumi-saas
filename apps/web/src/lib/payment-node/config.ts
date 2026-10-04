@@ -103,7 +103,7 @@ export const REGISTRY_HOLDING_WALLET_FUNDING_ADA_ENV =
   "PAYMENT_NODE_REGISTRY_HOLDING_WALLET_FUNDING_ADA" as const;
 
 /**
- * Lovelace sent to the holder wallet during agent registration (`sendFundingLovelace`).
+ * Lovelace sent to the holder wallet on agent registration and registry updates (`sendFundingLovelace`).
  * Optional env: ADA amount; defaults to 10 ADA.
  */
 function getRegistryHoldingWalletFundingLovelace(): string {

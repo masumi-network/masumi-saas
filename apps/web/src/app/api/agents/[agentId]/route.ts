@@ -8,6 +8,12 @@ import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import {
+  AGENT_UPDATE_CREDIT_COST,
+  consumeCreditIfRequired,
+  createCreditReference,
+  refundConsumedCredit,
+} from "@/lib/credits/service";
 import { updateAgentDetailsBodySchema } from "@/lib/schemas/agent";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
@@ -202,6 +208,11 @@ app.openapi(
     const { agentId } = c.req.valid("param");
     const body = c.req.valid("json");
 
+    let shouldRefundUpdateCredit = false;
+    let updateCreditReference: string | null = null;
+    let updateCreditMetadata: Record<string, unknown> | null = null;
+    let updateCreditNetwork: "Mainnet" | "Preprod" | null = null;
+
     try {
       const existingAgent = await prisma.agent.findFirst({
         where: { id: agentId, userId: authContext.user.id },
@@ -212,22 +223,62 @@ app.openapi(
         throw new ApiError(404, "Agent not found");
       }
 
+      const network =
+        existingAgent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod";
+
       requireNetworkedOidcApiScope(authContext, {
         resource: "agents",
         action: "write",
-        network:
-          existingAgent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
+        network,
       });
 
-      const result = await updateAgentDetails({
-        userId: authContext.user.id,
+      const creditReference = createCreditReference("agent-update");
+      const creditMetadata = {
         agentId,
-        body,
+        network,
+        authMethod: authContext.authMethod,
+      };
+
+      await consumeCreditIfRequired({
+        userId: authContext.user.id,
+        reason: "agent_update",
+        reference: creditReference,
+        network,
+        costDisplayCredits: AGENT_UPDATE_CREDIT_COST,
+        metadata: creditMetadata,
       });
+
+      shouldRefundUpdateCredit = true;
+      updateCreditReference = creditReference;
+      updateCreditMetadata = creditMetadata;
+      updateCreditNetwork = network;
+
+      let result: Awaited<ReturnType<typeof updateAgentDetails>>;
+      try {
+        result = await updateAgentDetails({
+          userId: authContext.user.id,
+          agentId,
+          body,
+        });
+      } catch (updateError) {
+        // Registry work may have started; do not refund on unexpected throws.
+        shouldRefundUpdateCredit = false;
+        throw updateError;
+      }
 
       if (!result.success) {
+        await refundConsumedCredit({
+          userId: authContext.user.id,
+          reason: "agent_update",
+          reference: creditReference,
+          network,
+          metadata: creditMetadata,
+        });
+        shouldRefundUpdateCredit = false;
         throw new ApiError(400, result.error);
       }
+
+      shouldRefundUpdateCredit = false;
 
       const agent = await getWalletOwnedAgentForUser({
         userId: authContext.user.id,
@@ -252,6 +303,19 @@ app.openapi(
         200,
       );
     } catch (error) {
+      if (
+        shouldRefundUpdateCredit &&
+        updateCreditReference &&
+        updateCreditNetwork
+      ) {
+        await refundConsumedCredit({
+          userId: authContext.user.id,
+          reason: "agent_update",
+          reference: updateCreditReference,
+          network: updateCreditNetwork,
+          metadata: updateCreditMetadata ?? undefined,
+        });
+      }
       if (error instanceof ApiError) throw error;
       rethrowIfAuthOrCreditsError(error);
       console.error("Failed to update agent details:", error);

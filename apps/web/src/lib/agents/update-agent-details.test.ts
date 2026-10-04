@@ -36,6 +36,7 @@ vi.mock("@/lib/payment-node/get-admin-client", () => ({
 vi.mock("@/lib/payment-node/config", () => ({
   paymentNodeConfig: {
     tryGetSmartContractAddress: vi.fn(() => "addr_test1wqsmartcontract"),
+    getRegistryHoldingWalletFundingLovelace: vi.fn(() => "10000000"),
   },
 }));
 
@@ -213,6 +214,11 @@ describe("updateAgentDetails", () => {
 
     expect(result.success).toBe(true);
     expect(updateAgentMock).toHaveBeenCalledOnce();
+    expect(updateAgentMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sendFundingLovelace: "10000000",
+      }),
+    );
     expect(buildUpdateAgentInputMock).toHaveBeenCalledWith(
       expect.objectContaining({
         verifications: [],

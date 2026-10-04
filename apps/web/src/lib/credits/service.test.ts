@@ -227,8 +227,11 @@ vi.mock("@masumi/database/client", () => ({
   },
 }));
 
+import { CREDIT_COST, INITIAL_CREDIT_GRANT } from "./constants";
+import { displayCreditsToStorageUnits } from "./units";
+
 const {
-  CREDIT_COST,
+  AGENT_UPDATE_CREDIT_COST,
   CreditBalanceCapExceededError,
   InsufficientCreditsError,
   consumeCreditIfRequired,
@@ -249,23 +252,27 @@ describe("credit service", () => {
     await grantInitialCreditsIfNeeded("user-1");
     await grantInitialCreditsIfNeeded("user-1");
 
-    expect(store.current.user?.creditsRemaining).toBe(20);
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(INITIAL_CREDIT_GRANT),
+    );
     expect(store.current.ledger).toHaveLength(1);
     expect(store.current.ledger[0]).toMatchObject({
-      delta: 20,
-      balanceAfter: 20,
+      delta: displayCreditsToStorageUnits(INITIAL_CREDIT_GRANT),
+      balanceAfter: displayCreditsToStorageUnits(INITIAL_CREDIT_GRANT),
       reason: "initial_grant",
       reference: "signup",
     });
   });
 
   it("skips grant when signup ledger entry already exists", async () => {
-    store.current = createState(20);
+    store.current = createState(
+      displayCreditsToStorageUnits(INITIAL_CREDIT_GRANT),
+    );
     store.current.ledger.push({
       id: "ledger-existing",
       userId: "user-1",
-      delta: 20,
-      balanceAfter: 20,
+      delta: displayCreditsToStorageUnits(INITIAL_CREDIT_GRANT),
+      balanceAfter: displayCreditsToStorageUnits(INITIAL_CREDIT_GRANT),
       reason: "initial_grant",
       reference: "signup",
       createdAt: new Date("2026-04-13T10:00:00.000Z"),
@@ -273,12 +280,14 @@ describe("credit service", () => {
 
     await grantInitialCreditsIfNeeded("user-1");
 
-    expect(store.current.user?.creditsRemaining).toBe(20);
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(INITIAL_CREDIT_GRANT),
+    );
     expect(store.current.ledger).toHaveLength(1);
   });
 
   it("consumes one credit and writes a ledger entry", async () => {
-    store.current = createState(1);
+    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST));
 
     const result = await consumeCreditOrThrow({
       userId: "user-1",
@@ -291,10 +300,29 @@ describe("credit service", () => {
     expect(store.current.user?.creditsRemaining).toBe(0);
     expect(store.current.ledger).toHaveLength(1);
     expect(store.current.ledger[0]).toMatchObject({
-      delta: -CREDIT_COST,
+      delta: -displayCreditsToStorageUnits(CREDIT_COST),
       balanceAfter: 0,
       reason: "agent_register",
       reference: "agent-register:test",
+    });
+  });
+
+  it("consumes half a credit for agent updates", async () => {
+    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST));
+
+    const result = await consumeCreditOrThrow({
+      userId: "user-1",
+      reason: "agent_update",
+      reference: "agent-update:test",
+      costDisplayCredits: AGENT_UPDATE_CREDIT_COST,
+    });
+
+    expect(result.creditsRemaining).toBe(0.5);
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(AGENT_UPDATE_CREDIT_COST),
+    );
+    expect(store.current.ledger[0]).toMatchObject({
+      delta: -displayCreditsToStorageUnits(AGENT_UPDATE_CREDIT_COST),
     });
   });
 
@@ -359,7 +387,7 @@ describe("credit service", () => {
   });
 
   it("still debits on Mainnet", async () => {
-    store.current = createState(1);
+    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST));
 
     const result = await consumeCreditIfRequired({
       userId: "user-1",
@@ -373,14 +401,14 @@ describe("credit service", () => {
     expect(store.current.user?.creditsRemaining).toBe(0);
     expect(store.current.ledger).toHaveLength(1);
     expect(store.current.ledger[0]).toMatchObject({
-      delta: -CREDIT_COST,
+      delta: -displayCreditsToStorageUnits(CREDIT_COST),
       reason: "payment_proxy_write",
       reference: "payment:mainnet",
     });
   });
 
   it("refunds a Mainnet debit with a :refund ledger entry", async () => {
-    store.current = createState(1);
+    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST));
 
     await consumeCreditIfRequired({
       userId: "user-1",
@@ -397,18 +425,20 @@ describe("credit service", () => {
       metadata: { network: "Mainnet" },
     });
 
-    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(CREDIT_COST),
+    );
     expect(store.current.ledger).toHaveLength(2);
     expect(store.current.ledger[1]).toMatchObject({
-      delta: CREDIT_COST,
-      balanceAfter: 1,
+      delta: displayCreditsToStorageUnits(CREDIT_COST),
+      balanceAfter: displayCreditsToStorageUnits(CREDIT_COST),
       reason: "payment_proxy_write",
       reference: "payment:mainnet:refund",
     });
   });
 
   it("is idempotent when refunded twice with the same reference", async () => {
-    store.current = createState(1);
+    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST));
 
     await consumeCreditIfRequired({
       userId: "user-1",
@@ -429,7 +459,9 @@ describe("credit service", () => {
       network: "Mainnet",
     });
 
-    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(CREDIT_COST),
+    );
     expect(store.current.ledger).toHaveLength(2);
     expect(store.current.ledger[1]).toMatchObject({
       reference: "payment:mainnet:refund",
@@ -437,7 +469,7 @@ describe("credit service", () => {
   });
 
   it("does not refund when the original debit is missing", async () => {
-    store.current = createState(1);
+    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST));
 
     await refundConsumedCredit({
       userId: "user-1",
@@ -446,7 +478,9 @@ describe("credit service", () => {
       network: "Mainnet",
     });
 
-    expect(store.current.user?.creditsRemaining).toBe(1);
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(CREDIT_COST),
+    );
     expect(store.current.ledger).toHaveLength(0);
   });
 
@@ -465,7 +499,7 @@ describe("credit service", () => {
   });
 
   it("allows only one concurrent debit when one credit remains", async () => {
-    store.current = createState(1);
+    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST));
 
     const results = await Promise.allSettled([
       consumeCreditOrThrow({
@@ -513,12 +547,15 @@ describe("credit service", () => {
       reason: "stripe_checkout",
       reference: "cs_test_123",
       stripeCheckoutSessionId: "cs_test_123",
-      delta: 10,
+      delta: displayCreditsToStorageUnits(10),
     });
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(10),
+    );
   });
 
   it("rejects stripe top-up when balance would exceed configured maximum", async () => {
-    store.current = createState(2_000_000_000);
+    store.current = createState(displayCreditsToStorageUnits(2_000_000_000));
 
     await expect(
       grantCreditTopUpFromCheckoutSession({
@@ -530,8 +567,18 @@ describe("credit service", () => {
   });
 
   it("reports whether a stripe top-up would exceed the balance cap", () => {
-    expect(wouldExceedCreditBalanceCap(1_999_999_990, 10)).toBe(false);
-    expect(wouldExceedCreditBalanceCap(1_999_999_991, 10)).toBe(true);
+    expect(
+      wouldExceedCreditBalanceCap(
+        displayCreditsToStorageUnits(1_999_999_990),
+        10,
+      ),
+    ).toBe(false);
+    expect(
+      wouldExceedCreditBalanceCap(
+        displayCreditsToStorageUnits(1_999_999_991),
+        10,
+      ),
+    ).toBe(true);
   });
 
   it("claws back stripe top-up credits idempotently per Stripe event", async () => {
@@ -542,7 +589,9 @@ describe("credit service", () => {
       credits: 10,
       checkoutSessionId: "cs_test_claw",
     });
-    expect(store.current.user?.creditsRemaining).toBe(10);
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(10),
+    );
 
     const first = await clawBackCreditTopUpFromCheckoutSession({
       userId: "user-1",
@@ -600,7 +649,9 @@ describe("credit service", () => {
       creditsRemoved: 30,
       balanceAfter: 40,
     });
-    expect(store.current.user?.creditsRemaining).toBe(40);
+    expect(store.current.user?.creditsRemaining).toBe(
+      displayCreditsToStorageUnits(40),
+    );
   });
 
   it("reports shortfall when the user already spent top-up credits", async () => {
@@ -612,7 +663,7 @@ describe("credit service", () => {
       checkoutSessionId: "cs_test_shortfall",
     });
     if (store.current.user) {
-      store.current.user.creditsRemaining = 3;
+      store.current.user.creditsRemaining = displayCreditsToStorageUnits(1.5);
     }
 
     const result = await clawBackCreditTopUpFromCheckoutSession({
@@ -624,9 +675,9 @@ describe("credit service", () => {
 
     expect(result).toMatchObject({
       clawedBack: true,
-      creditsRemoved: 3,
+      creditsRemoved: 1.5,
       balanceAfter: 0,
-      shortfall: 7,
+      shortfall: 8.5,
     });
   });
 });

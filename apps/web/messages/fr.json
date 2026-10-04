@@ -1380,7 +1380,13 @@
         "title": "Modifier l'agent",
         "submit": "Enregistrer les modifications",
         "success": "Agent mis à jour avec succès !",
-        "error": "Échec de la mise à jour de l'agent. Veuillez réessayer."
+        "error": "Échec de la mise à jour de l'agent. Veuillez réessayer.",
+        "reviewTitle": "Vérifier les modifications",
+        "reviewDescription": "Vérifiez tout ci-dessous avant de confirmer. Utilisez Retour pour modifier un champ.",
+        "continue": "Continuer",
+        "reviewBack": "Retour",
+        "confirmUpdate": "Confirmer la mise à jour",
+        "confirmSubmitting": "Mise à jour…"
       },
       "Details": {
         "overview": "Aperçu",

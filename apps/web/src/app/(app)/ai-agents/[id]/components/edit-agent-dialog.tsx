@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
@@ -15,6 +15,7 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -38,18 +39,16 @@ import { agentMetadataSchema } from "@/lib/schemas/agent";
 import { cn } from "@/lib/utils";
 import { extractErrorMessage } from "@/lib/utils/extract-error";
 
-type EditAgentFormValues = {
-  name: string;
-  description?: string;
-  apiUrl: string;
-  tags?: string;
-  icon?: string;
-  termsOfUseUrl?: string;
-  privacyPolicyUrl?: string;
-  otherUrl?: string;
-  capabilityName?: string;
-  capabilityVersion?: string;
-  exampleOutputs?: Array<{ name: string; url: string; mimeType: string }>;
+import type { EditAgentFormValues } from "./edit-agent-form-values";
+import { EditAgentReviewSection } from "./edit-agent-review-section";
+
+export type { EditAgentFormValues } from "./edit-agent-form-values";
+
+type EditStep = "form" | "review";
+
+type EditAgentReviewPayload = {
+  values: EditAgentFormValues;
+  tags: string[];
 };
 
 function parseAgentMetadata(agent: Agent): Record<string, unknown> {
@@ -191,6 +190,9 @@ export function EditAgentDialog({
   const t = useTranslations("App.Agents.Edit");
   const tRegister = useTranslations("App.Agents.Register");
   const [isSaving, setIsSaving] = useState(false);
+  const [step, setStep] = useState<EditStep>("form");
+  const [reviewPayload, setReviewPayload] =
+    useState<EditAgentReviewPayload | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(agent.tags);
 
@@ -262,11 +264,17 @@ export function EditAgentDialog({
       form.reset(buildDefaultValues(agent));
       setTags(agent.tags);
       setTagInput("");
+      setStep("form");
+      setReviewPayload(null);
     }
   }, [open, agent, form]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (isSaving) return;
+    if (!nextOpen) {
+      setStep("form");
+      setReviewPayload(null);
+    }
     onOpenChange(nextOpen);
   };
 
@@ -285,13 +293,16 @@ export function EditAgentDialog({
     form.setValue("tags", nextTags.join(", "), { shouldValidate: true });
   };
 
-  const handleSubmit = form.handleSubmit(async (values) => {
+  const submitUpdate = async (
+    values: EditAgentFormValues,
+    submitTags: string[],
+  ) => {
     setIsSaving(true);
     try {
       const result = await agentApiClient.updateAgent(agent.id, {
         name: values.name.trim(),
         description: values.description?.trim() || "",
-        tags: tags.join(", "),
+        tags: submitTags.join(", "),
         apiUrl: values.apiUrl.trim(),
         icon: values.icon,
         termsOfUseUrl: values.termsOfUseUrl,
@@ -313,7 +324,22 @@ export function EditAgentDialog({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const goToReview = form.handleSubmit((values) => {
+    setReviewPayload({ values, tags: [...tags] });
+    setStep("review");
   });
+
+  const handleBackFromReview = () => {
+    setStep("form");
+    setReviewPayload(null);
+  };
+
+  const handleConfirmUpdate = () => {
+    if (!reviewPayload) return;
+    void submitUpdate(reviewPayload.values, reviewPayload.tags);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -325,285 +351,349 @@ export function EditAgentDialog({
           className={cn(
             "shrink-0 border-b bg-masumi-gradient px-6 py-4 pr-12",
             dialogHeaderEnterClass,
+            step === "review" && "py-5",
           )}
         >
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold tracking-tight">
-              {t("title")}
+              {step === "form" ? t("title") : t("reviewTitle")}
             </DialogTitle>
+            {step === "review" ? (
+              <DialogDescription className="pt-1 text-sm text-muted-foreground">
+                {t("reviewDescription")}
+              </DialogDescription>
+            ) : null}
           </DialogHeader>
         </div>
 
-        <Form {...form}>
-          <form
-            onSubmit={(event) => void handleSubmit(event)}
-            className="flex min-h-0 flex-1 flex-col"
-          >
-            <DialogBody className="space-y-4 overflow-y-auto py-5">
-              <FormField
-                control={form.control}
-                name="icon"
-                render={({ field }) => (
-                  <AgentIconPicker
-                    value={field.value ?? "bot"}
-                    onChange={field.onChange}
-                    onClearError={() => form.clearErrors("icon")}
-                    disabled={isSaving}
-                    translations={{
-                      iconDescription: tRegister("iconDescription"),
-                      iconSearchPlaceholder: tRegister("iconSearchPlaceholder"),
-                      iconSearchEmpty: tRegister("iconSearchEmpty"),
-                      scrollLeft: tRegister("scrollLeft"),
-                      scrollRight: tRegister("scrollRight"),
-                    }}
-                  />
-                )}
-              />
+        {step === "form" ? (
+          <Form {...form}>
+            <form className="flex min-h-0 flex-1 flex-col">
+              <DialogBody className="space-y-4 overflow-y-auto py-5">
+                <FormField
+                  control={form.control}
+                  name="icon"
+                  render={({ field }) => (
+                    <AgentIconPicker
+                      value={field.value ?? "bot"}
+                      onChange={field.onChange}
+                      onClearError={() => form.clearErrors("icon")}
+                      disabled={isSaving}
+                      translations={{
+                        iconDescription: tRegister("iconDescription"),
+                        iconSearchPlaceholder: tRegister(
+                          "iconSearchPlaceholder",
+                        ),
+                        iconSearchEmpty: tRegister("iconSearchEmpty"),
+                        scrollLeft: tRegister("scrollLeft"),
+                        scrollRight: tRegister("scrollRight"),
+                      }}
+                    />
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{tRegister("name")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={tRegister("namePlaceholder")}
-                        {...field}
-                        className="h-11"
-                        disabled={isSaving}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{tRegister("name")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={tRegister("namePlaceholder")}
+                          {...field}
+                          className="h-11"
+                          disabled={isSaving}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{tRegister("description")}</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder={tRegister("descriptionPlaceholder")}
-                        {...field}
-                        className="min-h-[72px] resize-none"
-                        disabled={isSaving}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{tRegister("description")}</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder={tRegister("descriptionPlaceholder")}
+                          {...field}
+                          className="min-h-[72px] resize-none"
+                          disabled={isSaving}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="apiUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{tRegister("apiUrl")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={tRegister("apiUrlPlaceholder")}
-                        {...field}
-                        className="h-11 font-mono text-sm"
-                        disabled={isSaving}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="apiUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{tRegister("apiUrl")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={tRegister("apiUrlPlaceholder")}
+                          {...field}
+                          className="h-11 font-mono text-sm"
+                          disabled={isSaving}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="tags"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>{tRegister("tags")}</FormLabel>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={tagInput}
-                        onChange={(event) => setTagInput(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            handleAddTag();
-                          }
-                        }}
-                        placeholder={tRegister("tagsPlaceholder")}
-                        className="h-11"
-                        disabled={isSaving}
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleAddTag}
-                        variant="secondary"
-                        className="shrink-0"
-                        disabled={isSaving}
-                      >
-                        {tRegister("addTag")}
-                      </Button>
-                    </div>
-                    {tags.length > 0 ? (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {tags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm"
-                          >
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveTag(tag)}
-                              className="rounded-full p-0.5 transition-colors hover:bg-destructive/20 hover:text-destructive"
-                              disabled={isSaving}
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </Badge>
-                        ))}
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>{tRegister("tags")}</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={tagInput}
+                          onChange={(event) => setTagInput(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              handleAddTag();
+                            }
+                          }}
+                          placeholder={tRegister("tagsPlaceholder")}
+                          className="h-11"
+                          disabled={isSaving}
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleAddTag}
+                          variant="secondary"
+                          className="shrink-0"
+                          disabled={isSaving}
+                        >
+                          {tRegister("addTag")}
+                        </Button>
                       </div>
-                    ) : null}
-                    <FormMessage />
-                  </FormItem>
-                )}
+                      {tags.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {tags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm"
+                            >
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTag(tag)}
+                                className="rounded-full p-0.5 transition-colors hover:bg-destructive/20 hover:text-destructive"
+                                disabled={isSaving}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex items-center gap-4 pt-2">
+                  <Separator className="flex-1" />
+                  <h3 className="whitespace-nowrap text-sm font-medium text-muted-foreground">
+                    {tRegister("additionalFields")}
+                  </h3>
+                  <Separator className="flex-1" />
+                </div>
+
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="termsOfUseUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{tRegister("termsOfUseUrl")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder={tRegister("termsOfUseUrlPlaceholder")}
+                            {...field}
+                            className="h-11 font-mono text-sm"
+                            disabled={isSaving}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="privacyPolicyUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{tRegister("privacyPolicyUrl")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder={tRegister(
+                              "privacyPolicyUrlPlaceholder",
+                            )}
+                            {...field}
+                            className="h-11 font-mono text-sm"
+                            disabled={isSaving}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="otherUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{tRegister("otherUrl")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder={tRegister("otherUrlPlaceholder")}
+                            {...field}
+                            className="h-11 font-mono text-sm"
+                            disabled={isSaving}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="capabilityName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{tRegister("capabilityName")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={tRegister("capabilityNamePlaceholder")}
+                            {...field}
+                            className="h-11"
+                            disabled={isSaving}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="capabilityVersion"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{tRegister("capabilityVersion")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={tRegister(
+                              "capabilityVersionPlaceholder",
+                            )}
+                            {...field}
+                            className="h-11"
+                            disabled={isSaving}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <ExampleOutputsFields form={form} t={tRegister} />
+              </DialogBody>
+
+              <DialogFooter className="shrink-0 flex justify-end gap-2 border-t bg-background px-6 py-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-fit"
+                  onClick={() => handleOpenChange(false)}
+                  disabled={isSaving}
+                >
+                  {tRegister("cancel")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="group w-fit gap-2"
+                  disabled={isSaving}
+                  onClick={() => void goToReview()}
+                >
+                  {t("continue")}
+                  <span className="relative inline-flex size-4 shrink-0 items-center justify-center">
+                    <ArrowRight
+                      aria-hidden
+                      className="h-4 w-4 transition-all duration-200 ease-out motion-reduce:transition-none opacity-100 group-hover:translate-x-0.5 group-active:translate-x-1 motion-reduce:group-hover:translate-x-0 motion-reduce:group-active:translate-x-0"
+                    />
+                  </span>
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        ) : reviewPayload ? (
+          <>
+            <DialogBody className="space-y-4 overflow-y-auto py-5">
+              <EditAgentReviewSection
+                values={reviewPayload.values}
+                tags={reviewPayload.tags}
+                labels={{
+                  reviewSectionAgent: tRegister("reviewSectionAgent"),
+                  name: tRegister("name"),
+                  description: tRegister("description"),
+                  apiUrl: tRegister("apiUrl"),
+                  tags: tRegister("tags"),
+                  termsOfUseUrl: tRegister("termsOfUseUrl"),
+                  privacyPolicyUrl: tRegister("privacyPolicyUrl"),
+                  otherUrl: tRegister("otherUrl"),
+                  capabilityName: tRegister("capabilityName"),
+                  capabilityVersion: tRegister("capabilityVersion"),
+                  exampleOutputs: tRegister("exampleOutputs"),
+                }}
               />
-
-              <div className="flex items-center gap-4 pt-2">
-                <Separator className="flex-1" />
-                <h3 className="whitespace-nowrap text-sm font-medium text-muted-foreground">
-                  {tRegister("additionalFields")}
-                </h3>
-                <Separator className="flex-1" />
-              </div>
-
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="termsOfUseUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("termsOfUseUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder={tRegister("termsOfUseUrlPlaceholder")}
-                          {...field}
-                          className="h-11 font-mono text-sm"
-                          disabled={isSaving}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="privacyPolicyUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("privacyPolicyUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder={tRegister("privacyPolicyUrlPlaceholder")}
-                          {...field}
-                          className="h-11 font-mono text-sm"
-                          disabled={isSaving}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="otherUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("otherUrl")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder={tRegister("otherUrlPlaceholder")}
-                          {...field}
-                          className="h-11 font-mono text-sm"
-                          disabled={isSaving}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="capabilityName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("capabilityName")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={tRegister("capabilityNamePlaceholder")}
-                          {...field}
-                          className="h-11"
-                          disabled={isSaving}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="capabilityVersion"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{tRegister("capabilityVersion")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={tRegister(
-                            "capabilityVersionPlaceholder",
-                          )}
-                          {...field}
-                          className="h-11"
-                          disabled={isSaving}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <ExampleOutputsFields form={form} t={tRegister} />
             </DialogBody>
-
-            <DialogFooter className="shrink-0 flex justify-end gap-2 border-t bg-background px-6 py-3">
+            <DialogFooter className="shrink-0 flex w-full justify-between gap-2 border-t bg-background px-6 py-4">
               <Button
                 type="button"
                 variant="outline"
-                className="w-fit"
-                onClick={() => onOpenChange(false)}
+                className="group gap-2"
+                onClick={handleBackFromReview}
                 disabled={isSaving}
               >
-                {tRegister("cancel")}
+                <span className="relative inline-flex size-4 shrink-0 items-center justify-center">
+                  <ArrowLeft
+                    aria-hidden
+                    className="h-4 w-4 transition-all duration-200 ease-out motion-reduce:transition-none opacity-100 group-hover:-translate-x-0.5 group-active:-translate-x-1 motion-reduce:group-hover:translate-x-0 motion-reduce:group-active:translate-x-0"
+                  />
+                </span>
+                {t("reviewBack")}
               </Button>
               <Button
-                type="submit"
+                type="button"
                 variant="primary"
                 className="w-fit"
                 disabled={isSaving}
+                onClick={handleConfirmUpdate}
               >
                 {isSaving ? <Spinner size={16} className="mr-2" /> : null}
-                {t("submit")}
+                {isSaving ? t("confirmSubmitting") : t("confirmUpdate")}
               </Button>
             </DialogFooter>
-          </form>
-        </Form>
+          </>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

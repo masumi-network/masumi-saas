@@ -1380,7 +1380,13 @@
         "title": "Agent bearbeiten",
         "submit": "Änderungen speichern",
         "success": "Agent erfolgreich aktualisiert!",
-        "error": "Der Agent konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+        "error": "Der Agent konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+        "reviewTitle": "Änderungen prüfen",
+        "reviewDescription": "Prüfen Sie alles unten, bevor Sie bestätigen. Mit Zurück können Sie Felder ändern.",
+        "continue": "Weiter",
+        "reviewBack": "Zurück",
+        "confirmUpdate": "Update bestätigen",
+        "confirmSubmitting": "Wird aktualisiert…"
       },
       "Details": {
         "overview": "Überblick",

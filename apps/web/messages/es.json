@@ -1380,7 +1380,13 @@
         "title": "Editar agente",
         "submit": "Guardar cambios",
         "success": "¡Agente actualizado exitosamente!",
-        "error": "No se pudo actualizar el agente. Por favor inténtalo de nuevo."
+        "error": "No se pudo actualizar el agente. Por favor inténtalo de nuevo.",
+        "reviewTitle": "Revisar cambios",
+        "reviewDescription": "Comprueba todo lo siguiente antes de confirmar. Usa Atrás para cambiar cualquier campo.",
+        "continue": "Continuar",
+        "reviewBack": "Atrás",
+        "confirmUpdate": "Confirmar actualización",
+        "confirmSubmitting": "Actualizando…"
       },
       "Details": {
         "overview": "Descripción general",

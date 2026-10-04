@@ -1380,7 +1380,13 @@
         "title": "エージェントの編集",
         "submit": "変更を保存",
         "success": "エージェントは正常に更新されました。",
-        "error": "エージェントの更新に失敗しました。もう一度試してください。"
+        "error": "エージェントの更新に失敗しました。もう一度試してください。",
+        "reviewTitle": "変更内容の確認",
+        "reviewDescription": "確認する前に以下をご確認ください。戻るでフィールドを変更できます。",
+        "continue": "続行",
+        "reviewBack": "戻る",
+        "confirmUpdate": "更新を確定",
+        "confirmSubmitting": "更新中…"
       },
       "Details": {
         "overview": "概要",

@@ -328,21 +328,25 @@ export async function updateAgentDetails(params: {
   const verifications =
     onChainVerifications ?? registryEntry.verifications ?? undefined;
 
-  const updateBody = applyUserOverrides(
-    buildUpdateAgentInput({
-      network,
-      agentIdentifier: agent.agentIdentifier,
-      smartContractAddress,
-      registryEntry,
-      onChainMetadata,
-      storedRegistration: refMeta.registrationPayload ?? null,
-      agentIcon: params.body.icon ?? agent.icon,
-      verifications,
-    }),
-    params.body,
-    tagsArray,
-    agent.icon,
-  );
+  const updateBody = {
+    ...applyUserOverrides(
+      buildUpdateAgentInput({
+        network,
+        agentIdentifier: agent.agentIdentifier,
+        smartContractAddress,
+        registryEntry,
+        onChainMetadata,
+        storedRegistration: refMeta.registrationPayload ?? null,
+        agentIcon: params.body.icon ?? agent.icon,
+        verifications,
+      }),
+      params.body,
+      tagsArray,
+      agent.icon,
+    ),
+    sendFundingLovelace:
+      paymentNodeConfig.getRegistryHoldingWalletFundingLovelace(),
+  };
 
   const previousAgentIdentifier = agent.agentIdentifier;
   const registryRowUpdatedBefore = registryEntry.updatedAt;
