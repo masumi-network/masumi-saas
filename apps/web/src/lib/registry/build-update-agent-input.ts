@@ -3,9 +3,11 @@ import type {
   PaymentNodeNetwork,
   RegistryAgentIdentifierMetadata,
   RegistryEntry,
+  RegistryEntryType,
   UpdateAgentInput,
 } from "@/lib/payment-node/schemas";
 import type { Verification } from "@/lib/payment-node/verification-schemas";
+import { resolveRegistryEntryType } from "@/lib/registry/resolve-registry-entry-type";
 
 type StoredRegistrationPayload = {
   exampleOutputs: Array<{ name: string; url: string; mimeType: string }>;
@@ -57,17 +59,54 @@ function isV2RegistryMetadata(
   return (metadata.metadataVersion ?? 1) >= 2;
 }
 
-function resolveApiBaseUrl(
+function resolveStandardApiBaseUrl(
   metadata: RegistryAgentIdentifierMetadata["Metadata"],
   registryEntry: RegistryEntry,
 ): string {
   const fromMetadata = metadata.apiBaseUrl?.trim();
   if (fromMetadata) return fromMetadata;
-  const fromEntry = registryEntry.apiBaseUrl?.trim();
+  return registryEntry.apiBaseUrl?.trim() ?? "";
+}
+
+function resolveX402ResourcesUrl(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): string {
+  const fromEntry = registryEntry.x402ResourcesUrl?.trim();
   if (fromEntry) return fromEntry;
-  const fromX402 = registryEntry.x402ResourcesUrl?.trim();
-  if (fromX402) return fromX402;
-  return "";
+  return registryEntry.apiBaseUrl?.trim() ?? "";
+}
+
+function resolveOpenApiSpecUrl(
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): string {
+  return registryEntry.openApiSpecUrl?.trim() ?? "";
+}
+
+function buildRegistryEndpointFields(
+  entryType: RegistryEntryType,
+  metadata: RegistryAgentIdentifierMetadata["Metadata"],
+  registryEntry: RegistryEntry,
+): Pick<
+  UpdateAgentInput,
+  "type" | "apiBaseUrl" | "x402ResourcesUrl" | "openApiSpecUrl"
+> {
+  if (entryType === "X402") {
+    return {
+      type: "X402",
+      x402ResourcesUrl: resolveX402ResourcesUrl(metadata, registryEntry),
+    };
+  }
+  if (entryType === "OpenApi") {
+    return {
+      type: "OpenApi",
+      openApiSpecUrl: resolveOpenApiSpecUrl(metadata, registryEntry),
+    };
+  }
+  return {
+    apiBaseUrl: resolveStandardApiBaseUrl(metadata, registryEntry),
+  };
 }
 
 export function buildUpdateAgentInput(
@@ -75,6 +114,7 @@ export function buildUpdateAgentInput(
 ): UpdateAgentInput {
   const { registryEntry, onChainMetadata, storedRegistration } = params;
   const metadata = onChainMetadata.Metadata;
+  const entryType = resolveRegistryEntryType(registryEntry);
   const isV2 = isV2RegistryMetadata(metadata);
   const image =
     metadata.image ?? resolveAgentRegistryImage(params.agentIcon) ?? undefined;
@@ -117,7 +157,7 @@ export function buildUpdateAgentInput(
       ? { smartContractAddress: params.smartContractAddress }
       : {}),
     name: metadata.name ?? registryEntry.name,
-    apiBaseUrl: resolveApiBaseUrl(metadata, registryEntry),
+    ...buildRegistryEndpointFields(entryType, metadata, registryEntry),
     description: metadata.description ?? registryEntry.description ?? "",
     ...(image ? { image } : {}),
     Tags:

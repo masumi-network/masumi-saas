@@ -144,6 +144,8 @@ describe("buildUpdateAgentInput", () => {
       verifications: [],
     });
 
-    expect(input.apiBaseUrl).toBe("https://x402.org/protected");
+    expect(input.type).toBe("X402");
+    expect(input.x402ResourcesUrl).toBe("https://x402.org/protected");
+    expect(input.apiBaseUrl).toBeUndefined();
   });
 });

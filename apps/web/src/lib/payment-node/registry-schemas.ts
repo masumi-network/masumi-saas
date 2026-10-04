@@ -188,6 +188,7 @@ export const registerAgentInputSchema = z.object({
   sendFundingLovelace: z.string().optional(),
   name: z.string(),
   apiBaseUrl: z.string().optional(),
+  openApiSpecUrl: z.string().url().max(250).optional(),
   x402ResourcesUrl: z.string().url().max(250).optional(),
   description: z.string(),
   image: z.string().max(250).optional(),

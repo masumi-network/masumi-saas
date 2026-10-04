@@ -18,10 +18,12 @@ import { tryCreateAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-cl
 import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 import type {
   PaymentNodeNetwork,
+  RegistryEntryType,
   UpdateAgentInput,
 } from "@/lib/payment-node/schemas";
 import { buildUpdateAgentInput } from "@/lib/registry/build-update-agent-input";
 import { getOnChainVerifications } from "@/lib/registry/on-chain-verifications";
+import { resolveRegistryEntryType } from "@/lib/registry/resolve-registry-entry-type";
 import {
   extractAssetName,
   isV2RegistryAssetName,
@@ -84,11 +86,29 @@ function buildLegalFields(
   };
 }
 
+function applyRegistryUrlOverride(
+  entryType: RegistryEntryType,
+  apiUrl: string,
+): Pick<
+  UpdateAgentInput,
+  "type" | "apiBaseUrl" | "x402ResourcesUrl" | "openApiSpecUrl"
+> {
+  const trimmed = apiUrl.trim();
+  if (entryType === "X402") {
+    return { type: "X402", x402ResourcesUrl: trimmed };
+  }
+  if (entryType === "OpenApi") {
+    return { type: "OpenApi", openApiSpecUrl: trimmed };
+  }
+  return { apiBaseUrl: trimmed };
+}
+
 function applyUserOverrides(
   updateBody: UpdateAgentInput,
   body: UpdateAgentDetailsBody,
   tagsArray: string[],
   icon: string | null | undefined,
+  entryType: RegistryEntryType,
 ): UpdateAgentInput {
   const image = resolveAgentRegistryImage(body.icon ?? icon);
   const legal = buildLegalFields(body);
@@ -97,7 +117,7 @@ function applyUserOverrides(
     ...updateBody,
     name: body.name.trim(),
     description: body.description?.trim() ?? "",
-    apiBaseUrl: body.apiUrl.trim(),
+    ...applyRegistryUrlOverride(entryType, body.apiUrl),
     Tags: tagsArray,
     ...(image ? { image } : {}),
     Capability: {
@@ -374,6 +394,7 @@ export async function updateAgentDetails(params: {
       params.body,
       tagsArray,
       agent.icon,
+      resolveRegistryEntryType(registryEntry),
     ),
     sendFundingLovelace:
       paymentNodeConfig.getRegistryHoldingWalletFundingLovelace(),

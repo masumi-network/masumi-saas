@@ -621,7 +621,7 @@ export function EditAgentDialog({
                 <ExampleOutputsFields form={form} t={tRegister} />
               </DialogBody>
 
-              <DialogFooter className="shrink-0 flex justify-end gap-2 border-t bg-background px-6 py-3">
+              <DialogFooter className="shrink-0 flex w-full justify-between gap-2 border-t bg-background px-6 py-3">
                 <Button
                   type="button"
                   variant="outline"
