@@ -80,3 +80,30 @@ describe("probeX402HttpResource", () => {
     }
   });
 });
+
+it("selects compatible USDC when another exact token appears first", async () => {
+  const compatible = {
+    network: "eip155:8453",
+    scheme: "exact",
+    asset: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    payTo: "0x1234567890123456789012345678901234567890",
+    amount: "1000",
+    maxTimeoutSeconds: 3600,
+    extra: { name: "USD Coin", version: "2" },
+  };
+  const other = {
+    ...compatible,
+    asset: "0x1111111111111111111111111111111111111111",
+    extra: { name: "Other Token", version: "1" },
+  };
+  const result = await probeX402HttpResource({
+    resourceUrl: "https://example.com/paid",
+    evmNetwork: compatible.network,
+    fetchImpl: async () =>
+      new Response(JSON.stringify({ accepts: [other, compatible] }), {
+        status: 402,
+      }),
+  });
+  expect(result.ok).toBe(true);
+  if (result.ok) expect(result.row.asset).toBe(compatible.asset);
+});

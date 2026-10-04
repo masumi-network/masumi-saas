@@ -1,4 +1,5 @@
 import { MAX_BATCH_RESOURCE_URLS } from "./parse-batch-resource-urls";
+import { resourceUrlDuplicateKey } from "./resource-url-duplicate-key";
 
 const RESOURCE_URL_KEYS = [
   "resource",
@@ -105,7 +106,7 @@ export function parseBatchResourceUrlsFromJson(
   let uniqueTotal = 0;
 
   for (const href of rawUrls) {
-    const key = href.toLowerCase();
+    const key = resourceUrlDuplicateKey(href)!;
     if (seen.has(key)) continue;
     seen.add(key);
     uniqueTotal += 1;

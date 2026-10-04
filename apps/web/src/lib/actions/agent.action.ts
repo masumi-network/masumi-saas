@@ -277,7 +277,7 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
       entry,
       agentIdentifierChanged,
     )
-      ? agentDisplayFieldsFromRegistryEntry(entry)
+      ? agentDisplayFieldsFromRegistryEntry(entry, agent.apiUrl)
       : null;
     const agentDisplayChanged =
       registryDisplayFields !== null &&

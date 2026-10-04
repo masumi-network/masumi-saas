@@ -29,10 +29,13 @@ const baseEntry = {
 };
 
 describe("sync-agent-display-from-registry", () => {
-  it("maps x402 api url from x402ResourcesUrl", () => {
-    expect(agentDisplayFieldsFromRegistryEntry(baseEntry).apiUrl).toBe(
-      "https://x402.example/resource",
-    );
+  it("preserves the paid resource URL when syncing an x402 manifest", () => {
+    expect(
+      agentDisplayFieldsFromRegistryEntry(
+        baseEntry,
+        "https://paid.example/resource",
+      ).apiUrl,
+    ).toBe("https://paid.example/resource");
   });
 
   it("detects display field drift from registry row", () => {

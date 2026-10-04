@@ -41,9 +41,10 @@ describe("checkMainnetRegistrationCredits", () => {
       registrationsNeeded: 5,
       maxPerBatch: 100,
     });
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.reason).toBe("exceeds_affordable");
-    expect(result.affordable).toBe(2);
+    expect(result).toMatchObject({
+      ok: false,
+      reason: "exceeds_affordable",
+      affordable: 2,
+    });
   });
 });

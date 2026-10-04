@@ -1,7 +1,12 @@
 import type { RegistryEntry } from "@/lib/payment-node/schemas";
+import { resolveRegistryEntryType } from "@/lib/registry/resolve-registry-entry-type";
 
-export function resolveRegistryEntryApiUrl(entry: RegistryEntry): string {
-  return entry.apiBaseUrl?.trim() || entry.x402ResourcesUrl?.trim() || "";
+export function resolveRegistryEntryApiUrl(
+  entry: RegistryEntry,
+  resourceUrl: string,
+): string {
+  if (resolveRegistryEntryType(entry) === "X402") return resourceUrl;
+  return entry.apiBaseUrl?.trim() || entry.openApiSpecUrl?.trim() || "";
 }
 
 export type AgentDisplayFields = {
@@ -13,12 +18,13 @@ export type AgentDisplayFields = {
 
 export function agentDisplayFieldsFromRegistryEntry(
   entry: RegistryEntry,
+  resourceUrl = "",
 ): AgentDisplayFields {
   return {
     name: entry.name,
     description: entry.description,
     tags: entry.Tags.length > 0 ? entry.Tags : ["agent"],
-    apiUrl: resolveRegistryEntryApiUrl(entry),
+    apiUrl: resolveRegistryEntryApiUrl(entry, resourceUrl),
   };
 }
 
