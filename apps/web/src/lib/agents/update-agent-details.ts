@@ -22,7 +22,6 @@ import type {
 } from "@/lib/payment-node/schemas";
 import { buildUpdateAgentInput } from "@/lib/registry/build-update-agent-input";
 import { getOnChainVerifications } from "@/lib/registry/on-chain-verifications";
-import { pollRegistryUpdate } from "@/lib/registry/poll-registry-update";
 import {
   extractAssetName,
   isV2RegistryAssetName,
@@ -151,6 +150,38 @@ function buildAgentMetadataJson(
   }
 
   return Object.keys(cleaned).length > 0 ? JSON.stringify(cleaned) : null;
+}
+
+function buildNextRegistrationPayload(params: {
+  body: UpdateAgentDetailsBody;
+  existingPayload: StoredRegistrationPayload | undefined;
+  updateBody: UpdateAgentInput;
+}): StoredRegistrationPayload {
+  const { body, existingPayload, updateBody } = params;
+  return {
+    exampleOutputs:
+      body.exampleOutputs ??
+      existingPayload?.exampleOutputs ??
+      updateBody.ExampleOutputs ??
+      [],
+    capabilityName:
+      body.capabilityName?.trim() ||
+      existingPayload?.capabilityName ||
+      updateBody.Capability.name,
+    capabilityVersion:
+      body.capabilityVersion?.trim() ||
+      existingPayload?.capabilityVersion ||
+      updateBody.Capability.version,
+    authorName: existingPayload?.authorName ?? updateBody.Author.name,
+    authorEmail: existingPayload?.authorEmail,
+    organization: existingPayload?.organization,
+    contactOther: existingPayload?.contactOther,
+    termsOfUseUrl: body.termsOfUseUrl?.trim() || undefined,
+    privacyPolicyUrl: body.privacyPolicyUrl?.trim() || undefined,
+    otherUrl: body.otherUrl?.trim() || undefined,
+    agentPricing: existingPayload?.agentPricing ??
+      updateBody.AgentPricing ?? { pricingType: "Free" },
+  };
 }
 
 async function resolveSmartContractAddress(params: {
@@ -348,7 +379,6 @@ export async function updateAgentDetails(params: {
       paymentNodeConfig.getRegistryHoldingWalletFundingLovelace(),
   };
 
-  const previousAgentIdentifier = agent.agentIdentifier;
   const registryRowUpdatedBefore = registryEntry.updatedAt;
 
   const staleUpdateRequestedBefore = new Date(
@@ -424,96 +454,16 @@ export async function updateAgentDetails(params: {
     };
   }
 
-  const pollResult = await pollRegistryUpdate(
-    adminClient,
-    registryId,
-    network,
-    previousAgentIdentifier,
-    smartContractAddress,
-    {
-      allowSameIdentifierSuccess: true,
-      registryRowUpdatedBefore,
-    },
-  );
-
-  if ("error" in pollResult) {
-    console.error("[Registry] Agent details update poll failed:", {
-      agentId: params.agentId,
-      userId: params.userId,
-      error: pollResult.error,
-    });
-
-    let registrationState: "RegistrationConfirmed" | "UpdateFailed" =
-      "RegistrationConfirmed";
-    try {
-      const failedEntry = await adminClient.getRegistryById({
-        id: registryId,
-        network,
-        filterSmartContractAddress: smartContractAddress,
-      });
-      if (failedEntry?.state === "UpdateFailed") {
-        registrationState = "UpdateFailed";
-      }
-    } catch (error) {
-      console.error("[Registry] Failed to reconcile registry row after poll:", {
-        agentId: params.agentId,
-        userId: params.userId,
-        error,
-      });
-    }
-
-    try {
-      await prisma.$transaction([
-        prisma.agent.update({
-          where: { id: agent.id },
-          data: { registrationState },
-        }),
-        prisma.agentReference.update({
-          where: { agentId: agent.id },
-          data: {
-            metadata: withoutRegistryUpdateBaseline(
-              refMeta as Record<string, unknown>,
-            ),
-          },
-        }),
-      ]);
-    } catch (error) {
-      console.error(
-        "[Registry] Failed to reset registrationState after poll error:",
-        { agentId: params.agentId, userId: params.userId, error },
-      );
-    }
-
-    return { success: false, error: pollResult.error };
-  }
-
-  const existingPayload = refMeta.registrationPayload;
-  const nextRegistrationPayload: StoredRegistrationPayload = {
-    exampleOutputs:
-      params.body.exampleOutputs ??
-      existingPayload?.exampleOutputs ??
-      updateBody.ExampleOutputs ??
-      [],
-    capabilityName:
-      params.body.capabilityName?.trim() ||
-      existingPayload?.capabilityName ||
-      updateBody.Capability.name,
-    capabilityVersion:
-      params.body.capabilityVersion?.trim() ||
-      existingPayload?.capabilityVersion ||
-      updateBody.Capability.version,
-    authorName: existingPayload?.authorName ?? updateBody.Author.name,
-    authorEmail: existingPayload?.authorEmail,
-    organization: existingPayload?.organization,
-    contactOther: existingPayload?.contactOther,
-    termsOfUseUrl: params.body.termsOfUseUrl?.trim() || undefined,
-    privacyPolicyUrl: params.body.privacyPolicyUrl?.trim() || undefined,
-    otherUrl: params.body.otherUrl?.trim() || undefined,
-    agentPricing: existingPayload?.agentPricing ??
-      updateBody.AgentPricing ?? { pricingType: "Free" },
-  };
-
+  const nextRegistrationPayload = buildNextRegistrationPayload({
+    body: params.body,
+    existingPayload: refMeta.registrationPayload,
+    updateBody,
+  });
   const metadataJson = buildAgentMetadataJson(agent.metadata, params.body);
+  const refMetadataWithBaseline = withRegistryUpdateBaseline(
+    refMeta as Record<string, unknown>,
+    registryRowUpdatedBefore,
+  );
 
   await prisma.$transaction([
     prisma.agent.update({
@@ -524,19 +474,17 @@ export async function updateAgentDetails(params: {
         apiUrl: params.body.apiUrl.trim(),
         tags: tagsArray,
         icon: params.body.icon ?? agent.icon,
-        agentIdentifier: pollResult.agentIdentifier,
-        registrationState: "RegistrationConfirmed",
+        registrationState: "UpdateRequested",
         metadata: metadataJson,
       },
     }),
     prisma.agentReference.update({
       where: { agentId: agent.id },
       data: {
-        metadata: withoutRegistryUpdateBaseline({
-          ...(refMeta as Record<string, unknown>),
-          agentIdentifier: pollResult.agentIdentifier,
+        metadata: {
+          ...refMetadataWithBaseline,
           registrationPayload: nextRegistrationPayload,
-        }),
+        },
       },
     }),
   ]);
@@ -544,6 +492,6 @@ export async function updateAgentDetails(params: {
   return {
     success: true,
     agentId: agent.id,
-    agentIdentifier: pollResult.agentIdentifier,
+    agentIdentifier: agent.agentIdentifier,
   };
 }

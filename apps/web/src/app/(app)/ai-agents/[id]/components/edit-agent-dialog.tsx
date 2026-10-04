@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { isRegistrationUiPending } from "@/lib/agents/registration-state";
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { dialogHeaderEnterClass } from "@/lib/dialog-motion";
 import { zodResolver } from "@/lib/form-zod-resolver";
@@ -318,7 +319,11 @@ export function EditAgentDialog({
         return;
       }
 
-      toast.success(t("success"));
+      toast.success(
+        isRegistrationUiPending(result.data.registrationState)
+          ? t("successPending")
+          : t("success"),
+      );
       onUpdated(result.data);
       onOpenChange(false);
     } finally {

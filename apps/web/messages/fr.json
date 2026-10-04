@@ -1380,6 +1380,7 @@
         "title": "Modifier l'agent",
         "submit": "Enregistrer les modifications",
         "success": "Agent mis à jour avec succès !",
+        "successPending": "Mise à jour lancée. Les changements on-chain peuvent prendre quelques minutes.",
         "error": "Échec de la mise à jour de l'agent. Veuillez réessayer.",
         "reviewTitle": "Vérifier les modifications",
         "reviewDescription": "Vérifiez tout ci-dessous avant de confirmer. Utilisez Retour pour modifier un champ.",

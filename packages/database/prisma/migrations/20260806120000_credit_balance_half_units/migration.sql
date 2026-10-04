@@ -1,4 +1,4 @@
--- Store credits in half-unit integers (2 units = 1 display credit) so 0.5 credit debits are exact.
+-- Store credits in half-unit integers (2 units = 1 display credit) for consistent ledger math.
 UPDATE "user"
 SET "creditsRemaining" = "creditsRemaining" * 2;
 

@@ -2023,6 +2023,7 @@
         "title": "Edit Agent",
         "submit": "Save Changes",
         "success": "Agent updated successfully!",
+        "successPending": "Update started. On-chain changes may take a few minutes.",
         "error": "Failed to update agent. Please try again.",
         "reviewTitle": "Review changes",
         "reviewDescription": "Check everything below before confirming. Use Back to change any field.",

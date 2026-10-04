@@ -50,13 +50,6 @@ vi.mock("@/lib/security/outbound-url", () => ({
   ),
 }));
 
-const pollRegistryUpdateMock = vi.fn();
-vi.mock("@/lib/registry/poll-registry-update", () => ({
-  pollRegistryUpdate: pollRegistryUpdateMock,
-  REGISTRY_UPDATE_USER_FACING_ERROR:
-    "We couldn't apply your changes. Please try again.",
-}));
-
 const buildUpdateAgentInputMock = vi.fn();
 vi.mock("@/lib/registry/build-update-agent-input", () => ({
   buildUpdateAgentInput: buildUpdateAgentInputMock,
@@ -142,9 +135,6 @@ beforeEach(() => {
   });
   agentUpdateManyMock.mockResolvedValue({ count: 1 });
   updateAgentMock.mockResolvedValue(undefined);
-  pollRegistryUpdateMock.mockResolvedValue({
-    agentIdentifier: `${V2_AGENT_IDENTIFIER.slice(0, -6)}000002`,
-  });
   transactionMock.mockImplementation(async (ops: unknown[]) => {
     for (const op of ops) {
       await op;
@@ -224,18 +214,14 @@ describe("updateAgentDetails", () => {
         verifications: [],
       }),
     );
-    expect(pollRegistryUpdateMock).toHaveBeenCalledWith(
-      expect.anything(),
-      REGISTRY_ID,
-      "Preprod",
-      V2_AGENT_IDENTIFIER,
-      "addr_test1wqsmartcontract",
-      {
-        allowSameIdentifierSuccess: true,
-        registryRowUpdatedBefore: expect.any(String),
-      },
-    );
-    expect(transactionMock).toHaveBeenCalledOnce();
+    expect(transactionMock).toHaveBeenCalledTimes(1);
+    expect(agentUpdateMock).toHaveBeenCalledWith({
+      where: { id: "agent-1" },
+      data: expect.objectContaining({
+        name: "New name",
+        registrationState: "UpdateRequested",
+      }),
+    });
   });
 
   it("continues edit when on-chain metadata parse returns 422", async () => {
@@ -293,88 +279,6 @@ describe("updateAgentDetails", () => {
       error: "An agent update is already in progress. Please try again later.",
     });
     expect(updateAgentMock).not.toHaveBeenCalled();
-  });
-
-  it("resets to RegistrationConfirmed when poll times out with node still queued", async () => {
-    agentFindFirstMock.mockResolvedValue(registeredAgent());
-    pollRegistryUpdateMock.mockResolvedValue({
-      error: "We couldn't apply your changes. Please try again.",
-    });
-    getRegistryByIdMock
-      .mockResolvedValueOnce({
-        id: REGISTRY_ID,
-        state: "RegistrationConfirmed",
-        name: "Old name",
-        apiBaseUrl: "https://old.example.com/mip",
-        description: "Old description",
-        Tags: ["old"],
-        Capability: { name: "Masumi", version: "1.0" },
-        Author: { name: "Author" },
-        AgentPricing: { pricingType: "Free" },
-      })
-      .mockResolvedValueOnce({
-        id: REGISTRY_ID,
-        state: "UpdateRequested",
-      });
-
-    const result = await updateAgentDetails({
-      userId: "user-1",
-      agentId: "agent-1",
-      body: {
-        name: "New name",
-        tags: "ai",
-        apiUrl: "https://agent.example.com/mip",
-      },
-    });
-
-    expect(result).toEqual({
-      success: false,
-      error: "We couldn't apply your changes. Please try again.",
-    });
-    expect(transactionMock).toHaveBeenCalledOnce();
-    expect(agentUpdateMock).toHaveBeenCalledWith({
-      where: { id: "agent-1" },
-      data: { registrationState: "RegistrationConfirmed" },
-    });
-  });
-
-  it("marks UpdateFailed when the payment node reports update failure", async () => {
-    agentFindFirstMock.mockResolvedValue(registeredAgent());
-    pollRegistryUpdateMock.mockResolvedValue({
-      error: "We couldn't apply your changes. Please try again.",
-    });
-    getRegistryByIdMock
-      .mockResolvedValueOnce({
-        id: REGISTRY_ID,
-        state: "RegistrationConfirmed",
-        name: "Old name",
-        apiBaseUrl: "https://old.example.com/mip",
-        description: "Old description",
-        Tags: ["old"],
-        Capability: { name: "Masumi", version: "1.0" },
-        Author: { name: "Author" },
-        AgentPricing: { pricingType: "Free" },
-      })
-      .mockResolvedValueOnce({
-        id: REGISTRY_ID,
-        state: "UpdateFailed",
-      });
-
-    const result = await updateAgentDetails({
-      userId: "user-1",
-      agentId: "agent-1",
-      body: {
-        name: "New name",
-        tags: "ai",
-        apiUrl: "https://agent.example.com/mip",
-      },
-    });
-
-    expect(result.success).toBe(false);
-    expect(agentUpdateMock).toHaveBeenCalledWith({
-      where: { id: "agent-1" },
-      data: { registrationState: "UpdateFailed" },
-    });
   });
 });
 

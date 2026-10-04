@@ -231,7 +231,6 @@ import { CREDIT_COST, INITIAL_CREDIT_GRANT } from "./constants";
 import { displayCreditsToStorageUnits } from "./units";
 
 const {
-  AGENT_UPDATE_CREDIT_COST,
   CreditBalanceCapExceededError,
   InsufficientCreditsError,
   consumeCreditIfRequired,
@@ -307,22 +306,24 @@ describe("credit service", () => {
     });
   });
 
-  it("consumes half a credit for agent updates", async () => {
-    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST));
+  it("consumes one credit for agent updates on Mainnet", async () => {
+    store.current = createState(displayCreditsToStorageUnits(CREDIT_COST * 2));
 
-    const result = await consumeCreditOrThrow({
+    const result = await consumeCreditIfRequired({
       userId: "user-1",
       reason: "agent_update",
       reference: "agent-update:test",
-      costDisplayCredits: AGENT_UPDATE_CREDIT_COST,
+      network: "Mainnet",
+      costDisplayCredits: CREDIT_COST,
     });
 
-    expect(result.creditsRemaining).toBe(0.5);
+    expect(result.creditsRemaining).toBe(1);
     expect(store.current.user?.creditsRemaining).toBe(
-      displayCreditsToStorageUnits(AGENT_UPDATE_CREDIT_COST),
+      displayCreditsToStorageUnits(CREDIT_COST),
     );
     expect(store.current.ledger[0]).toMatchObject({
-      delta: -displayCreditsToStorageUnits(AGENT_UPDATE_CREDIT_COST),
+      delta: -displayCreditsToStorageUnits(CREDIT_COST),
+      reason: "agent_update",
     });
   });
 

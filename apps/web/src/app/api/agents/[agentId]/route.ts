@@ -9,9 +9,9 @@ import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
 import {
-  AGENT_UPDATE_CREDIT_COST,
   consumeCreditIfRequired,
   createCreditReference,
+  CREDIT_COST,
   refundConsumedCredit,
 } from "@/lib/credits/service";
 import { updateAgentDetailsBodySchema } from "@/lib/schemas/agent";
@@ -216,15 +216,20 @@ app.openapi(
     try {
       const existingAgent = await prisma.agent.findFirst({
         where: { id: agentId, userId: authContext.user.id },
-        select: { networkIdentifier: true },
+        select: {
+          networkIdentifier: true,
+          agentReference: { select: { networkIdentifier: true } },
+        },
       });
 
       if (!existingAgent) {
         throw new ApiError(404, "Agent not found");
       }
 
-      const network =
-        existingAgent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod";
+      const resolvedNetwork =
+        existingAgent.agentReference?.networkIdentifier ??
+        existingAgent.networkIdentifier;
+      const network = resolvedNetwork === "Mainnet" ? "Mainnet" : "Preprod";
 
       requireNetworkedOidcApiScope(authContext, {
         resource: "agents",
@@ -244,7 +249,7 @@ app.openapi(
         reason: "agent_update",
         reference: creditReference,
         network,
-        costDisplayCredits: AGENT_UPDATE_CREDIT_COST,
+        costDisplayCredits: CREDIT_COST,
         metadata: creditMetadata,
       });
 

@@ -12,7 +12,7 @@ import {
   storageUnitsToDisplayCredits,
 } from "./units";
 
-export { AGENT_UPDATE_CREDIT_COST, CREDIT_COST } from "./constants";
+export { CREDIT_COST } from "./constants";
 
 export type CreditLedgerReason =
   | "initial_grant"
