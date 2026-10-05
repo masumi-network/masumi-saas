@@ -20,6 +20,8 @@ export type PreparedX402HttpRegistration = {
 export async function prepareX402HttpRegistration(input: {
   resourceUrl: string;
   network: PaymentNodeNetwork;
+  /** Defaults to the probe's own timeout (60s). */
+  probeTimeoutMs?: number;
 }): Promise<
   | { ok: true; data: PreparedX402HttpRegistration }
   | { ok: false; error: string }
@@ -29,6 +31,7 @@ export async function prepareX402HttpRegistration(input: {
   const probe = await probeX402HttpResource({
     resourceUrl: trimmed,
     evmNetwork,
+    timeoutMs: input.probeTimeoutMs,
   });
   if (!probe.ok) {
     return { ok: false, error: probe.error };

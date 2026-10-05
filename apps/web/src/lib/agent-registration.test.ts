@@ -123,6 +123,8 @@ const {
 } = await import("./agent-registration");
 const { resolveRegistrationFundingWallet } =
   await import("./payment-node/registration-wallets");
+const { replaceSupportedPaymentSourcesForAgent } =
+  await import("@masumi/payment-source-x402/supported-payment-sources");
 
 describe("resolveRegistrationFundingWallet", () => {
   beforeEach(() => {
@@ -667,6 +669,12 @@ describe("startAgentRegistration", () => {
         }),
       }),
     });
+    // A reference marks the agent submittable, so its sources must exist first.
+    const replaceOrder = vi.mocked(replaceSupportedPaymentSourcesForAgent).mock
+      .invocationCallOrder[0];
+    const referenceOrder = agentReferenceCreateMock.mock.invocationCallOrder[0];
+    expect(replaceOrder).toBeDefined();
+    expect(replaceOrder).toBeLessThan(referenceOrder!);
   });
 });
 

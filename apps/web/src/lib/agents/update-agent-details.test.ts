@@ -135,8 +135,14 @@ beforeEach(() => {
   });
   agentUpdateManyMock.mockResolvedValue({ count: 1 });
   updateAgentMock.mockResolvedValue(undefined);
-  transactionMock.mockImplementation(async (ops: unknown[]) => {
-    for (const op of ops) {
+  transactionMock.mockImplementation(async (arg: unknown) => {
+    if (typeof arg === "function") {
+      return arg({
+        agent: { updateMany: agentUpdateManyMock, update: agentUpdateMock },
+        agentReference: { update: agentReferenceUpdateMock },
+      });
+    }
+    for (const op of arg as unknown[]) {
       await op;
     }
   });
@@ -214,7 +220,8 @@ describe("updateAgentDetails", () => {
         verifications: [],
       }),
     );
-    expect(transactionMock).toHaveBeenCalledTimes(1);
+    // Lock + baseline transaction, then the final persist transaction.
+    expect(transactionMock).toHaveBeenCalledTimes(2);
     expect(agentUpdateMock).toHaveBeenCalledWith({
       where: { id: "agent-1" },
       data: expect.objectContaining({
@@ -260,8 +267,8 @@ describe("updateAgentDetails", () => {
     expect(updateAgentMock).toHaveBeenCalledOnce();
   });
 
-  it("preserves the x402 manifest endpoint and updates its paid resource", async () => {
-    const resource = "https://paid.example.com/new";
+  it("preserves the x402 manifest endpoint when the resource is unchanged", async () => {
+    const resource = "https://paid.example.com/old";
     const manifestUrl =
       "https://saas.example.com/api/public/x402-manifest/agent-1";
     agentFindFirstMock.mockResolvedValue(
@@ -305,6 +312,32 @@ describe("updateAgentDetails", () => {
     expect(metadata.x402Manifest.resources).toEqual([
       { resource, type: "http", description: "Weather" },
     ]);
+  });
+
+  it("rejects an X402 resource URL change before requesting a registry update", async () => {
+    agentFindFirstMock.mockResolvedValue(
+      registeredAgent({ apiUrl: "https://paid.example.com/old" }),
+    );
+    getRegistryByIdMock.mockResolvedValue({ type: "X402" });
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "New name",
+        tags: "x402",
+        apiUrl: "https://paid.example.com/new",
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "The resource URL of a registered x402 agent cannot be changed.",
+    });
+    expect(agentUpdateManyMock).not.toHaveBeenCalled();
+    expect(agentReferenceUpdateMock).not.toHaveBeenCalled();
+    expect(updateAgentMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 
   it("clears explicitly empty legal fields while preserving omitted fields", async () => {
@@ -386,6 +419,94 @@ describe("updateAgentDetails", () => {
       success: false,
       error: "An agent update is already in progress. Please try again later.",
     });
+    expect(updateAgentMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateAgentDetails failure results", () => {
+  it("returns a failure result for a malformed agent identifier", async () => {
+    agentFindFirstMock.mockResolvedValue(
+      registeredAgent({ agentIdentifier: "a".repeat(40) }),
+    );
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "New name",
+        tags: "ai",
+        apiUrl: "https://agent.example.com/mip",
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Agent details updates require a V2 registry entry",
+    });
+    expect(updateAgentMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a failure result when loading the agent throws", async () => {
+    agentFindFirstMock.mockRejectedValue(new Error("pool timeout"));
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "New name",
+        tags: "ai",
+        apiUrl: "https://agent.example.com/mip",
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not load the agent. Please try again.",
+    });
+    expect(updateAgentMock).not.toHaveBeenCalled();
+  });
+
+  const body = {
+    name: "New name",
+    tags: "ai",
+    apiUrl: "https://agent.example.com/mip",
+  };
+
+  it("returns a failure result when the registry lookup throws", async () => {
+    agentFindFirstMock.mockResolvedValue(registeredAgent());
+    getRegistryByIdMock.mockRejectedValue(new Error("payment node timeout"));
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Registry metadata could not be loaded. Please try again.",
+    });
+    expect(agentUpdateManyMock).not.toHaveBeenCalled();
+    expect(updateAgentMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a failure result and sends nothing when the baseline write fails", async () => {
+    agentFindFirstMock.mockResolvedValue(registeredAgent());
+    agentReferenceUpdateMock.mockRejectedValueOnce(new Error("db down"));
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not start the agent update. Please try again.",
+    });
+    // Lock and baseline run in one interactive transaction (Postgres rolls
+    // back the lock with it; this mock can only prove the shared callback).
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function));
     expect(updateAgentMock).not.toHaveBeenCalled();
   });
 });

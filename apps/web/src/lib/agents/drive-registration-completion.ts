@@ -67,16 +67,47 @@ export async function pollAgentRegistrationCompletion(
     : { status: "pending" };
 }
 
-/** Fire-and-forget completion polling (does not block the HTTP response). */
+/** Background completion pollers allowed to run at once in this process. */
+export const MAX_BACKGROUND_COMPLETION_POLLERS = 10;
+
+const scheduledAgentIds = new Set<string>();
+const pendingCompletions: Array<{ agentId: string; userId: string }> = [];
+let activeCompletionPollers = 0;
+
+function drainCompletionQueue(): void {
+  while (
+    activeCompletionPollers < MAX_BACKGROUND_COMPLETION_POLLERS &&
+    pendingCompletions.length > 0
+  ) {
+    const { agentId, userId } = pendingCompletions.shift()!;
+    activeCompletionPollers += 1;
+    void pollAgentRegistrationCompletion(agentId, userId)
+      .catch((error) => {
+        serverLog.error("Background agent registration completion failed", {
+          agentId,
+          userId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      })
+      .finally(() => {
+        activeCompletionPollers -= 1;
+        scheduledAgentIds.delete(agentId);
+        drainCompletionQueue();
+      });
+  }
+}
+
+/**
+ * Fire-and-forget completion polling (does not block the HTTP response).
+ * One poller per agent; at most {@link MAX_BACKGROUND_COMPLETION_POLLERS}
+ * run at once and the rest wait in a queue.
+ */
 export function scheduleAgentRegistrationCompletion(
   agentId: string,
   userId: string,
 ): void {
-  void pollAgentRegistrationCompletion(agentId, userId).catch((error) => {
-    serverLog.error("Background agent registration completion failed", {
-      agentId,
-      userId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  });
+  if (scheduledAgentIds.has(agentId)) return;
+  scheduledAgentIds.add(agentId);
+  pendingCompletions.push({ agentId, userId });
+  drainCompletionQueue();
 }

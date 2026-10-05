@@ -18,6 +18,7 @@ import {
   matchesPricingTypeFilter,
 } from "@/lib/agents/agent-list-filter-match";
 import { scheduleAgentRegistrationCompletion } from "@/lib/agents/drive-registration-completion";
+import { canRefundCreditAfterRegistrationThrow } from "@/lib/agents/registration-credit-refund";
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -562,10 +563,11 @@ app.openapi(
         metadata: creditMetadata,
       });
 
-      let shouldRefundRegistrationCredit = true;
+      // Fix the id up front so a throw can tell whether the agent was persisted.
+      const registrationAgentId = agentId ?? randomUUID();
 
       const params: RegisterAgentParams = {
-        id: agentId,
+        id: registrationAgentId,
         name,
         description: description?.trim() || null,
         apiUrl: resolvedApiUrl,
@@ -606,7 +608,7 @@ app.openapi(
           params,
         );
       } catch (registrationError) {
-        if (shouldRefundRegistrationCredit) {
+        if (await canRefundCreditAfterRegistrationThrow(registrationAgentId)) {
           await refundConsumedCredit({
             userId: user.id,
             reason: "agent_register",
@@ -614,9 +616,15 @@ app.openapi(
             network,
             metadata: creditMetadata,
           });
-          shouldRefundRegistrationCredit = false;
+          throw registrationError;
         }
-        throw registrationError;
+        // The agent is submittable and its credit is spent: report it as
+        // started so completion polling drives it on-chain.
+        console.error(
+          "Agent registration threw after setup; continuing:",
+          registrationError,
+        );
+        result = { success: true, agentId: registrationAgentId };
       }
 
       if (!result.success) {
@@ -627,11 +635,8 @@ app.openapi(
           network,
           metadata: creditMetadata,
         });
-        shouldRefundRegistrationCredit = false;
         throw new ApiError(400, result.error);
       }
-
-      shouldRefundRegistrationCredit = false;
 
       scheduleAgentRegistrationCompletion(result.agentId, user.id);
       const agent = await prisma.agent.findFirst({
