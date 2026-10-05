@@ -113,3 +113,5 @@ app.openapi(
 );
 
 export const POST = nextHandlers(app).POST;
+
+export default app;

@@ -48,7 +48,7 @@ export function agentPricingRequiresPayoutAddress(
   return pricing?.pricingType !== "Free";
 }
 
-const exampleOutputSchema = z.object({
+export const exampleOutputSchema = z.object({
   name: z.string().max(60).min(1),
   url: z.string().url().min(1),
   mimeType: z.string().max(60).min(1),

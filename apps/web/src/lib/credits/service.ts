@@ -57,9 +57,9 @@ export function wouldExceedCreditBalanceCap(
   creditsRemainingStorage: number,
   creditsToAddDisplay: number,
 ): boolean {
-  const nextDisplay =
-    storageUnitsToDisplayCredits(creditsRemainingStorage) + creditsToAddDisplay;
-  return nextDisplay > MAX_USER_CREDITS_REMAINING;
+  const nextStorage =
+    creditsRemainingStorage + displayCreditsToStorageUnits(creditsToAddDisplay);
+  return nextStorage > MAX_USER_CREDITS_REMAINING;
 }
 
 function isUniqueConstraintError(error: unknown): boolean {

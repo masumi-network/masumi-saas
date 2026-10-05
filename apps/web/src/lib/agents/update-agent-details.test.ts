@@ -260,8 +260,8 @@ describe("updateAgentDetails", () => {
     expect(updateAgentMock).toHaveBeenCalledOnce();
   });
 
-  it("preserves the x402 manifest endpoint and updates its paid resource", async () => {
-    const resource = "https://paid.example.com/new";
+  it("preserves the x402 manifest endpoint when the resource is unchanged", async () => {
+    const resource = "https://paid.example.com/old";
     const manifestUrl =
       "https://saas.example.com/api/public/x402-manifest/agent-1";
     agentFindFirstMock.mockResolvedValue(
@@ -305,6 +305,32 @@ describe("updateAgentDetails", () => {
     expect(metadata.x402Manifest.resources).toEqual([
       { resource, type: "http", description: "Weather" },
     ]);
+  });
+
+  it("rejects an X402 resource URL change before requesting a registry update", async () => {
+    agentFindFirstMock.mockResolvedValue(
+      registeredAgent({ apiUrl: "https://paid.example.com/old" }),
+    );
+    getRegistryByIdMock.mockResolvedValue({ type: "X402" });
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "New name",
+        tags: "x402",
+        apiUrl: "https://paid.example.com/new",
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "The resource URL of a registered x402 agent cannot be changed.",
+    });
+    expect(agentUpdateManyMock).not.toHaveBeenCalled();
+    expect(agentReferenceUpdateMock).not.toHaveBeenCalled();
+    expect(updateAgentMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 
   it("clears explicitly empty legal fields while preserving omitted fields", async () => {

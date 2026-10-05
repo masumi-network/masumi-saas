@@ -233,6 +233,7 @@ import { displayCreditsToStorageUnits } from "./units";
 const {
   CreditBalanceCapExceededError,
   InsufficientCreditsError,
+  MAX_USER_CREDITS_REMAINING,
   consumeCreditIfRequired,
   consumeCreditOrThrow,
   clawBackCreditTopUpFromCheckoutSession,
@@ -556,7 +557,7 @@ describe("credit service", () => {
   });
 
   it("rejects stripe top-up when balance would exceed configured maximum", async () => {
-    store.current = createState(displayCreditsToStorageUnits(2_000_000_000));
+    store.current = createState(MAX_USER_CREDITS_REMAINING);
 
     await expect(
       grantCreditTopUpFromCheckoutSession({
@@ -568,18 +569,35 @@ describe("credit service", () => {
   });
 
   it("reports whether a stripe top-up would exceed the balance cap", () => {
+    const topUpUnits = displayCreditsToStorageUnits(10);
     expect(
       wouldExceedCreditBalanceCap(
-        displayCreditsToStorageUnits(1_999_999_990),
+        MAX_USER_CREDITS_REMAINING - topUpUnits,
         10,
       ),
     ).toBe(false);
     expect(
       wouldExceedCreditBalanceCap(
-        displayCreditsToStorageUnits(1_999_999_991),
+        MAX_USER_CREDITS_REMAINING - topUpUnits + 1,
         10,
       ),
     ).toBe(true);
+  });
+
+  it("rejects a top-up before its storage balance can overflow PostgreSQL INTEGER", async () => {
+    const postgresIntegerMax = 2_147_483_647;
+    store.current = createState(postgresIntegerMax - 1);
+
+    await expect(
+      grantCreditTopUpFromCheckoutSession({
+        userId: "user-1",
+        credits: 1,
+        checkoutSessionId: "cs_test_integer_overflow",
+      }),
+    ).rejects.toBeInstanceOf(CreditBalanceCapExceededError);
+
+    expect(store.current.user?.creditsRemaining).toBe(postgresIntegerMax - 1);
+    expect(store.current.ledger).toHaveLength(0);
   });
 
   it("claws back stripe top-up credits idempotently per Stripe event", async () => {

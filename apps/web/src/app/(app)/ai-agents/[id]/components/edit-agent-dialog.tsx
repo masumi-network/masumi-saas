@@ -40,6 +40,7 @@ import { agentMetadataSchema } from "@/lib/schemas/agent";
 import { cn } from "@/lib/utils";
 import { extractErrorMessage } from "@/lib/utils/extract-error";
 
+import { editAgentExampleOutputsSchema } from "./edit-agent-example-outputs";
 import type { EditAgentFormValues } from "./edit-agent-form-values";
 import { EditAgentReviewSection } from "./edit-agent-review-section";
 
@@ -235,15 +236,7 @@ export function EditAgentDialog({
       otherUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
       capabilityName: z.string().max(250).optional().or(z.literal("")),
       capabilityVersion: z.string().max(250).optional().or(z.literal("")),
-      exampleOutputs: z
-        .array(
-          z.object({
-            name: z.string().max(60),
-            url: z.string(),
-            mimeType: z.string().max(60),
-          }),
-        )
-        .optional(),
+      exampleOutputs: editAgentExampleOutputsSchema.optional(),
     })
     .superRefine((_data, ctx) => {
       if (tags.length === 0) {
@@ -443,6 +436,10 @@ export function EditAgentDialog({
                       <FormLabel>{tRegister("apiUrl")}</FormLabel>
                       <FormControl>
                         <Input
+                          readOnly={
+                            parseAgentMetadata(agent).registryEntryType ===
+                            "X402"
+                          }
                           placeholder={tRegister("apiUrlPlaceholder")}
                           {...field}
                           className="h-11 font-mono text-sm"
