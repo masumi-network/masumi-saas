@@ -16,10 +16,10 @@ import {
 import {
   loadSupportedPaymentSourcesForAgent,
   mergeWithDefaultCardanoSource,
-  replaceSupportedPaymentSourcesForAgent,
 } from "@masumi/payment-source-x402/supported-payment-sources";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { persistAgentRegistrationSetup } from "@/lib/agents/persist-agent-registration-setup";
 import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
 import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
 import {
@@ -883,16 +883,10 @@ async function registerAgentOnChainUntilSetup(
     agentPricing: params.agentPricing,
   };
 
-  if (mergedSupportedPaymentSources) {
-    await replaceSupportedPaymentSourcesForAgent(
-      agent.id,
-      mergedSupportedPaymentSources,
-    );
-  }
-
-  await prisma.agentReference.create({
-    data: {
-      agentId: agent.id,
+  await persistAgentRegistrationSetup({
+    agentId: agent.id,
+    supportedPaymentSources: mergedSupportedPaymentSources,
+    reference: {
       sellingWalletVkey: sellingWallet.walletVkey,
       sellingWalletId,
       networkIdentifier: network,
