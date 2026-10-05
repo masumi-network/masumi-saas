@@ -46,7 +46,7 @@ import {
   AgentX402Options,
 } from "../../../components/agent-x402-options";
 import { RequestVerificationDialog } from "../../../components/request-verification-dialog";
-import { AgentCapabilitiesDetailsCard } from "../agent-capabilities-details-card";
+import { AgentAdditionalDetailsSection } from "../agent-additional-details-section";
 import { AgentChangelogCard } from "../agent-changelog-card";
 import { AgentDetailsPinnedAside } from "../agent-details-pinned-aside";
 import { AgentPayoutAddressDialog } from "../agent-payout-address-dialog";
@@ -331,235 +331,241 @@ export function AgentDetails({
       ) : null}
 
       <div
-        className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(16rem,22rem)]"
+        className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(16rem,22rem)] lg:grid-rows-[auto_auto]"
         data-agent-details-grid
       >
-        <div className="flex min-w-0 flex-col gap-8">
-          <div className="flex flex-col gap-6">
-            <Card className="overflow-hidden gap-0 py-0">
-              <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
-                <CardTitle className="text-base font-semibold">
-                  {t("overview")}
-                </CardTitle>
-                {showEditButton ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-8 shrink-0 gap-1.5"
-                    onClick={() => setIsEditDialogOpen(true)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    {t("edit")}
-                  </Button>
-                ) : null}
-              </CardHeader>
-              <CardContent className="space-y-6 p-6">
-                {/* Description (short) */}
-                {agent.description && (
-                  <>
-                    <div className="flex gap-3">
-                      <Tag className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-muted-foreground mb-1">
-                          {t("description")}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {agent.description}
-                        </p>
-                      </div>
-                    </div>
-                    <Separator />
-                  </>
-                )}
-
-                {/* API URL - compact row */}
-                <div className="flex gap-3 min-w-0">
-                  <Link2 className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("apiUrl")}
-                    </p>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Link
-                        href={agent.apiUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono text-xs sm:text-sm hover:underline truncate min-w-0"
-                      >
-                        {agent.apiUrl}
-                      </Link>
-                      <CopyButton
-                        value={agent.apiUrl}
-                        className="h-7 w-7 shrink-0"
-                      />
+        <div className="flex min-w-0 flex-col gap-6 lg:col-start-1 lg:row-start-1">
+          <Card className="overflow-hidden gap-0 py-0">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
+              <CardTitle className="text-base font-semibold">
+                {t("overview")}
+              </CardTitle>
+              {showEditButton ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 shrink-0 gap-1.5"
+                  onClick={() => setIsEditDialogOpen(true)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  {t("edit")}
+                </Button>
+              ) : null}
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              {/* Description (short) */}
+              {agent.description && (
+                <>
+                  <div className="flex gap-3">
+                    <Tag className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        {t("description")}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {agent.description}
+                      </p>
                     </div>
                   </div>
-                </div>
+                  <Separator />
+                </>
+              )}
 
-                <Separator />
-
-                {/* Agent ID */}
-                <div className="flex gap-3 min-w-0">
-                  <Fingerprint className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("agentId")}
-                    </p>
-                    <div className="flex items-center gap-2 min-w-0">
-                      {agent.agentIdentifier ? (
-                        <>
-                          <span className="font-mono text-xs sm:text-sm truncate min-w-0">
-                            {agent.agentIdentifier}
-                          </span>
-                          <CopyButton
-                            value={agent.agentIdentifier}
-                            className="h-7 w-7 shrink-0"
-                          />
-                        </>
-                      ) : (
-                        <span className="text-xs sm:text-sm text-muted-foreground">
-                          {t("noAgentId")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Price */}
-                <div className="flex gap-3 min-w-0">
-                  <DollarSign className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("price")}
-                    </p>
-                    <AgentPriceTableCell
-                      pricing={agent.pricing}
-                      supportedPaymentSources={agent.supportedPaymentSources}
-                      networks={x402Networks}
+              {/* API URL - compact row */}
+              <div className="flex gap-3 min-w-0">
+                <Link2 className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("apiUrl")}
+                  </p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Link
+                      href={agent.apiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs sm:text-sm hover:underline truncate min-w-0"
+                    >
+                      {agent.apiUrl}
+                    </Link>
+                    <CopyButton
+                      value={agent.apiUrl}
+                      className="h-7 w-7 shrink-0"
                     />
                   </div>
                 </div>
+              </div>
 
-                <Separator />
+              <Separator />
 
-                {requiresPayoutAddress ? (
-                  <>
-                    {/* Payout address */}
-                    <div className="flex gap-3 min-w-0">
-                      <Wallet className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-medium text-muted-foreground">
-                            {t("payoutAddress")}
-                          </p>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
-                                <CircleHelp className="h-3.5 w-3.5" />
-                                <span className="sr-only">
-                                  {tRegister("payoutAddressHint")}
-                                </span>
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              {tRegister("payoutAddressHint")}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 min-w-0">
-                          {agent.payoutAddress ? (
-                            <>
-                              <span
-                                className="font-mono text-xs sm:text-sm truncate min-w-0"
-                                title={agent.payoutAddress}
-                              >
-                                {shortenAddress(agent.payoutAddress, 10)}
-                              </span>
-                              <CopyButton
-                                value={agent.payoutAddress}
-                                className="h-7 w-7 shrink-0"
-                              />
-                            </>
-                          ) : (
-                            <span className="text-xs sm:text-sm text-muted-foreground">
-                              {t("payoutAddressNotSet")}
-                            </span>
-                          )}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7"
-                            onClick={() => setIsPayoutDialogOpen(true)}
-                          >
-                            {agent.payoutAddress
-                              ? t("payoutAddressEdit")
-                              : t("payoutAddressSet")}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-                  </>
-                ) : null}
-
-                {/* Tags */}
-                <div className="flex gap-3">
-                  <Tags className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("tags")}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {agent.tags && agent.tags.length > 0 ? (
-                        agent.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary">
-                            {tag}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          {t("noTags")}
+              {/* Agent ID */}
+              <div className="flex gap-3 min-w-0">
+                <Fingerprint className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("agentId")}
+                  </p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {agent.agentIdentifier ? (
+                      <>
+                        <span className="font-mono text-xs sm:text-sm truncate min-w-0">
+                          {agent.agentIdentifier}
                         </span>
-                      )}
-                    </div>
+                        <CopyButton
+                          value={agent.agentIdentifier}
+                          className="h-7 w-7 shrink-0"
+                        />
+                      </>
+                    ) : (
+                      <span className="text-xs sm:text-sm text-muted-foreground">
+                        {t("noAgentId")}
+                      </span>
+                    )}
                   </div>
                 </div>
+              </div>
 
-                {agentVerificationEnabled ? (
-                  <>
-                    <Separator />
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 flex-1 gap-3">
-                        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                        <div className="min-w-0 space-y-2">
-                          <p className="text-xs font-medium text-muted-foreground">
-                            {t("verification")}
-                          </p>
-                          <AgentVerificationOverviewLine agent={agent} />
-                        </div>
+              <Separator />
+
+              {/* Price */}
+              <div className="flex gap-3 min-w-0">
+                <DollarSign className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("price")}
+                  </p>
+                  <AgentPriceTableCell
+                    pricing={agent.pricing}
+                    supportedPaymentSources={agent.supportedPaymentSources}
+                    networks={x402Networks}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {requiresPayoutAddress ? (
+                <>
+                  {/* Payout address */}
+                  <div className="flex gap-3 min-w-0">
+                    <Wallet className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("payoutAddress")}
+                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground">
+                              <CircleHelp className="h-3.5 w-3.5" />
+                              <span className="sr-only">
+                                {tRegister("payoutAddressHint")}
+                              </span>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            {tRegister("payoutAddressHint")}
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
-                      {onViewVerificationTab ? (
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        {agent.payoutAddress ? (
+                          <>
+                            <span
+                              className="font-mono text-xs sm:text-sm truncate min-w-0"
+                              title={agent.payoutAddress}
+                            >
+                              {shortenAddress(agent.payoutAddress, 10)}
+                            </span>
+                            <CopyButton
+                              value={agent.payoutAddress}
+                              className="h-7 w-7 shrink-0"
+                            />
+                          </>
+                        ) : (
+                          <span className="text-xs sm:text-sm text-muted-foreground">
+                            {t("payoutAddressNotSet")}
+                          </span>
+                        )}
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="shrink-0"
-                          onClick={onViewVerificationTab}
+                          className="h-7"
+                          onClick={() => setIsPayoutDialogOpen(true)}
                         >
-                          {t("viewInVerificationTab")}
+                          {agent.payoutAddress
+                            ? t("payoutAddressEdit")
+                            : t("payoutAddressSet")}
                         </Button>
-                      ) : null}
+                      </div>
                     </div>
-                  </>
-                ) : null}
-              </CardContent>
-            </Card>
+                  </div>
 
+                  <Separator />
+                </>
+              ) : null}
+
+              {/* Tags */}
+              <div className="flex gap-3">
+                <Tags className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("tags")}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {agent.tags && agent.tags.length > 0 ? (
+                      agent.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">
+                          {tag}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        {t("noTags")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {agentVerificationEnabled ? (
+                <>
+                  <Separator />
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 flex-1 gap-3">
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("verification")}
+                        </p>
+                        <AgentVerificationOverviewLine agent={agent} />
+                      </div>
+                    </div>
+                    {onViewVerificationTab ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={onViewVerificationTab}
+                      >
+                        {t("viewInVerificationTab")}
+                      </Button>
+                    ) : null}
+                  </div>
+                </>
+              ) : null}
+            </CardContent>
+          </Card>
+        </div>
+
+        <AgentDetailsPinnedAside className="lg:col-start-2 lg:row-start-1 lg:row-span-2">
+          {changelogCard}
+        </AgentDetailsPinnedAside>
+
+        <div className="flex min-w-0 flex-col gap-8 lg:col-start-1 lg:row-start-2">
+          <div className="flex flex-col gap-6">
             {agentHasX402Options(agent.supportedPaymentSources) ? (
               <AgentX402Options sources={agent.supportedPaymentSources} />
             ) : null}
@@ -594,21 +600,10 @@ export function AgentDetails({
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-4">
-              <Separator className="flex-1" />
-              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                {t("additionalDetails")}
-              </span>
-              <Separator className="flex-1" />
-            </div>
-            <AgentCapabilitiesDetailsCard agent={agent} />
-          </div>
+          <AgentAdditionalDetailsSection agent={agent} />
 
           {dangerZoneSection}
         </div>
-
-        <AgentDetailsPinnedAside>{changelogCard}</AgentDetailsPinnedAside>
       </div>
     </div>
   );

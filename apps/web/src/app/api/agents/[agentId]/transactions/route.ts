@@ -1,15 +1,10 @@
 import { createRoute } from "@hono/zod-openapi";
 
+import { getAgentTransactionsForUser } from "@/lib/agents/get-agent-transactions-for-user";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
-import { resolveAgentPaymentRail } from "@/lib/earnings/agent-income";
-import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
-import { formatRequestedAmount, toNetwork } from "@/lib/payment-node/format";
-import { getPaymentNodeClientForUser } from "@/lib/payment-node/get-user-client";
-import { mapX402AgentPaymentActivityToTransactions } from "@/lib/payment-node/map-x402-agent-transactions";
-import { getSmartContractAddressForConfiguredSource } from "@/lib/payment-node/resolve-smart-contract";
 import { agentIdRouteParamSchema } from "@/lib/schemas/api-query";
 import {
   agentTransactionsSuccessSchema,
@@ -31,33 +26,6 @@ const paramsSchema = z.object({
     example: "cmlf6gswz0000x1uctad958tq",
   }),
 });
-
-function mapItem(
-  item: PaymentOrPurchaseItem,
-  type: "payment" | "purchase",
-  network: string,
-): {
-  id: string;
-  type: "payment" | "purchase";
-  txHash: string | null;
-  amount: string;
-  network: string;
-  status: string;
-  unlockTime: string | null;
-  createdAt: string;
-} {
-  const status = item.onChainState ?? item.NextAction?.requestedAction ?? "—";
-  return {
-    id: item.id,
-    type,
-    txHash: item.CurrentTransaction?.txHash ?? null,
-    amount: formatRequestedAmount(item.RequestedFunds),
-    network: item.PaymentSource?.network ?? network,
-    status: String(status),
-    unlockTime: item.unlockTime ?? null,
-    createdAt: item.createdAt,
-  };
-}
 
 app.openapi(
   createRoute({
@@ -103,86 +71,10 @@ app.openapi(
         network: agent.networkIdentifier === "Mainnet" ? "Mainnet" : "Preprod",
       });
 
-      if (!agent.agentIdentifier) {
-        return c.json(
-          { success: true as const, data: { transactions: [] } },
-          200,
-        );
-      }
-
-      const client = await getPaymentNodeClientForUser(authContext.user.id);
-      if (!client) {
-        return c.json(
-          { success: true as const, data: { transactions: [] } },
-          200,
-        );
-      }
-
-      const network = toNetwork(
-        agent.agentReference?.networkIdentifier ?? agent.networkIdentifier,
-      );
-
-      if (resolveAgentPaymentRail(agent) === "x402") {
-        const end = new Date();
-        const start = new Date();
-        start.setFullYear(2020, 0, 1);
-        const activity = await client.getX402AgentPaymentActivity({
-          network,
-          agentIdentifier: agent.agentIdentifier,
-          startDate: start.toISOString().slice(0, 10),
-          endDate: end.toISOString().slice(0, 10),
-          take: 50,
-        });
-        const transactions =
-          mapX402AgentPaymentActivityToTransactions(activity);
-        return c.json({ success: true as const, data: { transactions } }, 200);
-      }
-
-      const smartContractAddress =
-        await getSmartContractAddressForConfiguredSource(
-          client,
-          authContext.user.id,
-          network,
-        );
-      if (!smartContractAddress) {
-        return c.json(
-          { success: true as const, data: { transactions: [] } },
-          200,
-        );
-      }
-
-      const [paymentsRes, purchasesRes] = await Promise.all([
-        client.listPayments({
-          network,
-          filterSmartContractAddress: smartContractAddress,
-          limit: 50,
-        }),
-        client.listPurchases({
-          network,
-          filterSmartContractAddress: smartContractAddress,
-          limit: 50,
-        }),
-      ]);
-
-      const agentIdVal = agent.agentIdentifier;
-      const payments = (paymentsRes.Payments ?? []).filter(
-        (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
-      );
-      const purchases = (purchasesRes.Purchases ?? []).filter(
-        (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
-      );
-
-      const transactions = [
-        ...payments.map((p: PaymentOrPurchaseItem) =>
-          mapItem(p, "payment", network),
-        ),
-        ...purchases.map((p: PaymentOrPurchaseItem) =>
-          mapItem(p, "purchase", network),
-        ),
-      ].sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
+      const transactions = await getAgentTransactionsForUser({
+        userId: authContext.user.id,
+        agentId,
+      });
 
       return c.json({ success: true as const, data: { transactions } }, 200);
     } catch (error) {

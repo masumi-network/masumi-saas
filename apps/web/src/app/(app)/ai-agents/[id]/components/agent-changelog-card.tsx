@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleHelp } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,7 @@ import {
   getRegistrationStatusBadgeVariant,
   getRegistrationStatusDisplayKey,
 } from "../../components/agent-utils";
-import { AgentRegistrationStatusTimeline } from "./agent-registration-status-timeline";
+import { AgentRecentActivityFeed } from "./agent-recent-activity-feed";
 
 type AgentChangelogCardProps = {
   agent: Agent;
@@ -53,13 +54,32 @@ export function AgentChangelogCard({
     await onSyncAgent();
   };
 
+  const activityRefreshKey = [
+    agent.id,
+    agent.registrationState,
+    agent.updatedAt,
+    agent.registrationInitiatedAt ?? "",
+    lastRegistrationSyncedAt?.toISOString() ?? "",
+  ].join("|");
+
   return (
     <Card className="overflow-hidden gap-0 py-0">
       <CardHeader className="gap-0 space-y-0 border-b border-border/50 p-0 !pb-0">
-        <div className="px-5 py-4">
+        <div className="flex items-center gap-1.5 px-5 py-4">
           <CardTitle className="text-base font-semibold leading-none">
-            {t("changelog")}
+            {t("recentActivity")}
           </CardTitle>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex shrink-0 cursor-help text-muted-foreground hover:text-foreground">
+                <CircleHelp className="h-3.5 w-3.5" aria-hidden />
+                <span className="sr-only">{t("recentActivityHint")}</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start" className="max-w-xs">
+              {t("recentActivityHint")}
+            </TooltipContent>
+          </Tooltip>
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-border/40 bg-muted/20 px-5 py-2.5">
           <span className="text-xs font-medium text-muted-foreground">
@@ -91,8 +111,11 @@ export function AgentChangelogCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-0 p-0">
-        <div className="px-5 py-4">
-          <AgentRegistrationStatusTimeline agent={agent} />
+        <div className="px-5 pt-4 pb-0">
+          <AgentRecentActivityFeed
+            agentId={agent.id}
+            refreshKey={activityRefreshKey}
+          />
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-border/40 bg-muted/10 px-5 py-3">
           <span className="text-xs text-muted-foreground">
