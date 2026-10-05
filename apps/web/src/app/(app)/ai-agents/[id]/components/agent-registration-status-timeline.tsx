@@ -29,6 +29,15 @@ interface AgentRegistrationStatusTimelineProps {
   >;
 }
 
+function toIsoTimestamp(
+  value: string | Date | null | undefined,
+): string | null {
+  if (value == null) {
+    return null;
+  }
+  return typeof value === "string" ? value : value.toISOString();
+}
+
 function stepVisualFlags(step: RegistrationTimelineStep) {
   return {
     isComplete: step.status === "complete",
@@ -108,9 +117,9 @@ export function AgentRegistrationStatusTimeline({
   const { formatDateTime, formatRelativeDate } = useFormatDate();
   const { steps } = buildAgentActivityTimeline({
     registrationState: agent.registrationState,
-    createdAt: agent.createdAt,
-    updatedAt: agent.updatedAt,
-    registrationInitiatedAt: agent.registrationInitiatedAt,
+    createdAt: toIsoTimestamp(agent.createdAt) ?? "",
+    updatedAt: toIsoTimestamp(agent.updatedAt) ?? "",
+    registrationInitiatedAt: toIsoTimestamp(agent.registrationInitiatedAt),
   });
 
   return (
