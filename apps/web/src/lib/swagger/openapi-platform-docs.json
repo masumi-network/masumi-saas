@@ -7219,6 +7219,10 @@
                         "registrationState": {
                           "type": "string"
                         },
+                        "registrationInitiatedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
                         "verificationStatus": {
                           "type": "string",
                           "nullable": true,
@@ -8831,6 +8835,10 @@
                         "registrationState": {
                           "type": "string"
                         },
+                        "registrationInitiatedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
                         "verificationStatus": {
                           "type": "string",
                           "nullable": true,
@@ -9434,6 +9442,10 @@
                         },
                         "registrationState": {
                           "type": "string"
+                        },
+                        "registrationInitiatedAt": {
+                          "type": "string",
+                          "nullable": true
                         },
                         "verificationStatus": {
                           "type": "string",
@@ -10384,6 +10396,10 @@
                         },
                         "registrationState": {
                           "type": "string"
+                        },
+                        "registrationInitiatedAt": {
+                          "type": "string",
+                          "nullable": true
                         },
                         "verificationStatus": {
                           "type": "string",
@@ -12264,6 +12280,10 @@
                         "registrationState": {
                           "type": "string"
                         },
+                        "registrationInitiatedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
                         "verificationStatus": {
                           "type": "string",
                           "nullable": true,
@@ -13555,6 +13575,10 @@
                           "registrationState": {
                             "type": "string"
                           },
+                          "registrationInitiatedAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "verificationStatus": {
                             "type": "string",
                             "nullable": true,
@@ -14772,6 +14796,10 @@
                         },
                         "registrationState": {
                           "type": "string"
+                        },
+                        "registrationInitiatedAt": {
+                          "type": "string",
+                          "nullable": true
                         },
                         "verificationStatus": {
                           "type": "string",
