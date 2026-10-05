@@ -12835,7 +12835,7 @@
           "Agents"
         ],
         "summary": "Batch register x402 HTTP resources",
-        "description": "Probes each URL, then starts one Masumi X402 registry agent per resource (same pipeline as single X402 HTTP registration). Processes URLs in order; partial success is allowed.",
+        "description": "Probes each URL, then starts one Masumi X402 registry agent per resource (same pipeline as single X402 HTTP registration). Processes a few URLs at a time and returns results in input order; partial success is allowed.",
         "security": [
           {
             "apiKeyHeader": []
