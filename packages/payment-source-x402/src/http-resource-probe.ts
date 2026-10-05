@@ -163,11 +163,15 @@ function inferDecimals(network: string, assetLower: string): number {
   return 6;
 }
 
+/** Max upstream 402 body buffered during live probe (public endpoint abuse guard). */
+export const MAX_PROBE_RESPONSE_BODY_BYTES = 256 * 1024;
+
 export type ProbeX402HttpResourceOptions = {
   resourceUrl: string;
   evmNetwork: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  maxResponseBodyBytes?: number;
 };
 
 export type ProbeX402HttpResourceResult =
@@ -184,6 +188,51 @@ export type ProbeX402HttpResourceResult =
 
 const SOKOSUMI_INCOMPATIBLE_REASON =
   "This resource is not Sokosumi-compatible (scheme, transfer method, USDC domain, or conflicting accepts).";
+
+const PROBE_BODY_TOO_LARGE =
+  "Probe response body exceeds the allowed size limit.";
+
+async function readResponseTextWithLimit(
+  res: Response,
+  maxBytes: number,
+): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  const contentLength = res.headers.get("content-length");
+  if (contentLength != null) {
+    const len = Number(contentLength);
+    if (Number.isFinite(len) && len > maxBytes) {
+      return { ok: false, error: PROBE_BODY_TOO_LARGE };
+    }
+  }
+
+  if (!res.body) {
+    const text = await res.text();
+    if (text.length > maxBytes) {
+      return { ok: false, error: PROBE_BODY_TOO_LARGE };
+    }
+    return { ok: true, text };
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let total = 0;
+  let text = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel();
+        return { ok: false, error: PROBE_BODY_TOO_LARGE };
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
+    return { ok: true, text };
+  } catch {
+    return { ok: false, error: "Failed to read probe response body." };
+  }
+}
 
 type ProbeX402HttpResourceCoreResult =
   | {
@@ -221,6 +270,8 @@ async function probeX402HttpResourceCore(
   const { resourceUrl, evmNetwork } = options;
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 60_000;
+  const maxResponseBodyBytes =
+    options.maxResponseBodyBytes ?? MAX_PROBE_RESPONSE_BODY_BYTES;
 
   let parsed: URL;
   try {
@@ -248,7 +299,11 @@ async function probeX402HttpResourceCore(
 
   const paymentHeader =
     res.headers.get("payment-required") ?? res.headers.get("PAYMENT-REQUIRED");
-  const body = await res.text();
+  const bodyRead = await readResponseTextWithLimit(res, maxResponseBodyBytes);
+  if (!bodyRead.ok) {
+    return { ok: false, error: bodyRead.error, httpStatus: res.status };
+  }
+  const body = bodyRead.text;
   const bodyDoc = tryParseJson(body);
   const headerDoc = parsePaymentRequiredHeader(paymentHeader);
   const doc = hasAccepts(bodyDoc)

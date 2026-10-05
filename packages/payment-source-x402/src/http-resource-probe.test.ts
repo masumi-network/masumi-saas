@@ -87,6 +87,43 @@ describe("evaluateX402SokosumiCompatibility", () => {
 });
 
 describe("probeX402HttpResource", () => {
+  it("rejects response bodies over the size limit", async () => {
+    const huge = "x".repeat(200);
+    const result = await probeX402HttpResource({
+      resourceUrl: "https://example.test/huge",
+      evmNetwork: "eip155:8453",
+      maxResponseBodyBytes: 100,
+      fetchImpl: async () =>
+        new Response(huge, {
+          status: 402,
+          headers: { "content-type": "text/plain" },
+        }),
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/size limit/);
+    }
+  });
+
+  it("rejects when Content-Length exceeds the limit before reading", async () => {
+    const result = await probeX402HttpResource({
+      resourceUrl: "https://example.test/cl",
+      evmNetwork: "eip155:8453",
+      maxResponseBodyBytes: 50,
+      fetchImpl: async () =>
+        new Response('{"accepts":[]}', {
+          status: 402,
+          headers: { "content-length": "99999" },
+        }),
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/size limit/);
+    }
+  });
+
   it("reads accepts from a 402 JSON body", async () => {
     const accepts = [
       {
