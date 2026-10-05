@@ -182,12 +182,42 @@ export type ProbeX402HttpResourceResult =
       httpStatus?: number;
     };
 
+const SOKOSUMI_INCOMPATIBLE_REASON =
+  "This resource is not Sokosumi-compatible (scheme, transfer method, USDC domain, or conflicting accepts).";
+
+type ProbeX402HttpResourceCoreResult =
+  | {
+      ok: true;
+      row: X402HttpProbeRow;
+      compatibility: SokosumiCompatibilityResult;
+      httpStatus: number;
+    }
+  | {
+      ok: false;
+      error: string;
+      httpStatus?: number;
+    };
+
+export type EvaluateX402SokosumiCompatibilityResult =
+  | {
+      ok: true;
+      sokosumiCompatible: boolean;
+      incompatibleReason: string | null;
+      checks: SokosumiCompatibilityResult["checks"];
+      row: X402HttpProbeRow;
+    }
+  | {
+      ok: false;
+      error: string;
+      httpStatus?: number;
+    };
+
 /**
  * GET the resource URL without payment; require 402 (or JSON with accepts).
  */
-export async function probeX402HttpResource(
+async function probeX402HttpResourceCore(
   options: ProbeX402HttpResourceOptions,
-): Promise<ProbeX402HttpResourceResult> {
+): Promise<ProbeX402HttpResourceCoreResult> {
   const { resourceUrl, evmNetwork } = options;
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 60_000;
@@ -299,14 +329,45 @@ export async function probeX402HttpResource(
     probedAt: new Date().toISOString(),
   };
 
-  if (!compatibility.compatible) {
+  return { ok: true, row, compatibility, httpStatus: res.status };
+}
+
+export async function probeX402HttpResource(
+  options: ProbeX402HttpResourceOptions,
+): Promise<ProbeX402HttpResourceResult> {
+  const core = await probeX402HttpResourceCore(options);
+  if (!core.ok) {
+    return core;
+  }
+  if (!core.compatibility.compatible) {
     return {
       ok: false,
-      error:
-        "This resource is not Sokosumi-compatible (scheme, transfer method, USDC domain, or conflicting accepts).",
-      httpStatus: res.status,
+      error: SOKOSUMI_INCOMPATIBLE_REASON,
+      httpStatus: core.httpStatus,
     };
   }
+  return {
+    ok: true,
+    row: core.row,
+    compatibility: core.compatibility,
+  };
+}
 
-  return { ok: true, row, compatibility };
+/** Live 402 probe that always returns Sokosumi gate results when payment data parses. */
+export async function evaluateX402SokosumiCompatibility(
+  options: ProbeX402HttpResourceOptions,
+): Promise<EvaluateX402SokosumiCompatibilityResult> {
+  const core = await probeX402HttpResourceCore(options);
+  if (!core.ok) {
+    return core;
+  }
+  return {
+    ok: true,
+    sokosumiCompatible: core.compatibility.compatible,
+    incompatibleReason: core.compatibility.compatible
+      ? null
+      : SOKOSUMI_INCOMPATIBLE_REASON,
+    checks: core.compatibility.checks,
+    row: core.row,
+  };
 }

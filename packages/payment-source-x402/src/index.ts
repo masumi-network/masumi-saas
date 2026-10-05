@@ -4,6 +4,8 @@ export * from "./counts.js";
 export * from "./encryption.js";
 export {
   assessSokosumiBuySideCompatibility,
+  evaluateX402SokosumiCompatibility,
+  type EvaluateX402SokosumiCompatibilityResult,
   parsePaymentRequiredHeader,
   probeX402HttpResource,
   type ProbeX402HttpResourceResult,

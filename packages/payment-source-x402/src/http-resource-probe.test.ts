@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assessSokosumiBuySideCompatibility,
+  evaluateX402SokosumiCompatibility,
   parsePaymentRequiredHeader,
   probeX402HttpResource,
 } from "./http-resource-probe.js";
@@ -47,6 +48,41 @@ describe("assessSokosumiBuySideCompatibility", () => {
     };
     const result = assessSokosumiBuySideCompatibility([accept], accept);
     expect(result.compatible).toBe(false);
+  });
+});
+
+describe("evaluateX402SokosumiCompatibility", () => {
+  it("returns compatible false with checks when gates fail", async () => {
+    const accepts = [
+      {
+        network: "eip155:8453",
+        scheme: "exact",
+        asset: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        payTo: "0x1234567890123456789012345678901234567890",
+        amount: "1000",
+        maxTimeoutSeconds: 3600,
+        extra: {
+          name: "USD Coin",
+          version: "2",
+          assetTransferMethod: "permit2",
+        },
+      },
+    ];
+    const result = await evaluateX402SokosumiCompatibility({
+      resourceUrl: "https://example.test/incompatible",
+      evmNetwork: "eip155:8453",
+      fetchImpl: async () =>
+        new Response(JSON.stringify({ accepts, x402Version: 2 }), {
+          status: 402,
+          headers: { "content-type": "application/json" },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.sokosumiCompatible).toBe(false);
+    expect(result.incompatibleReason).toMatch(/Sokosumi-compatible/);
+    expect(result.checks.transferMethodEip3009OrAbsent).toBe(false);
   });
 });
 
