@@ -93,7 +93,7 @@ describe("startX402HttpAgentRegistration", () => {
     );
   });
 
-  it("keeps the credit when registration throws after the agent is submittable", async () => {
+  it("reports the agent as started when registration throws after it is submittable", async () => {
     startAgentRegistrationMock.mockRejectedValue(new Error("db write failed"));
     canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(false);
 
@@ -102,11 +102,16 @@ describe("startX402HttpAgentRegistration", () => {
       resourceUrl: "https://x402.org/protected",
     });
 
-    expect(result.ok).toBe(false);
     const params = startAgentRegistrationMock.mock.calls[0]?.[1];
     expect(canRefundCreditAfterRegistrationThrowMock).toHaveBeenCalledWith(
       params?.id,
     );
+    // Reported as started so the batch route schedules completion polling.
+    expect(result).toEqual({
+      ok: true,
+      agentId: params?.id,
+      resourceUrl: "https://x402.org/protected",
+    });
     expect(refundConsumedCreditMock).not.toHaveBeenCalled();
   });
 

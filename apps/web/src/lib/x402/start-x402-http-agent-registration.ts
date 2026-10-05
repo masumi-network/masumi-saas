@@ -299,15 +299,23 @@ export async function startX402HttpAgentRegistration(
       resourceUrl: prepared.data.resourceUrl,
     };
   } catch (error) {
-    if (await canRefundCreditAfterRegistrationThrow(registrationAgentId)) {
-      await refundConsumedCredit({
-        userId: user.id,
-        reason: "agent_register",
-        reference: creditReference,
-        network,
-        metadata: creditMetadata,
-      });
+    if (!(await canRefundCreditAfterRegistrationThrow(registrationAgentId))) {
+      // The agent is submittable and its credit is spent: report it as
+      // started so the caller schedules completion polling.
+      console.error("x402 registration threw after setup; continuing:", error);
+      return {
+        ok: true,
+        agentId: registrationAgentId,
+        resourceUrl: prepared.data.resourceUrl,
+      };
     }
+    await refundConsumedCredit({
+      userId: user.id,
+      reason: "agent_register",
+      reference: creditReference,
+      network,
+      metadata: creditMetadata,
+    });
     const message =
       error instanceof Error ? error.message : "Registration failed.";
     return {

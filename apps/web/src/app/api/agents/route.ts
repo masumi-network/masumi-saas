@@ -616,8 +616,15 @@ app.openapi(
             network,
             metadata: creditMetadata,
           });
+          throw registrationError;
         }
-        throw registrationError;
+        // The agent is submittable and its credit is spent: report it as
+        // started so completion polling drives it on-chain.
+        console.error(
+          "Agent registration threw after setup; continuing:",
+          registrationError,
+        );
+        result = { success: true, agentId: registrationAgentId };
       }
 
       if (!result.success) {

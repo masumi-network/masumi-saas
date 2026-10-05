@@ -402,7 +402,14 @@ export async function updateAgentDetails(params: {
     };
   }
 
-  if (!isV2RegistryAssetName(extractAssetName(agent.agentIdentifier))) {
+  let isV2Entry: boolean;
+  try {
+    isV2Entry = isV2RegistryAssetName(extractAssetName(agent.agentIdentifier));
+  } catch {
+    // Malformed identifier (too short or non-hex asset name).
+    isV2Entry = false;
+  }
+  if (!isV2Entry) {
     return {
       success: false,
       error: "Agent details updates require a V2 registry entry",
@@ -481,10 +488,7 @@ export async function updateAgentDetails(params: {
     });
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Registry metadata could not be loaded",
+      error: "Registry metadata could not be loaded. Please try again.",
     };
   }
   if (!prepared.success) {

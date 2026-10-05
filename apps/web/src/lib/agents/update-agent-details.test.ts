@@ -424,6 +424,28 @@ describe("updateAgentDetails", () => {
 });
 
 describe("updateAgentDetails failure results", () => {
+  it("returns a failure result for a malformed agent identifier", async () => {
+    agentFindFirstMock.mockResolvedValue(
+      registeredAgent({ agentIdentifier: "a".repeat(40) }),
+    );
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "New name",
+        tags: "ai",
+        apiUrl: "https://agent.example.com/mip",
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Agent details updates require a V2 registry entry",
+    });
+    expect(updateAgentMock).not.toHaveBeenCalled();
+  });
+
   it("returns a failure result when loading the agent throws", async () => {
     agentFindFirstMock.mockRejectedValue(new Error("pool timeout"));
 
@@ -460,7 +482,10 @@ describe("updateAgentDetails failure results", () => {
       body,
     });
 
-    expect(result).toEqual({ success: false, error: "payment node timeout" });
+    expect(result).toEqual({
+      success: false,
+      error: "Registry metadata could not be loaded. Please try again.",
+    });
     expect(agentUpdateManyMock).not.toHaveBeenCalled();
     expect(updateAgentMock).not.toHaveBeenCalled();
   });
