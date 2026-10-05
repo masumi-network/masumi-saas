@@ -15,7 +15,7 @@ const refundConsumedCreditMock = vi.fn();
 const shapeAgentForApiMock = vi.fn();
 const loadSupportedPaymentSourcesMapMock = vi.fn();
 const agentFindFirstMock = vi.fn();
-const agentFindUniqueMock = vi.fn();
+const canRefundCreditAfterRegistrationThrowMock = vi.fn();
 const listWalletOwnedAgentsForUserMock = vi.fn();
 const createIntegrationConnectionMock = vi.fn();
 const decryptIntegrationConnectionSecretMock = vi.fn();
@@ -28,7 +28,6 @@ vi.mock("@masumi/database/client", () => ({
   default: {
     agent: {
       findFirst: agentFindFirstMock,
-      findUnique: agentFindUniqueMock,
     },
   },
   RegistrationState: {
@@ -53,6 +52,11 @@ vi.mock("@/lib/agent-registration", () => ({
   startAgentRegistration: startAgentRegistrationMock,
   validateAgentRegistrationPaymentSourcesPreflight:
     validateAgentRegistrationPaymentSourcesPreflightMock,
+}));
+
+vi.mock("@/lib/agents/registration-credit-refund", () => ({
+  canRefundCreditAfterRegistrationThrow:
+    canRefundCreditAfterRegistrationThrowMock,
 }));
 
 vi.mock("@/lib/agents/drive-registration-completion", () => ({
@@ -204,7 +208,7 @@ describe("/api/agents POST", () => {
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
     });
     refundConsumedCreditMock.mockResolvedValue(undefined);
-    agentFindUniqueMock.mockResolvedValue(null);
+    canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(true);
     consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
@@ -343,9 +347,9 @@ describe("/api/agents POST", () => {
     });
   });
 
-  it("refunds the credit when registration throws before the agent row exists", async () => {
+  it("refunds the credit when registration throws before the agent is submittable", async () => {
     startAgentRegistrationMock.mockRejectedValue(new Error("node down"));
-    agentFindUniqueMock.mockResolvedValue(null);
+    canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(true);
 
     const request = new NextRequest(
       "https://saas.example.com/api/agents?network=Preprod",
@@ -361,16 +365,15 @@ describe("/api/agents POST", () => {
     expect(response.status).toBe(500);
     const params = startAgentRegistrationMock.mock.calls[0]?.[1];
     expect(typeof params?.id).toBe("string");
-    expect(agentFindUniqueMock).toHaveBeenCalledWith({
-      where: { id: params?.id },
-      select: { id: true },
-    });
+    expect(canRefundCreditAfterRegistrationThrowMock).toHaveBeenCalledWith(
+      params?.id,
+    );
     expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the credit when registration throws after the agent row exists", async () => {
+  it("keeps the credit when registration throws after the agent is submittable", async () => {
     startAgentRegistrationMock.mockRejectedValue(new Error("db write failed"));
-    agentFindUniqueMock.mockResolvedValue({ id: "agent-1" });
+    canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(false);
 
     const request = new NextRequest(
       "https://saas.example.com/api/agents?network=Preprod",

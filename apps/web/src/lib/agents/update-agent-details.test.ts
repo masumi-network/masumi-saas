@@ -424,6 +424,26 @@ describe("updateAgentDetails", () => {
 });
 
 describe("updateAgentDetails failure results", () => {
+  it("returns a failure result when loading the agent throws", async () => {
+    agentFindFirstMock.mockRejectedValue(new Error("pool timeout"));
+
+    const result = await updateAgentDetails({
+      userId: "user-1",
+      agentId: "agent-1",
+      body: {
+        name: "New name",
+        tags: "ai",
+        apiUrl: "https://agent.example.com/mip",
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not load the agent. Please try again.",
+    });
+    expect(updateAgentMock).not.toHaveBeenCalled();
+  });
+
   const body = {
     name: "New name",
     tags: "ai",
@@ -459,7 +479,8 @@ describe("updateAgentDetails failure results", () => {
       success: false,
       error: "Could not start the agent update. Please try again.",
     });
-    // Lock and baseline share one transaction, so the lock rolls back too.
+    // Lock and baseline run in one interactive transaction (Postgres rolls
+    // back the lock with it; this mock can only prove the shared callback).
     expect(transactionMock).toHaveBeenCalledWith(expect.any(Function));
     expect(updateAgentMock).not.toHaveBeenCalled();
   });

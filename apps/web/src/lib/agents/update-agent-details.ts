@@ -377,10 +377,23 @@ export async function updateAgentDetails(params: {
     };
   }
 
-  const agent = await prisma.agent.findFirst({
-    where: { id: params.agentId, userId: params.userId },
-    include: { agentReference: true },
-  });
+  let agent;
+  try {
+    agent = await prisma.agent.findFirst({
+      where: { id: params.agentId, userId: params.userId },
+      include: { agentReference: true },
+    });
+  } catch (error) {
+    console.error("[Registry] Failed to load agent for details update:", {
+      agentId: params.agentId,
+      userId: params.userId,
+      error,
+    });
+    return {
+      success: false,
+      error: "Could not load the agent. Please try again.",
+    };
+  }
 
   if (!agent?.agentReference?.externalId || !agent.agentIdentifier) {
     return {

@@ -18,6 +18,7 @@ import {
   matchesPricingTypeFilter,
 } from "@/lib/agents/agent-list-filter-match";
 import { scheduleAgentRegistrationCompletion } from "@/lib/agents/drive-registration-completion";
+import { canRefundCreditAfterRegistrationThrow } from "@/lib/agents/registration-credit-refund";
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
@@ -562,7 +563,7 @@ app.openapi(
         metadata: creditMetadata,
       });
 
-      // Fix the id up front so a throw can tell whether the agent row exists.
+      // Fix the id up front so a throw can tell whether the agent was persisted.
       const registrationAgentId = agentId ?? randomUUID();
 
       const params: RegisterAgentParams = {
@@ -607,13 +608,7 @@ app.openapi(
           params,
         );
       } catch (registrationError) {
-        // Once the agent row exists, complete-registration can still submit it
-        // on-chain, so the credit must stay consumed.
-        const persistedAgent = await prisma.agent.findUnique({
-          where: { id: registrationAgentId },
-          select: { id: true },
-        });
-        if (!persistedAgent) {
+        if (await canRefundCreditAfterRegistrationThrow(registrationAgentId)) {
           await refundConsumedCredit({
             userId: user.id,
             reason: "agent_register",

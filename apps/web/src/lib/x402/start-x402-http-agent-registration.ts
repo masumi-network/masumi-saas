@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import prisma from "@masumi/database/client";
 
 import {
@@ -5,6 +7,7 @@ import {
   startAgentRegistration,
   validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
+import { canRefundCreditAfterRegistrationThrow } from "@/lib/agents/registration-credit-refund";
 import { X402_RESOURCE_URL_BLOCKED_STATES } from "@/lib/agents/registration-state";
 import {
   consumeCreditIfRequired,
@@ -248,9 +251,11 @@ export async function startX402HttpAgentRegistration(
     };
   }
 
-  let shouldRefundRegistrationCredit = true;
+  // Fix the id up front so a throw can tell whether the agent was persisted.
+  const registrationAgentId = randomUUID();
   try {
     const result = await startAgentRegistration(ctx, {
+      id: registrationAgentId,
       name: resolvedName,
       description: resolvedDescription,
       apiUrl: prepared.data.resourceUrl,
@@ -280,7 +285,6 @@ export async function startX402HttpAgentRegistration(
         network,
         metadata: creditMetadata,
       });
-      shouldRefundRegistrationCredit = false;
       return {
         ok: false,
         resourceUrl: prepared.data.resourceUrl,
@@ -289,14 +293,13 @@ export async function startX402HttpAgentRegistration(
       };
     }
 
-    shouldRefundRegistrationCredit = false;
     return {
       ok: true,
       agentId: result.agentId,
       resourceUrl: prepared.data.resourceUrl,
     };
   } catch (error) {
-    if (shouldRefundRegistrationCredit) {
+    if (await canRefundCreditAfterRegistrationThrow(registrationAgentId)) {
       await refundConsumedCredit({
         userId: user.id,
         reason: "agent_register",
