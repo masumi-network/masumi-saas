@@ -98,7 +98,7 @@ export function AgentChangelogCard({
           <span className="text-xs text-muted-foreground">
             {t("lastSynced")}
           </span>
-          {showLastSyncedPending ? (
+          {showLastSyncedPending || lastRegistrationSyncedAt == null ? (
             <span className="text-xs font-medium tabular-nums text-muted-foreground">
               {t("syncInProgress")}
             </span>
