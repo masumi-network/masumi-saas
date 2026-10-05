@@ -883,6 +883,13 @@ async function registerAgentOnChainUntilSetup(
     agentPricing: params.agentPricing,
   };
 
+  if (mergedSupportedPaymentSources) {
+    await replaceSupportedPaymentSourcesForAgent(
+      agent.id,
+      mergedSupportedPaymentSources,
+    );
+  }
+
   await prisma.agentReference.create({
     data: {
       agentId: agent.id,
@@ -911,13 +918,6 @@ async function registerAgentOnChainUntilSetup(
       },
     },
   });
-
-  if (mergedSupportedPaymentSources) {
-    await replaceSupportedPaymentSourcesForAgent(
-      agent.id,
-      mergedSupportedPaymentSources,
-    );
-  }
 
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
