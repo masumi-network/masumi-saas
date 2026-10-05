@@ -16,6 +16,8 @@ export type AgentRecentActivityLifecycleItem = {
   /** i18n key under App.Agents.Details.statusTimeline.steps or activity lifecycle label */
   eventKey: string;
   failed?: boolean;
+  /** Set for synthetic timeline rows (stripped before API response). */
+  timelineStatus?: "complete" | "current" | "failed";
 };
 
 export type AgentRecentActivityTransactionItem = {
@@ -34,11 +36,27 @@ export type AgentRecentActivityItem =
 
 const DB_ONLY_LIFECYCLE_TYPES = new Set(["AgentVerified", "AgentDeleted"]);
 
+const REGISTRY_DB_EVENT_TYPES = new Set([
+  "RegistrationInitiated",
+  "RegistrationConfirmed",
+  "RegistrationFailed",
+  "DeregistrationRequested",
+  "DeregistrationConfirmed",
+]);
+
 const FAILED_REGISTRATION_STATES = new Set([
   "RegistrationFailed",
   "UpdateFailed",
   "DeregistrationFailed",
 ]);
+
+/** DB stores RegistrationInitiated; feed copy uses Registration requested. */
+function dbEventTypeToFeedKey(type: string): string {
+  if (type === "RegistrationInitiated") {
+    return "RegistrationRequested";
+  }
+  return type;
+}
 
 function toIso(value: string | Date | null | undefined): string | null {
   if (value == null) return null;
@@ -73,6 +91,7 @@ function lifecycleFromTimeline(params: {
       date,
       eventKey: step.state,
       ...(step.status === "failed" ? { failed: true } : {}),
+      timelineStatus: step.status,
     });
   }
   return items;
@@ -85,18 +104,50 @@ function lifecycleFromDbEvents(
     kind: "lifecycle",
     id: e.id,
     date: e.createdAt.toISOString(),
-    eventKey: e.type,
+    eventKey: dbEventTypeToFeedKey(e.type),
   }));
 }
 
-function mergeLifecycleItems(
-  timeline: AgentRecentActivityLifecycleItem[],
-  db: AgentRecentActivityLifecycleItem[],
-  registrationState: string,
-): AgentRecentActivityLifecycleItem[] {
-  if (timeline.length === 0) {
-    return db;
+function stripLifecycleItemForApi(
+  item: AgentRecentActivityLifecycleItem,
+): AgentRecentActivityLifecycleItem {
+  const { timelineStatus: _timelineStatus, ...rest } = item;
+  return rest;
+}
+
+/** Prefer DB registry events (real timestamps); timeline fills legacy + in-flight only. */
+export function mergeAgentRecentActivityLifecycle(params: {
+  timeline: AgentRecentActivityLifecycleItem[];
+  db: AgentRecentActivityLifecycleItem[];
+  dbRawTypes: string[];
+  registrationState: string;
+}): AgentRecentActivityLifecycleItem[] {
+  const { timeline, db, dbRawTypes, registrationState } = params;
+  const hasRegistryDbHistory = dbRawTypes.some((type) =>
+    REGISTRY_DB_EVENT_TYPES.has(type),
+  );
+
+  if (hasRegistryDbHistory) {
+    const fromDb = db.filter(
+      (item) =>
+        DB_ONLY_LIFECYCLE_TYPES.has(item.eventKey) ||
+        item.eventKey === "RegistrationFailed" ||
+        item.eventKey === "RegistrationRequested" ||
+        item.eventKey === "RegistrationConfirmed" ||
+        item.eventKey === "DeregistrationRequested" ||
+        item.eventKey === "DeregistrationConfirmed",
+    );
+    const inflight = timeline.filter(
+      (item) =>
+        item.timelineStatus === "current" || item.timelineStatus === "failed",
+    );
+    return [...fromDb, ...inflight.map(stripLifecycleItemForApi)];
   }
+
+  if (timeline.length === 0) {
+    return db.map(stripLifecycleItemForApi);
+  }
+
   const timelineShowsFailure = timeline.some((item) => item.failed);
   const extraDb = db.filter((item) => {
     if (DB_ONLY_LIFECYCLE_TYPES.has(item.eventKey)) {
@@ -110,7 +161,7 @@ function mergeLifecycleItems(
     }
     return false;
   });
-  return [...timeline, ...extraDb];
+  return [...timeline, ...extraDb].map(stripLifecycleItemForApi);
 }
 
 function toTransactionItems(
@@ -130,9 +181,11 @@ function toTransactionItems(
 export function sortAgentRecentActivityItems(
   items: AgentRecentActivityItem[],
 ): AgentRecentActivityItem[] {
-  return [...items].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
+  return [...items].sort((a, b) => {
+    const byDate = new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (byDate !== 0) return byDate;
+    return b.id.localeCompare(a.id);
+  });
 }
 
 export function paginateAgentRecentActivity(
@@ -185,11 +238,13 @@ export async function buildAgentRecentActivityFeed(params: {
     select: { id: true, type: true, createdAt: true },
   });
 
-  const lifecycle = mergeLifecycleItems(
+  const dbLifecycle = lifecycleFromDbEvents(dbEvents);
+  const lifecycle = mergeAgentRecentActivityLifecycle({
     timeline,
-    lifecycleFromDbEvents(dbEvents),
-    params.registrationState,
-  );
+    db: dbLifecycle,
+    dbRawTypes: dbEvents.map((e) => e.type),
+    registrationState: params.registrationState,
+  });
   const merged = sortAgentRecentActivityItems([
     ...lifecycle,
     ...toTransactionItems(params.transactions),

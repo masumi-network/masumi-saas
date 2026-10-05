@@ -13,7 +13,9 @@ export function AppCanvasShell({ children, className }: AppCanvasShellProps) {
   const pathname = usePathname();
   const isDashboardHome = pathname === "/";
   const isAccountPage = pathname === "/account";
-  const showSubtleGlow = !isDashboardHome && !isAccountPage;
+  const isAgentDetailPage = /^\/ai-agents\/[^/]+$/.test(pathname);
+  const showSubtleGlow =
+    !isDashboardHome && !isAccountPage && !isAgentDetailPage;
   const showVividGlow = isDashboardHome;
 
   return (
