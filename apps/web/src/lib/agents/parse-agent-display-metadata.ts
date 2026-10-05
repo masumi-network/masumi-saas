@@ -1,5 +1,5 @@
 import { agentMetadataSchema, exampleOutputSchema } from "@/lib/schemas/agent";
-import type { z } from "@/utils/zod-openapi";
+import type { z } from "@/lib/zod-openapi";
 
 export type AgentDisplayMetadata = z.infer<typeof agentMetadataSchema>;
 type ExampleOutput = z.infer<typeof exampleOutputSchema>;
