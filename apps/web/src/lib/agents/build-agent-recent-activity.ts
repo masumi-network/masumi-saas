@@ -115,6 +115,50 @@ function stripLifecycleItemForApi(
   return rest;
 }
 
+/** Confirmed steps still in progress must not read as already completed in the feed. */
+function isInflightTimelineItem(
+  item: AgentRecentActivityLifecycleItem,
+): boolean {
+  if (item.timelineStatus === "failed") {
+    return true;
+  }
+  if (item.timelineStatus !== "current") {
+    return false;
+  }
+  return !item.eventKey.endsWith("Confirmed");
+}
+
+const DEDUPE_LATEST_EVENT_KEYS = new Set([
+  "RegistrationRequested",
+  "RegistrationConfirmed",
+  "RegistrationFailed",
+  "DeregistrationRequested",
+  "DeregistrationConfirmed",
+]);
+
+function dedupeLifecycleByLatestEventKey(
+  items: AgentRecentActivityLifecycleItem[],
+): AgentRecentActivityLifecycleItem[] {
+  const latestByKey = new Map<string, AgentRecentActivityLifecycleItem>();
+  const passthrough: AgentRecentActivityLifecycleItem[] = [];
+
+  for (const item of items) {
+    if (!DEDUPE_LATEST_EVENT_KEYS.has(item.eventKey)) {
+      passthrough.push(item);
+      continue;
+    }
+    const existing = latestByKey.get(item.eventKey);
+    if (
+      !existing ||
+      new Date(item.date).getTime() > new Date(existing.date).getTime()
+    ) {
+      latestByKey.set(item.eventKey, item);
+    }
+  }
+
+  return [...passthrough, ...latestByKey.values()];
+}
+
 /** Prefer DB registry events (real timestamps); timeline fills legacy + in-flight only. */
 export function mergeAgentRecentActivityLifecycle(params: {
   timeline: AgentRecentActivityLifecycleItem[];
@@ -137,11 +181,10 @@ export function mergeAgentRecentActivityLifecycle(params: {
         item.eventKey === "DeregistrationRequested" ||
         item.eventKey === "DeregistrationConfirmed",
     );
-    const inflight = timeline.filter(
-      (item) =>
-        item.timelineStatus === "current" || item.timelineStatus === "failed",
-    );
-    return [...fromDb, ...inflight.map(stripLifecycleItemForApi)];
+    const inflight = timeline
+      .filter(isInflightTimelineItem)
+      .map(stripLifecycleItemForApi);
+    return dedupeLifecycleByLatestEventKey([...fromDb, ...inflight]);
   }
 
   if (timeline.length === 0) {
@@ -161,7 +204,9 @@ export function mergeAgentRecentActivityLifecycle(params: {
     }
     return false;
   });
-  return [...timeline, ...extraDb].map(stripLifecycleItemForApi);
+  return dedupeLifecycleByLatestEventKey(
+    [...timeline, ...extraDb].map(stripLifecycleItemForApi),
+  );
 }
 
 function toTransactionItems(

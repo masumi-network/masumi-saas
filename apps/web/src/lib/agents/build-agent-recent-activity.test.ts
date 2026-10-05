@@ -96,6 +96,64 @@ describe("mergeAgentRecentActivityLifecycle", () => {
     });
     expect(merged.map((i) => i.id)).toEqual(["db-1", "db-2", "db-3", "db-4"]);
   });
+
+  it("does not show in-flight confirmed steps as completed milestones", () => {
+    const timeline = [
+      {
+        kind: "lifecycle" as const,
+        id: "timeline:RegistrationRequested",
+        date: "2026-01-01T10:00:00.000Z",
+        eventKey: "RegistrationRequested",
+        timelineStatus: "complete" as const,
+      },
+      {
+        kind: "lifecycle" as const,
+        id: "timeline:RegistrationConfirmed",
+        date: "2026-01-01T10:01:00.000Z",
+        eventKey: "RegistrationConfirmed",
+        timelineStatus: "current" as const,
+      },
+    ];
+    const db = [
+      {
+        kind: "lifecycle" as const,
+        id: "db-1",
+        date: "2026-01-01T10:00:00.000Z",
+        eventKey: "RegistrationRequested",
+      },
+    ];
+    const merged = mergeAgentRecentActivityLifecycle({
+      timeline,
+      db,
+      dbRawTypes: ["RegistrationInitiated"],
+      registrationState: "RegistrationInitiated",
+    });
+    expect(merged.map((i) => i.eventKey)).toEqual(["RegistrationRequested"]);
+  });
+
+  it("dedupes duplicate registration confirmed rows", () => {
+    const merged = mergeAgentRecentActivityLifecycle({
+      timeline: [],
+      db: [
+        {
+          kind: "lifecycle" as const,
+          id: "db-old",
+          date: "2026-01-01T10:00:00.000Z",
+          eventKey: "RegistrationConfirmed",
+        },
+        {
+          kind: "lifecycle" as const,
+          id: "db-new",
+          date: "2026-01-01T10:00:01.000Z",
+          eventKey: "RegistrationConfirmed",
+        },
+      ],
+      dbRawTypes: ["RegistrationConfirmed", "RegistrationConfirmed"],
+      registrationState: "RegistrationConfirmed",
+    });
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.id).toBe("db-new");
+  });
 });
 
 describe("paginateAgentRecentActivity", () => {
