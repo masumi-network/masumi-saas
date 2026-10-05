@@ -10,6 +10,7 @@ import {
   isRegistryRowUpdatedAfter,
   isRegistryVerificationUpdatePending,
   readRegistryUpdateBaseline,
+  registrationInitiatedAtForAgentUpdate,
   resolveRegistrationStateAfterSync,
   withoutRegistryUpdateBaseline,
 } from "@/lib/agents/registration-state";
@@ -296,6 +297,19 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     }
 
     const registrationStateChanged = registrationState !== previousState;
+    let registrationInitiatedAt = registrationInitiatedAtForAgentUpdate({
+      registrationState,
+      previousState,
+      existingRegistrationInitiatedAt: agent.registrationInitiatedAt,
+    });
+    if (
+      !registrationInitiatedAt &&
+      registrationState === "RegistrationInitiated" &&
+      !agent.registrationInitiatedAt
+    ) {
+      registrationInitiatedAt = agent.updatedAt;
+    }
+    const shouldSetRegistrationInitiatedAt = Boolean(registrationInitiatedAt);
     const referenceStatusChanged = status !== agent.agentReference.status;
     const referenceMetadataChanged =
       JSON.stringify(metadata) !== JSON.stringify(existingMeta);
@@ -308,13 +322,15 @@ export async function syncAgentRegistrationStatusAction(agentId: string) {
     if (
       registrationStateChanged ||
       agentIdentifierChanged ||
-      agentDisplayChanged
+      agentDisplayChanged ||
+      shouldSetRegistrationInitiatedAt
     ) {
       transactionOps.push(
         prisma.agent.update({
           where: { id: agentId },
           data: {
             ...(registrationStateChanged ? { registrationState } : {}),
+            ...(registrationInitiatedAt ? { registrationInitiatedAt } : {}),
             ...(agentIdentifierChanged && entry.agentIdentifier
               ? { agentIdentifier: entry.agentIdentifier }
               : {}),

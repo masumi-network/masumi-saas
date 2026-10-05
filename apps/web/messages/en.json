@@ -4,6 +4,7 @@
     "Error": "Error",
     "Success": "Success",
     "dismiss": "Dismiss",
+    "justNow": "Just now",
     "ErrorBoundary": {
       "title": "Something went wrong",
       "descriptionRoot": "An unexpected error occurred. Please try again.",
@@ -2089,10 +2090,48 @@
         "tags": "Tags",
         "noTags": "No tags",
         "additionalDetails": "Additional Details",
+        "capabilitiesAndDetails": "Capabilities & details",
+        "noCapabilitiesAndDetails": "No capability or additional registry details were provided at registration.",
+        "sectionCapability": "Capability",
+        "sectionContact": "Contact",
+        "sectionLinks": "Links",
+        "authorName": "Author name",
+        "authorEmail": "Author email",
+        "organization": "Organization",
+        "contactOther": "Other contact",
+        "exampleOutputUntitled": "Untitled example",
         "dangerZone": "Danger Zone",
-        "recordActivity": "Activity",
+        "changelog": "Changelog",
+        "registryStatusLabel": "Status:",
+        "statusTimeline": {
+          "changelogTimelineAria": "Agent registration and lifecycle changelog",
+          "phase": {
+            "registration": "Registration status",
+            "update": "Registry update",
+            "deregistration": "Deregistration status"
+          },
+          "failed": "failed",
+          "failedMarker": " (failed)",
+          "inProgress": "In progress…",
+          "stepHints": {
+            "RegistrationInitiated": "Your agent has been submitted for on-chain registration on the Masumi network. Confirmation may take a few minutes."
+          },
+          "steps": {
+            "RegistrationInitiated": "Registration initiated",
+            "RegistrationRequested": "Registration requested",
+            "RegistrationConfirmed": "Registration confirmed",
+            "UpdateInitiated": "Update initiated",
+            "UpdateRequested": "Update requested",
+            "UpdateConfirmed": "Update confirmed",
+            "DeregistrationInitiated": "Deregistration initiated",
+            "DeregistrationRequested": "Deregistration requested",
+            "DeregistrationConfirmed": "Deregistration confirmed"
+          }
+        },
         "createdAt": "Created",
         "updatedAt": "Updated",
+        "lastSynced": "Last synced",
+        "syncInProgress": "Sync in progress…",
         "registeringAgent": "Registering agent. This may take a few moments.",
         "registerSuccess": "Agent registered successfully.",
         "registerError": "Registration failed. Please try again.",

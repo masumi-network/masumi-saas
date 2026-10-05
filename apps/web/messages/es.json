@@ -4,6 +4,7 @@
     "Error": "Error",
     "Success": "Éxito",
     "dismiss": "Descartar",
+    "justNow": "Justo ahora",
     "ErrorBoundary": {
       "title": "Algo salió mal",
       "descriptionRoot": "Se produjo un error inesperado. Inténtalo de nuevo.",
@@ -1446,10 +1447,48 @@
         "tags": "Etiquetas",
         "noTags": "Sin etiquetas",
         "additionalDetails": "Detalles adicionales",
+        "capabilitiesAndDetails": "Capacidades y detalles",
+        "noCapabilitiesAndDetails": "No se proporcionaron capacidades ni detalles adicionales del registro.",
+        "sectionCapability": "Capacidad",
+        "sectionContact": "Contacto",
+        "sectionLinks": "Enlaces",
+        "authorName": "Nombre del autor",
+        "authorEmail": "Correo del autor",
+        "organization": "Organización",
+        "contactOther": "Otro contacto",
+        "exampleOutputUntitled": "Ejemplo sin título",
         "dangerZone": "Zona de peligro",
-        "recordActivity": "Actividad",
+        "changelog": "Historial de cambios",
+        "registryStatusLabel": "Estado:",
+        "statusTimeline": {
+          "changelogTimelineAria": "Historial de registro y ciclo de vida del agente",
+          "phase": {
+            "registration": "Estado del registro",
+            "update": "Actualización del registro",
+            "deregistration": "Estado de baja"
+          },
+          "failed": "fallido",
+          "failedMarker": " (fallido)",
+          "inProgress": "En curso…",
+          "stepHints": {
+            "RegistrationInitiated": "Su agente se ha enviado para el registro on-chain en la red Masumi. La confirmación puede tardar unos minutos."
+          },
+          "steps": {
+            "RegistrationInitiated": "Registro iniciado",
+            "RegistrationRequested": "Registro solicitado",
+            "RegistrationConfirmed": "Registro confirmado",
+            "UpdateInitiated": "Actualización iniciada",
+            "UpdateRequested": "Actualización solicitada",
+            "UpdateConfirmed": "Actualización confirmada",
+            "DeregistrationInitiated": "Baja iniciada",
+            "DeregistrationRequested": "Baja solicitada",
+            "DeregistrationConfirmed": "Baja confirmada"
+          }
+        },
         "createdAt": "Creado",
         "updatedAt": "Actualizado",
+        "lastSynced": "Última sincronización",
+        "syncInProgress": "Sincronizando…",
         "registeringAgent": "Agente registrador. Esto puede tardar unos momentos.",
         "registerSuccess": "Agente registrado exitosamente.",
         "registerError": "El registro falló. Por favor inténtalo de nuevo.",

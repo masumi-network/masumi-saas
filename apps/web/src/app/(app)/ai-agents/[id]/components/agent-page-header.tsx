@@ -3,75 +3,41 @@
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
 
 import { AgentIcon } from "@/components/agent-icon";
 import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RefreshButton } from "@/components/ui/refresh-button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  isRegistrationConfirmedOnNetwork,
-  isRegistrationUiPending,
-} from "@/lib/agents/registration-state";
+import { isRegistrationUiPending } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
-import { cn } from "@/lib/utils";
 
 import { AgentRegistryVersionBadge } from "../../components/agent-registry-version-badge";
-import {
-  getRegistrationStatusBadgeClassName,
-  getRegistrationStatusBadgeVariant,
-  getRegistrationStatusDisplayKey,
-} from "../../components/agent-utils";
 
 interface AgentPageHeaderProps {
   agent: Agent;
   backHref?: string;
   backLabel?: string;
-  onRefreshRegistrationStatus?: () => void | Promise<void>;
 }
 
 export function AgentPageHeader({
   agent,
   backHref = "/ai-agents",
   backLabel,
-  onRefreshRegistrationStatus,
 }: AgentPageHeaderProps) {
   const tDetails = useTranslations("App.Agents.Details");
   const tSidebar = useTranslations("App.Sidebar.MenuItems");
-  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
 
   const label = backLabel ?? tDetails("backToAgents");
   const breadcrumbLabel =
     backHref === "/" ? tSidebar("dashboard") : tSidebar("agents");
 
-  const isRegistrationConfirmed = isRegistrationConfirmedOnNetwork(
-    agent.registrationState,
-  );
-  const registrationBadgeVariant = isRegistrationConfirmed
-    ? ("success" as const)
-    : getRegistrationStatusBadgeVariant(agent.registrationState);
   const registrationStatusPending = isRegistrationUiPending(
     agent.registrationState,
   );
-  const showRegistrationRefresh =
-    Boolean(onRefreshRegistrationStatus) && registrationStatusPending;
-
-  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
-  const handleRefreshStatus = useCallback(async () => {
-    if (!onRefreshRegistrationStatus) return;
-    setIsRefreshingStatus(true);
-    try {
-      await onRefreshRegistrationStatus();
-    } finally {
-      setIsRefreshingStatus(false);
-    }
-  }, [onRefreshRegistrationStatus]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -112,27 +78,6 @@ export function AgentPageHeader({
             <AgentRegistryVersionBadge
               agentIdentifier={agent.agentIdentifier}
             />
-            <Badge
-              variant={registrationBadgeVariant}
-              className={cn(
-                "shrink-0",
-                getRegistrationStatusBadgeClassName(agent.registrationState),
-              )}
-            >
-              {tRegistrationStatus(
-                getRegistrationStatusDisplayKey(agent.registrationState),
-              )}
-            </Badge>
-            {showRegistrationRefresh ? (
-              <RefreshButton
-                onRefresh={handleRefreshStatus}
-                isRefreshing={isRefreshingStatus}
-                buttonVariant="ghost"
-                size="sm"
-                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-                aria-label={tDetails("refresh")}
-              />
-            ) : null}
             {agent.verificationStatus === "VERIFIED" ? (
               <AgentVerificationShieldIndicator
                 agentId={agent.id}

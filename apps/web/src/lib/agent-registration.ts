@@ -20,7 +20,10 @@ import {
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
 import { persistAgentRegistrationSetup } from "@/lib/agents/persist-agent-registration-setup";
-import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
+import {
+  registrationInitiatedAtForAgentUpdate,
+  registrationStateFromRegistryEntry,
+} from "@/lib/agents/registration-state";
 import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
 import {
   doRuntimeDebugLog,
@@ -219,10 +222,23 @@ async function completeRegistrationFromRegistryEntry(params: {
   entry: RegistryEntry;
 }): Promise<CompleteRegistrationResult> {
   const state = registrationStateFromRegistryEntry(params.entry.state);
+  const existing = await prisma.agent.findUniqueOrThrow({
+    where: { id: params.agentId },
+    select: {
+      registrationState: true,
+      registrationInitiatedAt: true,
+    },
+  });
+  const registrationInitiatedAt = registrationInitiatedAtForAgentUpdate({
+    registrationState: state,
+    previousState: existing.registrationState,
+    existingRegistrationInitiatedAt: existing.registrationInitiatedAt,
+  });
   await prisma.agent.update({
     where: { id: params.agentId },
     data: {
       registrationState: state,
+      ...(registrationInitiatedAt ? { registrationInitiatedAt } : {}),
       ...(params.entry.agentIdentifier && {
         agentIdentifier: params.entry.agentIdentifier,
       }),
@@ -1342,12 +1358,19 @@ export async function completeOnChainRegistration(
           },
         },
       });
+      const nextRegistrationState = registrationStateFromRegistryEntry(
+        registryEntry.state,
+      );
+      const registrationInitiatedAt = registrationInitiatedAtForAgentUpdate({
+        registrationState: nextRegistrationState,
+        previousState: agent.registrationState,
+        existingRegistrationInitiatedAt: agent.registrationInitiatedAt,
+      });
       await tx.agent.update({
         where: { id: agent.id },
         data: {
-          registrationState: registrationStateFromRegistryEntry(
-            registryEntry.state,
-          ),
+          registrationState: nextRegistrationState,
+          ...(registrationInitiatedAt ? { registrationInitiatedAt } : {}),
           ...(registryEntry.agentIdentifier && {
             agentIdentifier: registryEntry.agentIdentifier,
           }),
@@ -1401,10 +1424,16 @@ export async function completeOnChainRegistration(
             },
           },
         });
+        const registrationInitiatedAt = registrationInitiatedAtForAgentUpdate({
+          registrationState: "RegistrationInitiated",
+          previousState: agent.registrationState,
+          existingRegistrationInitiatedAt: agent.registrationInitiatedAt,
+        });
         await tx.agent.update({
           where: { id: agent.id },
           data: {
             registrationState: "RegistrationInitiated",
+            ...(registrationInitiatedAt ? { registrationInitiatedAt } : {}),
           },
         });
         const updated = await tx.agent.findUniqueOrThrow({

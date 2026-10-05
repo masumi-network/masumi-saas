@@ -79,6 +79,7 @@ const agentListItemSchema = z.object({
   }),
   organizationId: z.string().nullable(),
   registrationState: z.string(),
+  registrationInitiatedAt: z.string().nullable().optional(),
   verificationStatus: z
     .enum(["PENDING", "VERIFIED", "REVOKED", "EXPIRED"])
     .nullable(),

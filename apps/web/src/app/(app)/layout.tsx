@@ -71,7 +71,10 @@ export default async function AppLayout({
                   <Sidebar session={authContext.session} />
                   <AppCanvasShell>
                     <Header />
-                    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                    <div
+                      className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+                      data-app-main-scroll
+                    >
                       <main className="relative mx-auto w-full max-w-container flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
                         {isImpersonating && (
                           <div className="mb-4">

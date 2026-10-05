@@ -4,6 +4,7 @@
     "Error": "エラー",
     "Success": "成功",
     "dismiss": "閉じる",
+    "justNow": "たった今",
     "ErrorBoundary": {
       "title": "問題が発生しました",
       "descriptionRoot": "予期しないエラーが発生しました。もう一度お試しください。",
@@ -1446,10 +1447,48 @@
         "tags": "タグ",
         "noTags": "タグなし",
         "additionalDetails": "追加の詳細",
+        "capabilitiesAndDetails": "機能と詳細",
+        "noCapabilitiesAndDetails": "登録時に機能または追加のレジストリ詳細は提供されていません。",
+        "sectionCapability": "機能",
+        "sectionContact": "連絡先",
+        "sectionLinks": "リンク",
+        "authorName": "作成者名",
+        "authorEmail": "作成者メール",
+        "organization": "組織",
+        "contactOther": "その他の連絡先",
+        "exampleOutputUntitled": "無題の例",
         "dangerZone": "危険地帯",
-        "recordActivity": "アクティビティ",
+        "changelog": "変更履歴",
+        "registryStatusLabel": "ステータス:",
+        "statusTimeline": {
+          "changelogTimelineAria": "エージェントの登録とライフサイクルの変更履歴",
+          "phase": {
+            "registration": "登録ステータス",
+            "update": "レジストリ更新",
+            "deregistration": "登録解除ステータス"
+          },
+          "failed": "失敗",
+          "failedMarker": "（失敗）",
+          "inProgress": "処理中…",
+          "stepHints": {
+            "RegistrationInitiated": "エージェントは Masumi ネットワークへのオンチェーン登録として送信されました。確認まで数分かかる場合があります。"
+          },
+          "steps": {
+            "RegistrationInitiated": "登録を開始",
+            "RegistrationRequested": "登録をリクエスト",
+            "RegistrationConfirmed": "登録が確認されました",
+            "UpdateInitiated": "更新を開始",
+            "UpdateRequested": "更新をリクエスト",
+            "UpdateConfirmed": "更新が確認されました",
+            "DeregistrationInitiated": "登録解除を開始",
+            "DeregistrationRequested": "登録解除をリクエスト",
+            "DeregistrationConfirmed": "登録解除が確認されました"
+          }
+        },
         "createdAt": "作成されました",
         "updatedAt": "更新されました",
+        "lastSynced": "最終同期",
+        "syncInProgress": "同期中…",
         "registeringAgent": "エージェントを登録しています。これには少し時間がかかる場合があります。",
         "registerSuccess": "エージェントは正常に登録されました。",
         "registerError": "登録に失敗しました。もう一度試してください。",
