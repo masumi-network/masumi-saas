@@ -222,18 +222,35 @@ app.openapi(
             };
           }
 
-          const outcome = await startX402HttpAgentRegistration({
-            ctx,
-            resourceUrl: item.resourceUrl,
-            name: item.name,
-            description: item.description,
-            tags: item.tags,
-            icon: item.icon ?? undefined,
-            skipIfDuplicate: skipExisting !== false,
-            authMethod: authContext.authMethod,
-            useProbeMetadataAutofill,
-            probeTimeoutMs: BATCH_X402_PROBE_TIMEOUT_MS,
-          });
+          let outcome: Awaited<
+            ReturnType<typeof startX402HttpAgentRegistration>
+          >;
+          try {
+            outcome = await startX402HttpAgentRegistration({
+              ctx,
+              resourceUrl: item.resourceUrl,
+              name: item.name,
+              description: item.description,
+              tags: item.tags,
+              icon: item.icon ?? undefined,
+              skipIfDuplicate: skipExisting !== false,
+              authMethod: authContext.authMethod,
+              useProbeMetadataAutofill,
+              probeTimeoutMs: BATCH_X402_PROBE_TIMEOUT_MS,
+            });
+          } catch (error) {
+            // A throw must stay per-item: rejecting here would end the request
+            // while the other workers keep registering and spending credits.
+            console.error("batch x402 item failed:", {
+              resourceUrl: item.resourceUrl,
+              error,
+            });
+            return {
+              resourceUrl: item.resourceUrl,
+              status: "failed",
+              error: "Registration failed. Please try again.",
+            };
+          }
 
           if (outcome.ok) {
             scheduleAgentRegistrationCompletion(outcome.agentId, user.id);

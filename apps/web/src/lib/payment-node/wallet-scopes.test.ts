@@ -352,4 +352,49 @@ describe("ensureUserPaymentNodeKeyScopedToWallets", () => {
       WalletScopeHotWalletIds: ["wallet-new"],
     });
   });
+  it("serializes concurrent scope updates for one user so no wallet is lost", async () => {
+    let scope = ["wallet-existing"];
+    const client = {
+      getApiKeyStatus: vi.fn(async () => ({
+        id: "api-key-1",
+        walletScopeEnabled: true,
+        WalletScopes: scope.map((hotWalletId) => ({ hotWalletId })),
+      })),
+      getWalletList: vi.fn(async () => ({
+        Wallets: [
+          { id: "wallet-existing" },
+          { id: "wallet-a" },
+          { id: "wallet-b" },
+        ],
+      })),
+      updateApiKey: vi.fn(
+        async (input: { WalletScopeHotWalletIds: string[] }) => {
+          // Slow write: without serialization both reads see the old scope.
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          scope = input.WalletScopeHotWalletIds;
+          return {};
+        },
+      ),
+    };
+    createPaymentNodeClientMock.mockReturnValue(client);
+    agentReferenceFindManyMock.mockResolvedValue([]);
+
+    const { ensureUserPaymentNodeKeyScopedToWallets } =
+      await import("./wallet-scopes");
+
+    await Promise.all([
+      ensureUserPaymentNodeKeyScopedToWallets({
+        userId: "user-1",
+        walletIds: ["wallet-a"],
+      }),
+      ensureUserPaymentNodeKeyScopedToWallets({
+        userId: "user-1",
+        walletIds: ["wallet-b"],
+      }),
+    ]);
+
+    expect(scope).toEqual(
+      expect.arrayContaining(["wallet-existing", "wallet-a", "wallet-b"]),
+    );
+  });
 });

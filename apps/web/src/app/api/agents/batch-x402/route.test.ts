@@ -118,4 +118,19 @@ describe("/api/agents/batch-x402 POST", () => {
     expect(json.results[5].status).toBe("not_attempted");
     expect(startX402HttpAgentRegistrationMock).toHaveBeenCalledTimes(5);
   });
+  it("reports a thrown item as failed and finishes the rest of the batch", async () => {
+    startX402HttpAgentRegistrationMock.mockImplementation(
+      async ({ resourceUrl }: { resourceUrl: string }) => {
+        if (resourceUrl.endsWith("-2")) throw new Error("prisma timeout");
+        return { ok: true, agentId: "agent", resourceUrl };
+      },
+    );
+
+    const response = await POST(batchRequest());
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.results[2]).toMatchObject({ status: "failed" });
+    expect(json.summary).toMatchObject({ started: 6, failed: 1 });
+  });
 });
