@@ -10,14 +10,15 @@ import {
 import {
   buildAgentPricing,
   completeOnChainRegistration,
-  type CompleteRegistrationResult,
   startAgentRegistration,
   validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
+import { pollAgentRegistrationCompletion } from "@/lib/agents/drive-registration-completion";
 import { isKycVerificationEnabled } from "@/lib/config/verification.config";
 import { consumeCreditIfRequired } from "@/lib/credits/service";
 import { doRuntimeDebugLog } from "@/lib/debug/do-runtime-log";
 import { getKycStatusForUser } from "@/lib/network-registration/kyc-status";
+import { isPermanentNetworkRegistrationError } from "@/lib/network-registration/permanent-registration-error";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
 import { getNetworkRegisterCapabilities } from "@/lib/payment-node/registry-capabilities";
@@ -399,17 +400,6 @@ async function tryReuseNetworkRegistrationDraft(params: {
   };
 }
 
-function isPermanentNetworkRegistrationError(error: string): boolean {
-  const lower = error.toLowerCase();
-  return (
-    lower.includes("rejected") ||
-    lower.includes("failed on the network") ||
-    lower.includes("not found") ||
-    lower.includes("missing registration") ||
-    lower.includes("invalid")
-  );
-}
-
 async function getOrCreateNetworkRegistrationDraftForTicket(params: {
   body: NetworkRegisterCompleteBody;
   userId: string;
@@ -759,8 +749,9 @@ export async function pollNetworkRegistrationStatus(params: {
         where: { id: draft.id },
         data: { status: "FAILED", error: result.error },
       });
+      return { ok: false, error: result.error, status: 400 };
     }
-    return { ok: false, error: result.error, status: 400 };
+    return { ok: true, status: "pending", agentId: draft.agentId };
   }
 
   return { ok: true, status: "pending", agentId: draft.agentId };
@@ -1254,35 +1245,17 @@ async function pollComplete(
     userId,
     maxAttempts: COMPLETE_POLL_ATTEMPTS,
   });
-  let last: Awaited<ReturnType<typeof completeOnChainRegistration>> | null =
-    null;
-  let lastSeenStatus: CompleteRegistrationResult["status"] | null = null;
-  for (let i = 0; i < COMPLETE_POLL_ATTEMPTS; i += 1) {
-    last = await completeOnChainRegistration(agentId, userId);
-    lastSeenStatus = last.status;
-    doRuntimeDebugLog("network-register", "pollComplete attempt", {
-      agentId,
-      attempt: i + 1,
-      status: last.status,
-      ...(last.status === "error" ? { error: last.error } : {}),
-    });
-    if (last.status === "registered") {
-      return { ok: true, status: "registered" };
-    }
-    if (last.status === "error") {
-      return { ok: false, error: last.error };
-    }
-    await sleep(COMPLETE_POLL_DELAY_MS);
-  }
-  if (last?.status === "pending") {
-    return { ok: true, status: "pending" };
-  }
-  doRuntimeDebugLog("network-register", "pollComplete timed out", {
-    agentId,
-    userId,
-    lastStatus: lastSeenStatus,
+  const result = await pollAgentRegistrationCompletion(agentId, userId, {
+    maxAttempts: COMPLETE_POLL_ATTEMPTS,
+    delayMs: COMPLETE_POLL_DELAY_MS,
   });
-  return { ok: false, error: "Registration timed out" };
+  if (result.status === "registered") {
+    return { ok: true, status: "registered" };
+  }
+  if (result.status === "error") {
+    return { ok: false, error: result.error };
+  }
+  return { ok: true, status: "pending" };
 }
 
 function agentPublicSummaryFromDraft(

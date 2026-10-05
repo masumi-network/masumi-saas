@@ -17,6 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  type AgentPricingTypeFilter,
+  type AgentRegistrationKindFilter,
+} from "@/lib/agents/agent-list-filter-match";
+import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
 
 const FILTER_ALL = "__all__";
 
@@ -29,10 +34,34 @@ export type AgentVerificationFilter =
   | "revoked"
   | "expired";
 
+export type AgentTypeFilter = AgentRegistrationKindFilter;
+export type AgentPricingFilter = AgentPricingTypeFilter;
+
 export type AgentListFilters = {
   registration?: AgentRegistrationFilter;
   verification?: AgentVerificationFilter;
+  agentType?: AgentTypeFilter;
+  pricingType?: AgentPricingFilter;
 };
+
+const AGENT_TYPE_FILTER_VALUES = [
+  "standard",
+  "x402",
+] as const satisfies readonly AgentTypeFilter[];
+
+const PRICING_TYPE_FILTER_VALUES = [
+  "free",
+  "fixed",
+  "dynamic",
+] as const satisfies readonly AgentPricingFilter[];
+
+function isAgentTypeFilter(value: string): value is AgentTypeFilter {
+  return (AGENT_TYPE_FILTER_VALUES as readonly string[]).includes(value);
+}
+
+function isAgentPricingFilter(value: string): value is AgentPricingFilter {
+  return (PRICING_TYPE_FILTER_VALUES as readonly string[]).includes(value);
+}
 
 const VERIFICATION_FILTER_VALUES = [
   "verified",
@@ -51,7 +80,9 @@ function isAgentVerificationFilter(
 export function countAgentListFilters(filters: AgentListFilters): number {
   let count = 0;
   if (filters.registration) count += 1;
-  if (filters.verification) count += 1;
+  if (isAgentVerificationFlowEnabled() && filters.verification) count += 1;
+  if (filters.agentType) count += 1;
+  if (filters.pricingType) count += 1;
   return count;
 }
 
@@ -61,24 +92,28 @@ export function agentListFiltersToApi(filters: AgentListFilters) {
     unverified?: boolean;
     registrationState?: "RegistrationConfirmed";
     registrationStateIn?: string[];
+    agentType?: AgentTypeFilter;
+    pricingType?: AgentPricingFilter;
   } = {};
 
-  switch (filters.verification) {
-    case "verified":
-      api.verificationStatus = "VERIFIED";
-      break;
-    case "pending":
-      api.verificationStatus = "PENDING";
-      break;
-    case "revoked":
-      api.verificationStatus = "REVOKED";
-      break;
-    case "expired":
-      api.verificationStatus = "EXPIRED";
-      break;
-    case "unverified":
-      api.unverified = true;
-      break;
+  if (isAgentVerificationFlowEnabled()) {
+    switch (filters.verification) {
+      case "verified":
+        api.verificationStatus = "VERIFIED";
+        break;
+      case "pending":
+        api.verificationStatus = "PENDING";
+        break;
+      case "revoked":
+        api.verificationStatus = "REVOKED";
+        break;
+      case "expired":
+        api.verificationStatus = "EXPIRED";
+        break;
+      case "unverified":
+        api.unverified = true;
+        break;
+    }
   }
 
   switch (filters.registration) {
@@ -102,6 +137,13 @@ export function agentListFiltersToApi(filters: AgentListFilters) {
         "UpdateFailed",
       ];
       break;
+  }
+
+  if (filters.agentType) {
+    api.agentType = filters.agentType;
+  }
+  if (filters.pricingType) {
+    api.pricingType = filters.pricingType;
   }
 
   return Object.keys(api).length > 0 ? api : undefined;
@@ -139,6 +181,16 @@ export function parseAgentListFilters(
     filters.verification = verification;
   }
 
+  const agentType = searchParams.get("agentType");
+  if (agentType && isAgentTypeFilter(agentType)) {
+    filters.agentType = agentType;
+  }
+
+  const pricingType = searchParams.get("pricingType");
+  if (pricingType && isAgentPricingFilter(pricingType)) {
+    filters.pricingType = pricingType;
+  }
+
   return filters;
 }
 
@@ -161,6 +213,18 @@ export function agentListFiltersToSearchParams(
     params.delete("verification");
   }
 
+  if (filters.agentType) {
+    params.set("agentType", filters.agentType);
+  } else {
+    params.delete("agentType");
+  }
+
+  if (filters.pricingType) {
+    params.set("pricingType", filters.pricingType);
+  } else {
+    params.delete("pricingType");
+  }
+
   return params;
 }
 
@@ -176,6 +240,7 @@ export function AgentsFiltersPopover({
   onClear: () => void;
 }) {
   const t = useTranslations("App.Agents");
+  const showVerificationFilter = isAgentVerificationFlowEnabled();
 
   return (
     <Popover>
@@ -247,44 +312,110 @@ export function AgentsFiltersPopover({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agents-filter-verification">
-              {t("filterVerification")}
+            <Label htmlFor="agents-filter-agent-type">
+              {t("filterAgentType")}
             </Label>
             <Select
-              value={filters.verification ?? FILTER_ALL}
+              value={filters.agentType ?? FILTER_ALL}
               onValueChange={(value) =>
                 onChange({
                   ...filters,
-                  verification:
+                  agentType:
                     value === FILTER_ALL
                       ? undefined
-                      : (value as AgentVerificationFilter),
+                      : (value as AgentTypeFilter),
                 })
               }
             >
-              <SelectTrigger id="agents-filter-verification" className="w-full">
+              <SelectTrigger id="agents-filter-agent-type" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FILTER_ALL}>{t("allAgentTypes")}</SelectItem>
+                <SelectItem value="standard">
+                  {t("agentTypeStandard")}
+                </SelectItem>
+                <SelectItem value="x402">{t("agentTypeX402")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="agents-filter-pricing-type">
+              {t("filterPricingType")}
+            </Label>
+            <Select
+              value={filters.pricingType ?? FILTER_ALL}
+              onValueChange={(value) =>
+                onChange({
+                  ...filters,
+                  pricingType:
+                    value === FILTER_ALL
+                      ? undefined
+                      : (value as AgentPricingFilter),
+                })
+              }
+            >
+              <SelectTrigger id="agents-filter-pricing-type" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={FILTER_ALL}>
-                  {t("allVerificationStatuses")}
+                  {t("allPricingTypes")}
                 </SelectItem>
-                <SelectItem value="verified">{t("tabs.verified")}</SelectItem>
-                <SelectItem value="pending">
-                  {t("verificationFilters.pending")}
-                </SelectItem>
-                <SelectItem value="unverified">
-                  {t("verificationFilters.unverified")}
-                </SelectItem>
-                <SelectItem value="revoked">
-                  {t("verificationFilters.revoked")}
-                </SelectItem>
-                <SelectItem value="expired">
-                  {t("verificationFilters.expired")}
+                <SelectItem value="free">{t("pricingTypeFree")}</SelectItem>
+                <SelectItem value="fixed">{t("pricingTypeFixed")}</SelectItem>
+                <SelectItem value="dynamic">
+                  {t("pricingTypeDynamic")}
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {showVerificationFilter ? (
+            <div className="space-y-2">
+              <Label htmlFor="agents-filter-verification">
+                {t("filterVerification")}
+              </Label>
+              <Select
+                value={filters.verification ?? FILTER_ALL}
+                onValueChange={(value) =>
+                  onChange({
+                    ...filters,
+                    verification:
+                      value === FILTER_ALL
+                        ? undefined
+                        : (value as AgentVerificationFilter),
+                  })
+                }
+              >
+                <SelectTrigger
+                  id="agents-filter-verification"
+                  className="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={FILTER_ALL}>
+                    {t("allVerificationStatuses")}
+                  </SelectItem>
+                  <SelectItem value="verified">{t("tabs.verified")}</SelectItem>
+                  <SelectItem value="pending">
+                    {t("verificationFilters.pending")}
+                  </SelectItem>
+                  <SelectItem value="unverified">
+                    {t("verificationFilters.unverified")}
+                  </SelectItem>
+                  <SelectItem value="revoked">
+                    {t("verificationFilters.revoked")}
+                  </SelectItem>
+                  <SelectItem value="expired">
+                    {t("verificationFilters.expired")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
         </div>
       </PopoverContent>
     </Popover>

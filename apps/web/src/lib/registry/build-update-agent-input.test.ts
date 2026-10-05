@@ -74,6 +74,7 @@ describe("buildUpdateAgentInput", () => {
     expect(input.ExampleOutputs).toHaveLength(1);
     expect(input.verifications).toHaveLength(1);
     expect(input.agentIdentifier).toBe(onChainMetadata.agentIdentifier);
+    expect(input.AgentPricing).toBeUndefined();
   });
 
   it("uses agent icon when on-chain metadata has no image", () => {
@@ -96,5 +97,55 @@ describe("buildUpdateAgentInput", () => {
     });
 
     expect(input.image).toMatch(/^ipfs:\/\//);
+    expect(input.AgentPricing).toBeUndefined();
+  });
+
+  it("includes AgentPricing for legacy V1 metadata", () => {
+    const input = buildUpdateAgentInput({
+      network: "Preprod",
+      agentIdentifier: "a".repeat(120),
+      registryEntry,
+      onChainMetadata: {
+        policyId: "a".repeat(56),
+        assetName: "b".repeat(64),
+        agentIdentifier: "a".repeat(120),
+        Metadata: {
+          name: "On-chain Name",
+          apiBaseUrl: "https://api.example/agent",
+          metadataVersion: 1,
+          AgentPricing: { pricingType: "Free" },
+        },
+      },
+      verifications: [],
+    });
+
+    expect(input.AgentPricing).toEqual({ pricingType: "Free" });
+  });
+
+  it("uses x402ResourcesUrl when on-chain metadata has no apiBaseUrl", () => {
+    const input = buildUpdateAgentInput({
+      network: "Preprod",
+      agentIdentifier: "a".repeat(120),
+      registryEntry: {
+        ...registryEntry,
+        type: "X402",
+        apiBaseUrl: null,
+        x402ResourcesUrl: "https://x402.org/protected",
+      },
+      onChainMetadata: {
+        policyId: "a".repeat(56),
+        assetName: "b".repeat(64),
+        agentIdentifier: "a".repeat(120),
+        Metadata: {
+          name: "x402 agent",
+          metadataVersion: 2,
+        },
+      },
+      verifications: [],
+    });
+
+    expect(input.type).toBe("X402");
+    expect(input.x402ResourcesUrl).toBe("https://x402.org/protected");
+    expect(input.apiBaseUrl).toBeUndefined();
   });
 });

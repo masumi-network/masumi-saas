@@ -3,9 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  AlertTriangle,
   Ban,
-  CheckCircle2,
   CircleHelp,
   Link2,
   ListFilter,
@@ -46,7 +44,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -78,6 +75,7 @@ import { isTestnetEnv } from "@/lib/x402-rail";
 
 import { ChainLabel } from "./chain-icon";
 import { ChainPickerDropdown } from "./chain-picker-dropdown";
+import { FieldProbeIndicator } from "./field-probe-indicator";
 import { WalletBalanceDialog } from "./wallet-extras";
 import { CreateWalletDialog } from "./wallets-tab";
 import { X402FormDialog } from "./x402-form-dialog";
@@ -162,64 +160,6 @@ function isProbeableRpcUrl(rpcUrl: string) {
   } catch {
     return false;
   }
-}
-
-function RpcUrlProbeIndicator({
-  status,
-  checkingLabel,
-  validLabel,
-  invalidMessage,
-}: {
-  status: RpcProbeViewState["status"];
-  checkingLabel: string;
-  validLabel: string;
-  invalidMessage?: string;
-}) {
-  if (status === "idle") return null;
-
-  const tooltipLabel =
-    status === "checking"
-      ? checkingLabel
-      : status === "valid"
-        ? validLabel
-        : (invalidMessage ?? checkingLabel);
-
-  const icon =
-    status === "checking" ? (
-      <Spinner
-        key="rpc-probe-checking"
-        size={16}
-        className="text-muted-foreground"
-      />
-    ) : status === "valid" ? (
-      <CheckCircle2
-        key="rpc-probe-valid"
-        className="h-4 w-4 animate-in fade-in zoom-in-90 fill-mode-both text-sky-500 duration-300"
-        aria-hidden
-      />
-    ) : (
-      <AlertTriangle
-        key="rpc-probe-invalid"
-        className="h-4 w-4 animate-rpc-probe-vibrate text-destructive"
-        aria-hidden
-      />
-    );
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          className="flex size-4 shrink-0 cursor-help items-center justify-center [&_svg]:block"
-          aria-live="polite"
-          aria-busy={status === "checking"}
-        >
-          {icon}
-          <span className="sr-only">{tooltipLabel}</span>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs">{tooltipLabel}</TooltipContent>
-    </Tooltip>
-  );
 }
 
 export function ChainsTab() {
@@ -1087,7 +1027,7 @@ export function ChainDialog({
             />
             <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center">
               <div className="pointer-events-auto flex items-center justify-center">
-                <RpcUrlProbeIndicator
+                <FieldProbeIndicator
                   status={showRpcProbeStatus ? rpcProbe.status : "idle"}
                   checkingLabel={t("rpcProbeChecking")}
                   validLabel={t("rpcProbeValid")}

@@ -47,6 +47,45 @@ function DialogOverlay({
   );
 }
 
+const dialogContentClassName =
+  "bg-background max-h-[90vh] overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 outline-none sm:max-w-lg";
+
+/** Dialog surface only (no portal/overlay). Use inside `DialogPortal` when swapping panels on one backdrop. */
+function DialogContentPanel({
+  className,
+  children,
+  showCloseButton = true,
+  closeButtonClassName,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  showCloseButton?: boolean;
+  closeButtonClassName?: string;
+}) {
+  const t = useTranslations("Components.Dialog");
+
+  return (
+    <DialogPrimitive.Content
+      data-slot="dialog-content"
+      className={cn(dialogContentClassName, className)}
+      {...props}
+    >
+      {children}
+      {showCloseButton && (
+        <DialogPrimitive.Close
+          data-slot="dialog-close"
+          className={cn(
+            "ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+            closeButtonClassName,
+          )}
+        >
+          <XIcon />
+          <span className="sr-only">{t("close")}</span>
+        </DialogPrimitive.Close>
+      )}
+    </DialogPrimitive.Content>
+  );
+}
+
 function DialogContent({
   className,
   children,
@@ -58,33 +97,17 @@ function DialogContent({
   /** Override close button position (e.g. for p-0 dialogs with custom headers) */
   closeButtonClassName?: string;
 }) {
-  const t = useTranslations("Components.Dialog");
-
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
-      <DialogPrimitive.Content
-        data-slot="dialog-content"
-        className={cn(
-          "bg-background max-h-[90vh] overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 outline-none sm:max-w-lg",
-          className,
-        )}
+      <DialogContentPanel
+        className={className}
+        showCloseButton={showCloseButton}
+        closeButtonClassName={closeButtonClassName}
         {...props}
       >
         {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className={cn(
-              "ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-              closeButtonClassName,
-            )}
-          >
-            <XIcon />
-            <span className="sr-only">{t("close")}</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Content>
+      </DialogContentPanel>
     </DialogPortal>
   );
 }
@@ -136,13 +159,13 @@ function DialogDescription({
 }
 
 /** Scrollable dialog main area; direct children stagger fade-in-up on open. */
-function DialogBody({
-  className,
-  stagger = true,
-  ...props
-}: React.ComponentProps<"div"> & { stagger?: boolean }) {
+const DialogBody = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<"div"> & { stagger?: boolean }
+>(function DialogBody({ className, stagger = true, ...props }, ref) {
   return (
     <div
+      ref={ref}
       data-slot="dialog-body"
       className={cn(
         "min-h-0 flex-1 space-y-6 overflow-y-auto p-6",
@@ -152,13 +175,14 @@ function DialogBody({
       {...props}
     />
   );
-}
+});
 
 export {
   Dialog,
   DialogBody,
   DialogClose,
   DialogContent,
+  DialogContentPanel,
   DialogDescription,
   DialogFooter,
   DialogHeader,

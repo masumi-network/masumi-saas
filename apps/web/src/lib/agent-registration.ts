@@ -16,10 +16,10 @@ import {
 import {
   loadSupportedPaymentSourcesForAgent,
   mergeWithDefaultCardanoSource,
-  replaceSupportedPaymentSourcesForAgent,
 } from "@masumi/payment-source-x402/supported-payment-sources";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { persistAgentRegistrationSetup } from "@/lib/agents/persist-agent-registration-setup";
 import { registrationStateFromRegistryEntry } from "@/lib/agents/registration-state";
 import { resolveAgentRegistryImage } from "@/lib/agents/resolve-agent-registry-image";
 import {
@@ -56,6 +56,11 @@ import { listSettleablePaymentNodeX402Networks } from "@/lib/payment-node/resolv
 import { getRegistryEntryForSync } from "@/lib/payment-node/resolve-registry-entry-for-sync";
 import type { RegistryEntry } from "@/lib/payment-node/schemas";
 import { ensureUserPaymentNodeKeyScopedToWallets } from "@/lib/payment-node/wallet-scopes";
+import {
+  isX402RegistryAgent,
+  parseAgentRegistryMetadata,
+} from "@/lib/x402/agent-registry-metadata";
+import { getPublicX402ManifestUrl } from "@/lib/x402/public-manifest-url";
 
 import {
   normalizePayoutAddress,
@@ -87,6 +92,15 @@ export type RegisterAgentParams = {
   name: string;
   description: string | null;
   apiUrl: string;
+  registryEntryType?: "X402";
+  x402Manifest?: {
+    x402Version: number;
+    resources: Array<{
+      resource: string;
+      type: "http" | "mcp";
+      description?: string;
+    }>;
+  };
   runtimeProvider?: "DIRECT_MIP" | "LANGDOCK";
   integrationConnectionId?: string | null;
   providerConfig?: Record<string, unknown> | null;
@@ -818,6 +832,12 @@ async function registerAgentOnChainUntilSetup(
     capabilityName: params.capabilityName,
     capabilityVersion: params.capabilityVersion,
     exampleOutputs: params.exampleOutputs,
+    ...(params.registryEntryType === "X402" && params.x402Manifest
+      ? {
+          registryEntryType: "X402" as const,
+          x402Manifest: params.x402Manifest,
+        }
+      : {}),
   };
   const metadataCleaned: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(agentMetadata)) {
@@ -863,9 +883,10 @@ async function registerAgentOnChainUntilSetup(
     agentPricing: params.agentPricing,
   };
 
-  await prisma.agentReference.create({
-    data: {
-      agentId: agent.id,
+  await persistAgentRegistrationSetup({
+    agentId: agent.id,
+    supportedPaymentSources: mergedSupportedPaymentSources,
+    reference: {
       sellingWalletVkey: sellingWallet.walletVkey,
       sellingWalletId,
       networkIdentifier: network,
@@ -891,13 +912,6 @@ async function registerAgentOnChainUntilSetup(
       },
     },
   });
-
-  if (mergedSupportedPaymentSources) {
-    await replaceSupportedPaymentSourcesForAgent(
-      agent.id,
-      mergedSupportedPaymentSources,
-    );
-  }
 
   await recordAgentActivityEvent(agent.id, "RegistrationInitiated");
 
@@ -1255,6 +1269,17 @@ export async function completeOnChainRegistration(
       recipientWalletAddressPrefix: recipientWalletAddress.slice(0, 16),
     });
 
+    const registryMetadata = parseAgentRegistryMetadata(agent.metadata);
+    const x402Registry = isX402RegistryAgent(registryMetadata);
+    const x402ResourcesUrl = x402Registry
+      ? getPublicX402ManifestUrl(agent.id)
+      : undefined;
+    if (x402Registry && x402ResourcesUrl && x402ResourcesUrl.length > 250) {
+      throw new Error(
+        "x402 manifest URL exceeds registry length limit; set a shorter NEXT_PUBLIC_APP_URL.",
+      );
+    }
+
     const registerPromise = adminClient.registerAgent({
       network,
       sellingWalletVkey: fundingWalletVkey,
@@ -1262,7 +1287,9 @@ export async function completeOnChainRegistration(
       sendFundingLovelace:
         paymentNodeConfig.getRegistryHoldingWalletFundingLovelace(),
       name: agent.name,
-      apiBaseUrl: agent.apiUrl,
+      ...(x402Registry
+        ? { type: "X402" as const, x402ResourcesUrl }
+        : { apiBaseUrl: agent.apiUrl }),
       description: agent.description?.trim() ?? "",
       ...(registryImage ? { image: registryImage } : {}),
       Tags: agent.tags,

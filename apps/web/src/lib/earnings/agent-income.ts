@@ -1,5 +1,6 @@
 import "server-only";
 
+import { classifyAgentRegistrationKind } from "@/lib/agents/agent-list-filter-match";
 import type { PaymentNodeClient } from "@/lib/payment-node/client";
 import {
   type DashboardEarningsAmountUnit,
@@ -319,6 +320,15 @@ export function hasAgentEarningsData(agent: {
   );
 }
 
+export function resolveAgentPaymentRail(agent: {
+  metadata: string | null;
+  agentReference?: { metadata: unknown } | null;
+}): "cardano" | "x402" {
+  return classifyAgentRegistrationKind(agent) === "X402_HTTP"
+    ? "x402"
+    : "cardano";
+}
+
 export function resolveAgentAnalyticsPeriod(params: {
   range: AgentAnalyticsRange;
   startDate?: string;
@@ -377,6 +387,7 @@ export async function fetchNormalizedAgentPaymentIncome(params: {
   startDate: string;
   endDate: string;
   timeZone: string;
+  paymentRail?: "cardano" | "x402";
 }): Promise<NormalizedAgentPaymentIncome> {
   const income = await params.client.getPaymentIncome({
     network: params.network,
@@ -384,6 +395,7 @@ export async function fetchNormalizedAgentPaymentIncome(params: {
     startDate: params.startDate,
     endDate: params.endDate,
     timeZone: params.timeZone,
+    paymentRail: params.paymentRail ?? "cardano",
   });
 
   return {

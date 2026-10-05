@@ -15,6 +15,7 @@ import {
 import { type Agent, agentApiClient } from "@/lib/api/agent.client";
 import { credentialApiClient } from "@/lib/api/credential.client";
 import { isAgentVerificationFlowEnabled } from "@/lib/config/verification.config";
+import { useAgentCompletion } from "@/lib/context/agent-completion-context";
 import { usePaymentNetwork } from "@/lib/context/payment-network-context";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 
@@ -52,6 +53,7 @@ export function AgentPageContent({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { network, setNetwork } = usePaymentNetwork();
+  const { addPendingRegistration } = useAgentCompletion();
   const [agent, setAgent] = useState<Agent>(initialAgent);
   const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -64,18 +66,20 @@ export function AgentPageContent({
   const [pendingBannerRefreshKey, setPendingBannerRefreshKey] = useState(0);
   const initialAgentRef = useRef(initialAgent);
   initialAgentRef.current = initialAgent;
+  const [networkDialogDismissed, setNetworkDialogDismissed] = useState(false);
+  const switchingNetworkRef = useRef(false);
 
   // Client-side navigation reuses this component — reset agent-scoped UI state.
   useEffect(() => {
     setAgent(initialAgentRef.current);
     setResumePendingCredentialId(null);
+    setNetworkDialogDismissed(false);
+    switchingNetworkRef.current = false;
   }, [initialAgent.id]);
 
   const agentNetwork = isValidNetwork(agent.networkIdentifier)
     ? agent.networkIdentifier
     : null;
-  // Track if user explicitly dismissed the dialog (e.g. clicked "Go back")
-  const [networkDialogDismissed, setNetworkDialogDismissed] = useState(false);
   const isNetworkDialogOpen =
     agentNetwork !== null &&
     agentNetwork !== network &&
@@ -83,6 +87,7 @@ export function AgentPageContent({
 
   const handleSwitchNetwork = () => {
     if (agentNetwork) {
+      switchingNetworkRef.current = true;
       setNetworkDialogDismissed(true);
       setNetwork(agentNetwork);
     }
@@ -91,6 +96,21 @@ export function AgentPageContent({
   const handleNetworkDialogBack = () => {
     setNetworkDialogDismissed(true);
     router.back();
+  };
+
+  const handleNetworkMismatchOpenChange = (open: boolean) => {
+    if (open) return;
+    if (switchingNetworkRef.current) {
+      switchingNetworkRef.current = false;
+      return;
+    }
+    if (
+      agentNetwork !== null &&
+      agentNetwork !== network &&
+      !networkDialogDismissed
+    ) {
+      handleNetworkDialogBack();
+    }
   };
 
   const pendingRegistration = isRegistrationUiPending(agent.registrationState);
@@ -240,6 +260,8 @@ export function AgentPageContent({
         const result = await agentApiClient.deregisterAgent(agent.id);
         if (result.success) {
           toast.success(t("deregisterSuccess"));
+          addPendingRegistration(agent.id, "deregistration");
+          await syncAgentRegistrationStatusAction(agent.id);
           const next = await agentApiClient.getAgent(agent.id);
           if (next.success && next.data) setAgent(next.data);
           setIsDeregisterDialogOpen(false);
@@ -302,6 +324,7 @@ export function AgentPageContent({
           agent={agent}
           backHref={backHref}
           backLabel={backLabel}
+          onRefreshRegistrationStatus={syncAndRefetch}
         />
         {agentVerificationUiEnabled ? (
           <PendingWalletAcceptanceBanner
@@ -319,7 +342,6 @@ export function AgentPageContent({
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
           onDeregisterClick={() => setIsDeregisterDialogOpen(true)}
           onVerificationSuccess={handleVerificationSuccess}
-          onRefreshStatus={syncAndRefetch}
           onVerificationDialogClosed={() =>
             setPendingBannerRefreshKey((key) => key + 1)
           }
@@ -353,6 +375,7 @@ export function AgentPageContent({
           currentNetwork={network}
           onSwitch={handleSwitchNetwork}
           onBack={handleNetworkDialogBack}
+          onOpenChange={handleNetworkMismatchOpenChange}
         />
       )}
 

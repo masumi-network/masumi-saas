@@ -5,6 +5,10 @@ import * as Sentry from "@sentry/nextjs";
 import type Stripe from "stripe";
 
 import { clawBackCreditTopUpFromCheckoutSession } from "@/lib/credits/service";
+import {
+  displayCreditsToStorageUnits,
+  storageUnitsToDisplayCredits,
+} from "@/lib/credits/units";
 import { serverLog } from "@/lib/server/logger";
 import { MASUMI_CHECKOUT_METADATA_PURPOSE } from "@/lib/stripe/config";
 import { parseVerifiedTopUpCheckoutMetadata } from "@/lib/stripe/top-up-metadata";
@@ -43,7 +47,12 @@ function creditsToClawBackForRefund(
   }
   return Math.min(
     grantCredits,
-    Math.floor((grantCredits * charge.amount_refunded) / charge.amount),
+    storageUnitsToDisplayCredits(
+      Math.floor(
+        (displayCreditsToStorageUnits(grantCredits) * charge.amount_refunded) /
+          charge.amount,
+      ),
+    ),
   );
 }
 
@@ -90,7 +99,7 @@ async function resolveMasumiTopUpClawbackContext(
     kind: "ready",
     checkoutSessionId,
     userId: grant.userId,
-    grantCredits: grant.delta,
+    grantCredits: storageUnitsToDisplayCredits(grant.delta),
   };
 }
 

@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   canDeregisterAgent,
+  canEditAgentDetails,
   canRequestAgentVerification,
+  classifyRegistrationPollAfterSync,
   isAgentLiveOnRegistry,
   isRegistrationSyncPending,
   isRegistrationUiPending,
   isUpdateRequestedStale,
   registrationStateFromRegistryEntry,
+  REGISTRY_UPDATE_ABANDONED_MS,
   resolveRegistrationStateAfterSync,
   STALE_UPDATE_REQUESTED_MS,
 } from "./registration-state";
@@ -62,6 +65,95 @@ describe("resolveRegistrationStateAfterSync", () => {
       }),
     ).toBe("UpdateRequested");
   });
+
+  it("keeps optimistic DeregistrationRequested when node still RegistrationConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "DeregistrationRequested",
+        registryState: "RegistrationConfirmed",
+      }),
+    ).toBe("DeregistrationRequested");
+  });
+
+  it("keeps optimistic DeregistrationInitiated when node still UpdateConfirmed", () => {
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "DeregistrationInitiated",
+        registryState: "UpdateConfirmed",
+      }),
+    ).toBe("DeregistrationInitiated");
+  });
+
+  it("keeps node update queue visible when the lock is abandoned", () => {
+    const now = 1_000_000_000_000;
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "UpdateRequested",
+        updatedAt: new Date(now - REGISTRY_UPDATE_ABANDONED_MS),
+        now,
+      }),
+    ).toBe("UpdateRequested");
+  });
+
+  it("releases abandoned UpdateRequested when the node never left RegistrationConfirmed", () => {
+    const now = 1_000_000_000_000;
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "RegistrationConfirmed",
+        updatedAt: new Date(now - REGISTRY_UPDATE_ABANDONED_MS),
+        now,
+      }),
+    ).toBe("RegistrationConfirmed");
+  });
+
+  it("keeps in-flight UpdateRequested within the abandoned window", () => {
+    const now = 1_000_000_000_000;
+    expect(
+      resolveRegistrationStateAfterSync({
+        previousState: "UpdateRequested",
+        registryState: "UpdateRequested",
+        updatedAt: new Date(now - (REGISTRY_UPDATE_ABANDONED_MS - 1)),
+        now,
+      }),
+    ).toBe("UpdateRequested");
+  });
+});
+
+describe("classifyRegistrationPollAfterSync", () => {
+  it("maps terminal registration and deregistration outcomes", () => {
+    expect(classifyRegistrationPollAfterSync("RegistrationConfirmed")).toBe(
+      "registration_complete",
+    );
+    expect(classifyRegistrationPollAfterSync("DeregistrationConfirmed")).toBe(
+      "deregistration_complete",
+    );
+    expect(classifyRegistrationPollAfterSync("RegistrationFailed")).toBe(
+      "registration_failed",
+    );
+    expect(classifyRegistrationPollAfterSync("DeregistrationFailed")).toBe(
+      "deregistration_failed",
+    );
+  });
+
+  it("syncs only while deregistration is in flight", () => {
+    expect(classifyRegistrationPollAfterSync("DeregistrationRequested")).toBe(
+      "still_pending",
+    );
+    expect(classifyRegistrationPollAfterSync("DeregistrationInitiated")).toBe(
+      "still_pending",
+    );
+  });
+
+  it("continues registration completion for in-flight registration", () => {
+    expect(classifyRegistrationPollAfterSync("RegistrationRequested")).toBe(
+      "continue_registration",
+    );
+    expect(classifyRegistrationPollAfterSync("UpdateRequested")).toBe(
+      "continue_registration",
+    );
+  });
 });
 
 describe("pending helpers", () => {
@@ -97,6 +189,7 @@ describe("isAgentLiveOnRegistry", () => {
 describe("canDeregisterAgent", () => {
   it("allows only settled registration states", () => {
     expect(canDeregisterAgent("RegistrationConfirmed")).toBe(true);
+    expect(canDeregisterAgent("UpdateFailed")).toBe(true);
     expect(canDeregisterAgent("DeregistrationFailed")).toBe(true);
   });
 
@@ -105,6 +198,28 @@ describe("canDeregisterAgent", () => {
     expect(canDeregisterAgent("UpdateRequested")).toBe(false);
     expect(canDeregisterAgent("UpdateInitiated")).toBe(false);
     expect(canDeregisterAgent("DeregistrationRequested")).toBe(false);
+  });
+});
+
+describe("canEditAgentDetails", () => {
+  const agentIdentifier = "a".repeat(56) + "b".repeat(64);
+
+  it("allows registered agents with an identifier", () => {
+    expect(
+      canEditAgentDetails({
+        registrationState: "RegistrationConfirmed",
+        agentIdentifier,
+      }),
+    ).toBe(true);
+  });
+
+  it("blocks pending updates", () => {
+    expect(
+      canEditAgentDetails({
+        registrationState: "UpdateInitiated",
+        agentIdentifier,
+      }),
+    ).toBe(false);
   });
 });
 

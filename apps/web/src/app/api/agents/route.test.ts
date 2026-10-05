@@ -10,9 +10,13 @@ const buildAgentPricingMock = vi.fn();
 const startAgentRegistrationMock = vi.fn();
 const validateAgentRegistrationPaymentSourcesPreflightMock = vi.fn();
 const consumeCreditIfRequiredMock = vi.fn();
+const getCreditBalanceMock = vi.fn();
+const refundConsumedCreditMock = vi.fn();
 const shapeAgentForApiMock = vi.fn();
 const loadSupportedPaymentSourcesMapMock = vi.fn();
 const agentFindFirstMock = vi.fn();
+const canRefundCreditAfterRegistrationThrowMock = vi.fn();
+const scheduleAgentRegistrationCompletionMock = vi.fn();
 const listWalletOwnedAgentsForUserMock = vi.fn();
 const createIntegrationConnectionMock = vi.fn();
 const decryptIntegrationConnectionSecretMock = vi.fn();
@@ -51,12 +55,23 @@ vi.mock("@/lib/agent-registration", () => ({
     validateAgentRegistrationPaymentSourcesPreflightMock,
 }));
 
+vi.mock("@/lib/agents/registration-credit-refund", () => ({
+  canRefundCreditAfterRegistrationThrow:
+    canRefundCreditAfterRegistrationThrowMock,
+}));
+
+vi.mock("@/lib/agents/drive-registration-completion", () => ({
+  scheduleAgentRegistrationCompletion: scheduleAgentRegistrationCompletionMock,
+}));
+
 vi.mock("@/lib/agents/wallet-ownership", () => ({
   listWalletOwnedAgentsForUser: listWalletOwnedAgentsForUserMock,
 }));
 
 vi.mock("@/lib/credits/service", () => ({
   consumeCreditIfRequired: consumeCreditIfRequiredMock,
+  getCreditBalance: getCreditBalanceMock,
+  refundConsumedCredit: refundConsumedCreditMock,
   createCreditReference: () => "agent-register:test",
 }));
 
@@ -189,6 +204,12 @@ describe("/api/agents POST", () => {
       pricingType: "Fixed",
       prices: [{ amount: "5", currency: "USD" }],
     });
+    getCreditBalanceMock.mockResolvedValue({
+      creditsRemaining: 20,
+      updatedAt: new Date("2026-04-13T10:00:00.000Z"),
+    });
+    refundConsumedCreditMock.mockResolvedValue(undefined);
+    canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(true);
     consumeCreditIfRequiredMock.mockResolvedValue({
       creditsRemaining: 0,
       updatedAt: new Date("2026-04-13T10:00:00.000Z"),
@@ -325,6 +346,54 @@ describe("/api/agents POST", () => {
       error:
         "PAYMENT_NODE_PAYMENT_SOURCE_ID_MAINNET is required for Mainnet payment-source operations",
     });
+  });
+
+  it("refunds the credit when registration throws before the agent is submittable", async () => {
+    startAgentRegistrationMock.mockRejectedValue(new Error("node down"));
+    canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(true);
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerAgentBody()),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(500);
+    const params = startAgentRegistrationMock.mock.calls[0]?.[1];
+    expect(typeof params?.id).toBe("string");
+    expect(canRefundCreditAfterRegistrationThrowMock).toHaveBeenCalledWith(
+      params?.id,
+    );
+    expect(refundConsumedCreditMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports the agent as started when registration throws after it is submittable", async () => {
+    startAgentRegistrationMock.mockRejectedValue(new Error("db write failed"));
+    canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(false);
+
+    const request = new NextRequest(
+      "https://saas.example.com/api/agents?network=Preprod",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerAgentBody()),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(refundConsumedCreditMock).not.toHaveBeenCalled();
+    const params = startAgentRegistrationMock.mock.calls[0]?.[1];
+    expect(scheduleAgentRegistrationCompletionMock).toHaveBeenCalledWith(
+      params?.id,
+      "user-1",
+    );
   });
 
   it("lists only wallet-owned agents for the selected network", async () => {

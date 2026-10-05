@@ -48,7 +48,7 @@ export function agentPricingRequiresPayoutAddress(
   return pricing?.pricingType !== "Free";
 }
 
-const exampleOutputSchema = z.object({
+export const exampleOutputSchema = z.object({
   name: z.string().max(60).min(1),
   url: z.string().url().min(1),
   mimeType: z.string().max(60).min(1),
@@ -97,11 +97,26 @@ export const agentMetadataSchema = z
     capabilityName: z.string().optional(),
     capabilityVersion: z.string().optional(),
     exampleOutputs: z.array(exampleOutputSchema).optional(),
+    registryEntryType: z.literal("X402").optional(),
+    x402Manifest: z
+      .object({
+        x402Version: z.number(),
+        resources: z.array(
+          z.object({
+            resource: z.string().url(),
+            type: z.enum(["http", "mcp"]),
+            description: z.string().optional(),
+          }),
+        ),
+      })
+      .optional(),
   })
   .strict();
 
 export const registerAgentBodySchema = z
   .object({
+    registrationKind: z.enum(["STANDARD", "X402_HTTP"]).optional(),
+    x402ResourceUrl: agentApiUrlSchema.optional(),
     runtimeProvider: z.enum(["DIRECT_MIP", "LANGDOCK"]).optional(),
     name: z
       .string()
@@ -138,6 +153,27 @@ export const registerAgentBodySchema = z
       .or(z.literal("")),
   })
   .superRefine((data, ctx) => {
+    const kind = data.registrationKind ?? "STANDARD";
+    if (kind === "X402_HTTP") {
+      const resource = data.x402ResourceUrl?.trim() ?? "";
+      if (!resource) {
+        ctx.addIssue({
+          code: "custom",
+          message: "x402 resource URL is required.",
+          path: ["x402ResourceUrl"],
+        });
+      }
+      if (data.supportedPaymentSources?.length) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Do not send supportedPaymentSources for X402 HTTP registration.",
+          path: ["supportedPaymentSources"],
+        });
+      }
+      return;
+    }
+
     if (!registerAgentPricingRequiresPayoutAddress(data.pricing)) return;
 
     const payoutAddress = data.payoutAddress?.trim() ?? "";
@@ -196,8 +232,34 @@ export const agentsListQuerySchema = z.object({
   take: z.coerce.number().int().min(1).max(50).optional().default(10),
   registrationState: z.string().optional(),
   registrationStateIn: z.string().optional(),
+  agentType: z.enum(["standard", "x402"]).optional(),
+  pricingType: z.enum(["free", "fixed", "dynamic"]).optional(),
   search: z.string().optional(),
   network: z.enum(["Mainnet", "Preprod"]).optional(),
+});
+
+/** PATCH /api/agents/{agentId} JSON body — editable registry metadata (no pricing/payout). */
+export const updateAgentDetailsBodySchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(250, "Name must be less than 250 characters"),
+  description: z
+    .string()
+    .max(250, "Description must be 250 characters or less")
+    .optional()
+    .or(z.literal("")),
+  tags: z.string().min(1, "At least one tag is required"),
+  apiUrl: agentApiUrlSchema,
+  capabilityName: z.string().max(250).optional().or(z.literal("")),
+  capabilityVersion: z.string().max(250).optional().or(z.literal("")),
+  exampleOutputs: z.array(exampleOutputSchema).optional(),
+  termsOfUseUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+  privacyPolicyUrl: z
+    .union([z.literal(""), z.string().url().max(250)])
+    .optional(),
+  otherUrl: z.union([z.literal(""), z.string().url().max(250)]).optional(),
+  icon: z.string().max(2000).optional(),
 });
 
 /** PATCH /api/agents/{agentId}/payout-address JSON body */

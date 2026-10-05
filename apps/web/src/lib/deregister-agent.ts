@@ -1,6 +1,7 @@
 import prisma from "@masumi/database/client";
 
 import { recordAgentActivityEvent } from "@/lib/activity-event";
+import { canDeregisterAgent } from "@/lib/agents/registration-state";
 import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { isPaymentNodeConfigError } from "@/lib/payment-node/config";
 import { createAdminPaymentNodeClient } from "@/lib/payment-node/get-admin-client";
@@ -28,10 +29,7 @@ export async function deregisterAgentForUser(
     if (!agent) {
       return { success: false, error: "Agent not found" };
     }
-    const canDeregister =
-      agent.registrationState === "RegistrationConfirmed" ||
-      agent.registrationState === "DeregistrationFailed";
-    if (!canDeregister) {
+    if (!canDeregisterAgent(agent.registrationState)) {
       return {
         success: false,
         error:

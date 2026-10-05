@@ -11,13 +11,23 @@ import {
   startAgentRegistration,
   validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
+import {
+  type AgentPricingTypeFilter,
+  type AgentRegistrationKindFilter,
+  matchesAgentTypeFilter,
+  matchesPricingTypeFilter,
+} from "@/lib/agents/agent-list-filter-match";
+import { scheduleAgentRegistrationCompletion } from "@/lib/agents/drive-registration-completion";
+import { canRefundCreditAfterRegistrationThrow } from "@/lib/agents/registration-credit-refund";
 import { listWalletOwnedAgentsForUser } from "@/lib/agents/wallet-ownership";
 import { shapeAgentForApi } from "@/lib/api/agent-metadata";
 import { requireNetworkedOidcApiScope } from "@/lib/auth/oidc-api-permissions";
 import { getAuthenticatedOrThrow } from "@/lib/auth/utils";
+import { assertMainnetCreditsForNewRegistrations } from "@/lib/credits/apply-mainnet-registration-credit-gate";
 import {
   consumeCreditIfRequired,
   createCreditReference,
+  refundConsumedCredit,
 } from "@/lib/credits/service";
 import {
   createIntegrationConnection,
@@ -45,6 +55,8 @@ import {
   startRegistrationSuccessSchema,
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
+import { prepareX402HttpRegistration } from "@/lib/x402/prepare-http-registration";
+import { findExistingX402HttpAgentByResourceUrl } from "@/lib/x402/start-x402-http-agent-registration";
 import { z } from "@/lib/zod-openapi";
 import { createApiApp } from "@/server/hono/app";
 import { ApiError, rethrowIfAuthOrCreditsError } from "@/server/hono/errors";
@@ -144,6 +156,8 @@ app.openapi(
       take,
       registrationState,
       registrationStateIn,
+      agentType,
+      pricingType,
       search,
       network: networkQuery,
     } = c.req.valid("query");
@@ -186,6 +200,14 @@ app.openapi(
             registrationState: normalizedRegistrationState,
             registrationStateIn: normalizedRegistrationStateIn,
           }) &&
+          matchesAgentTypeFilter(
+            agent,
+            agentType as AgentRegistrationKindFilter | undefined,
+          ) &&
+          matchesPricingTypeFilter(
+            agent,
+            pricingType as AgentPricingTypeFilter | undefined,
+          ) &&
           matchesAgentSearch(agent, search),
       );
 
@@ -268,6 +290,8 @@ app.openapi(
       name,
       description,
       apiUrl,
+      registrationKind,
+      x402ResourceUrl,
       runtimeProvider,
       integrationConnectionId,
       langdockApiKey,
@@ -309,13 +333,60 @@ app.openapi(
         network,
       });
 
-      const selectedRuntimeProvider = runtimeProvider ?? "DIRECT_MIP";
+      const isX402HttpRegistration = registrationKind === "X402_HTTP";
+      let x402Manifest: RegisterAgentParams["x402Manifest"];
+      let x402CanonicalResourceUrl: string | undefined;
+      let resolvedSupportedPaymentSources = supportedPaymentSources;
+
+      if (isX402HttpRegistration) {
+        const resource = x402ResourceUrl?.trim() ?? "";
+        if (!resource) {
+          throw new ApiError(400, "x402 resource URL is required.");
+        }
+        try {
+          await assertAllowedAgentApiUrl(resource);
+        } catch (error) {
+          if (error instanceof Error) {
+            throw new ApiError(400, error.message);
+          }
+          throw new ApiError(400, "Invalid x402 resource URL");
+        }
+        const prepared = await prepareX402HttpRegistration({
+          resourceUrl: resource,
+          network,
+        });
+        if (!prepared.ok) {
+          throw new ApiError(400, prepared.error);
+        }
+        x402Manifest = prepared.data.x402Manifest;
+        x402CanonicalResourceUrl = prepared.data.resourceUrl;
+        resolvedSupportedPaymentSources = prepared.data.supportedPaymentSources;
+
+        const existingX402 = await findExistingX402HttpAgentByResourceUrl({
+          userId: user.id,
+          organizationId: activeOrganizationId,
+          network,
+          resourceUrl: x402CanonicalResourceUrl,
+        });
+        if (existingX402) {
+          throw new ApiError(
+            409,
+            "An agent for this resource URL is already registered.",
+          );
+        }
+      }
+
+      const selectedRuntimeProvider = isX402HttpRegistration
+        ? "DIRECT_MIP"
+        : (runtimeProvider ?? "DIRECT_MIP");
       let resolvedApiUrl = apiUrl?.trim() ?? "";
       let resolvedIntegrationConnectionId: string | null = null;
       let providerConfig: Record<string, unknown> | null = null;
       let agentId: string | undefined;
 
-      if (selectedRuntimeProvider === "DIRECT_MIP") {
+      if (isX402HttpRegistration) {
+        resolvedApiUrl = x402CanonicalResourceUrl ?? "";
+      } else if (selectedRuntimeProvider === "DIRECT_MIP") {
         if (!resolvedApiUrl) {
           throw new ApiError(400, "API URL is required.");
         }
@@ -410,7 +481,9 @@ app.openapi(
 
       let agentPricing: ReturnType<typeof buildAgentPricing>;
       try {
-        agentPricing = buildAgentPricing(network, pricing ?? undefined);
+        agentPricing = isX402HttpRegistration
+          ? { pricingType: "Free" as const }
+          : buildAgentPricing(network, pricing ?? undefined);
       } catch (error) {
         // An unparseable fixed price is a client input error, not a 500.
         throw new ApiError(
@@ -419,32 +492,34 @@ app.openapi(
         );
       }
 
-      if (
-        agentPricing.pricingType === "Free" &&
-        supportedPaymentSources &&
-        supportedPaymentSources.length > 0
-      ) {
-        throw new ApiError(
-          400,
-          "Free agents cannot include x402 payment options.",
-        );
-      }
+      if (!isX402HttpRegistration) {
+        if (
+          agentPricing.pricingType === "Free" &&
+          resolvedSupportedPaymentSources &&
+          resolvedSupportedPaymentSources.length > 0
+        ) {
+          throw new ApiError(
+            400,
+            "Free agents cannot include x402 payment options.",
+          );
+        }
 
-      if (
-        agentPricing.pricingType === "Dynamic" &&
-        supportedPaymentSources &&
-        supportedPaymentSources.length > 0
-      ) {
-        throw new ApiError(
-          400,
-          "Dynamic pricing agents cannot include x402 payment options.",
-        );
+        if (
+          agentPricing.pricingType === "Dynamic" &&
+          resolvedSupportedPaymentSources &&
+          resolvedSupportedPaymentSources.length > 0
+        ) {
+          throw new ApiError(
+            400,
+            "Dynamic pricing agents cannot include x402 payment options.",
+          );
+        }
       }
 
       const paymentSourcesPreflight =
         await validateAgentRegistrationPaymentSourcesPreflight(
           network,
-          supportedPaymentSources,
+          resolvedSupportedPaymentSources,
           agentPricing,
         );
       if (!paymentSourcesPreflight.ok) {
@@ -465,22 +540,34 @@ app.openapi(
         }
       }
 
+      await assertMainnetCreditsForNewRegistrations({
+        userId: user.id,
+        network,
+        registrationsNeeded: 1,
+      });
+
+      const creditReference = createCreditReference("agent-register");
+      const creditMetadata = {
+        name,
+        apiUrl: resolvedApiUrl,
+        network,
+        authMethod: authContext.authMethod,
+        runtimeProvider: selectedRuntimeProvider,
+      };
+
       await consumeCreditIfRequired({
         userId: user.id,
         reason: "agent_register",
-        reference: createCreditReference("agent-register"),
+        reference: creditReference,
         network,
-        metadata: {
-          name,
-          apiUrl: resolvedApiUrl,
-          network,
-          authMethod: authContext.authMethod,
-          runtimeProvider: selectedRuntimeProvider,
-        },
+        metadata: creditMetadata,
       });
 
+      // Fix the id up front so a throw can tell whether the agent was persisted.
+      const registrationAgentId = agentId ?? randomUUID();
+
       const params: RegisterAgentParams = {
-        id: agentId,
+        id: registrationAgentId,
         name,
         description: description?.trim() || null,
         apiUrl: resolvedApiUrl,
@@ -496,52 +583,86 @@ app.openapi(
         termsOfUseUrl: termsOfUseUrl?.trim() || null,
         privacyPolicyUrl: privacyPolicyUrl?.trim() || null,
         otherUrl: otherUrl?.trim() || null,
-        supportedPaymentSources,
+        supportedPaymentSources: resolvedSupportedPaymentSources,
         payoutAddress: payoutAddress?.trim() ?? "",
+        ...(isX402HttpRegistration && x402Manifest
+          ? {
+              registryEntryType: "X402" as const,
+              x402Manifest,
+            }
+          : {}),
       };
 
-      const result = await startAgentRegistration(
-        {
-          user: {
-            id: user.id,
-            name: user.name ?? null,
-            email: user.email ?? null,
-          },
-          activeOrganizationId,
-          network,
-        },
-        params,
-      );
-
-      if (result.success) {
-        const agent = await prisma.agent.findFirst({
-          where: { id: result.agentId, userId: user.id },
-          include: { agentReference: true },
-        });
-        if (!agent) {
-          throw new ApiError(500, "Failed to load created agent");
-        }
-        const sourcesByAgentId = await loadSupportedPaymentSourcesMap([
-          agent.id,
-        ]);
-        const data = shapeAgentForApi(
-          agent,
-          sourcesByAgentId.get(agent.id) ?? null,
-        );
-        // Prisma types are looser than the OpenAPI response schema. Cast.
-        type StartRegistrationData = z.infer<
-          typeof startRegistrationSuccessSchema
-        >["data"];
-        return c.json(
+      let result: Awaited<ReturnType<typeof startAgentRegistration>>;
+      try {
+        result = await startAgentRegistration(
           {
-            success: true as const,
-            data: data as unknown as StartRegistrationData,
-            agentId: result.agentId,
+            user: {
+              id: user.id,
+              name: user.name ?? null,
+              email: user.email ?? null,
+            },
+            activeOrganizationId,
+            network,
           },
-          200,
+          params,
         );
+      } catch (registrationError) {
+        if (await canRefundCreditAfterRegistrationThrow(registrationAgentId)) {
+          await refundConsumedCredit({
+            userId: user.id,
+            reason: "agent_register",
+            reference: creditReference,
+            network,
+            metadata: creditMetadata,
+          });
+          throw registrationError;
+        }
+        // The agent is submittable and its credit is spent: report it as
+        // started so completion polling drives it on-chain.
+        console.error(
+          "Agent registration threw after setup; continuing:",
+          registrationError,
+        );
+        result = { success: true, agentId: registrationAgentId };
       }
-      throw new ApiError(400, result.error);
+
+      if (!result.success) {
+        await refundConsumedCredit({
+          userId: user.id,
+          reason: "agent_register",
+          reference: creditReference,
+          network,
+          metadata: creditMetadata,
+        });
+        throw new ApiError(400, result.error);
+      }
+
+      scheduleAgentRegistrationCompletion(result.agentId, user.id);
+      const agent = await prisma.agent.findFirst({
+        where: { id: result.agentId, userId: user.id },
+        include: { agentReference: true },
+      });
+      if (!agent) {
+        throw new ApiError(500, "Failed to load created agent");
+      }
+      const sourcesByAgentId = await loadSupportedPaymentSourcesMap([agent.id]);
+      const data = shapeAgentForApi(
+        agent,
+        sourcesByAgentId.get(agent.id) ?? null,
+      );
+      // Prisma types are looser than the OpenAPI response schema. Cast.
+      type StartRegistrationData = z.infer<
+        typeof startRegistrationSuccessSchema
+      >["data"];
+      return c.json(
+        {
+          success: true as const,
+          data: data as unknown as StartRegistrationData,
+          agentId: result.agentId,
+        },
+        200,
+      );
     } catch (error) {
       if (error instanceof ApiError) throw error;
       if (isPaymentNodeConfigError(error)) {
