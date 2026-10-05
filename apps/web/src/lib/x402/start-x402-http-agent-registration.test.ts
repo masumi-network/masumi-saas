@@ -6,12 +6,19 @@ const {
   startAgentRegistrationMock,
   prepareX402HttpRegistrationMock,
   validatePreflightMock,
+  canRefundCreditAfterRegistrationThrowMock,
 } = vi.hoisted(() => ({
   consumeCreditIfRequiredMock: vi.fn(),
   refundConsumedCreditMock: vi.fn(),
   startAgentRegistrationMock: vi.fn(),
   prepareX402HttpRegistrationMock: vi.fn(),
   validatePreflightMock: vi.fn(),
+  canRefundCreditAfterRegistrationThrowMock: vi.fn(),
+}));
+
+vi.mock("@/lib/agents/registration-credit-refund", () => ({
+  canRefundCreditAfterRegistrationThrow:
+    canRefundCreditAfterRegistrationThrowMock,
 }));
 
 vi.mock("@/lib/agent-registration", () => ({
@@ -49,6 +56,7 @@ describe("startX402HttpAgentRegistration", () => {
     validatePreflightMock.mockResolvedValue({ ok: true });
     consumeCreditIfRequiredMock.mockResolvedValue({ creditsRemaining: 9 });
     refundConsumedCreditMock.mockResolvedValue(undefined);
+    canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(true);
     prepareX402HttpRegistrationMock.mockResolvedValue({
       ok: true,
       data: {
@@ -83,6 +91,28 @@ describe("startX402HttpAgentRegistration", () => {
         network: "Mainnet",
       }),
     );
+  });
+
+  it("reports the agent as started when registration throws after it is submittable", async () => {
+    startAgentRegistrationMock.mockRejectedValue(new Error("db write failed"));
+    canRefundCreditAfterRegistrationThrowMock.mockResolvedValue(false);
+
+    const result = await startX402HttpAgentRegistration({
+      ctx,
+      resourceUrl: "https://x402.org/protected",
+    });
+
+    const params = startAgentRegistrationMock.mock.calls[0]?.[1];
+    expect(canRefundCreditAfterRegistrationThrowMock).toHaveBeenCalledWith(
+      params?.id,
+    );
+    // Reported as started so the batch route schedules completion polling.
+    expect(result).toEqual({
+      ok: true,
+      agentId: params?.id,
+      resourceUrl: "https://x402.org/protected",
+    });
+    expect(refundConsumedCreditMock).not.toHaveBeenCalled();
   });
 
   it("refunds when registration throws after debit", async () => {

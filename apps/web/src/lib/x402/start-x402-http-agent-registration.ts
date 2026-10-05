@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import prisma from "@masumi/database/client";
 
 import {
@@ -5,6 +7,7 @@ import {
   startAgentRegistration,
   validateAgentRegistrationPaymentSourcesPreflight,
 } from "@/lib/agent-registration";
+import { canRefundCreditAfterRegistrationThrow } from "@/lib/agents/registration-credit-refund";
 import { X402_RESOURCE_URL_BLOCKED_STATES } from "@/lib/agents/registration-state";
 import {
   consumeCreditIfRequired,
@@ -23,6 +26,10 @@ import { prepareX402HttpRegistration } from "./prepare-http-registration";
 import { resourceUrlDuplicateKey } from "./resource-url-duplicate-key";
 
 export const BATCH_X402_REGISTRATION_MAX_URLS = MAX_BATCH_RESOURCE_URLS;
+/** Registrations processed at once in one batch request. */
+export const BATCH_X402_REGISTRATION_CONCURRENCY = 5;
+/** Per-URL probe timeout in a batch, so one slow host cannot stall the request. */
+export const BATCH_X402_PROBE_TIMEOUT_MS = 15_000;
 
 export type StartX402HttpAgentRegistrationInput = {
   ctx: RegisterAgentContext;
@@ -35,6 +42,7 @@ export type StartX402HttpAgentRegistrationInput = {
   authMethod?: string;
   /** When false, name/description/tags ignore probe-derived autofill defaults. */
   useProbeMetadataAutofill?: boolean;
+  probeTimeoutMs?: number;
 };
 
 export type StartX402HttpAgentRegistrationResult =
@@ -142,6 +150,7 @@ export async function startX402HttpAgentRegistration(
   const prepared = await prepareX402HttpRegistration({
     resourceUrl: trimmedResource,
     network,
+    probeTimeoutMs: input.probeTimeoutMs,
   });
   if (!prepared.ok) {
     return {
@@ -248,9 +257,11 @@ export async function startX402HttpAgentRegistration(
     };
   }
 
-  let shouldRefundRegistrationCredit = true;
+  // Fix the id up front so a throw can tell whether the agent was persisted.
+  const registrationAgentId = randomUUID();
   try {
     const result = await startAgentRegistration(ctx, {
+      id: registrationAgentId,
       name: resolvedName,
       description: resolvedDescription,
       apiUrl: prepared.data.resourceUrl,
@@ -280,7 +291,6 @@ export async function startX402HttpAgentRegistration(
         network,
         metadata: creditMetadata,
       });
-      shouldRefundRegistrationCredit = false;
       return {
         ok: false,
         resourceUrl: prepared.data.resourceUrl,
@@ -289,22 +299,29 @@ export async function startX402HttpAgentRegistration(
       };
     }
 
-    shouldRefundRegistrationCredit = false;
     return {
       ok: true,
       agentId: result.agentId,
       resourceUrl: prepared.data.resourceUrl,
     };
   } catch (error) {
-    if (shouldRefundRegistrationCredit) {
-      await refundConsumedCredit({
-        userId: user.id,
-        reason: "agent_register",
-        reference: creditReference,
-        network,
-        metadata: creditMetadata,
-      });
+    if (!(await canRefundCreditAfterRegistrationThrow(registrationAgentId))) {
+      // The agent is submittable and its credit is spent: report it as
+      // started so the caller schedules completion polling.
+      console.error("x402 registration threw after setup; continuing:", error);
+      return {
+        ok: true,
+        agentId: registrationAgentId,
+        resourceUrl: prepared.data.resourceUrl,
+      };
     }
+    await refundConsumedCredit({
+      userId: user.id,
+      reason: "agent_register",
+      reference: creditReference,
+      network,
+      metadata: creditMetadata,
+    });
     const message =
       error instanceof Error ? error.message : "Registration failed.";
     return {

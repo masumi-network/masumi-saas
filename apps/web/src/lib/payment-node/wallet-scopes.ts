@@ -70,7 +70,32 @@ async function getRegistrationFundingWalletIds(params: {
   );
 }
 
-export async function ensureUserPaymentNodeKeyScopedToWallets(params: {
+/**
+ * Per-user tail of in-flight scope updates. The update reads the scope list,
+ * then replaces it, so concurrent calls for one user (batch registration)
+ * would overwrite each other's wallets without this.
+ */
+const userScopeUpdateChains = new Map<string, Promise<void>>();
+
+export function ensureUserPaymentNodeKeyScopedToWallets(params: {
+  userId: string;
+  walletIds: Array<string | null | undefined>;
+}): Promise<void> {
+  const previous = userScopeUpdateChains.get(params.userId);
+  const run = (previous ?? Promise.resolve()).then(() =>
+    scopeUserPaymentNodeKeyToWallets(params),
+  );
+  const tail = run.catch(() => {});
+  userScopeUpdateChains.set(params.userId, tail);
+  void tail.then(() => {
+    if (userScopeUpdateChains.get(params.userId) === tail) {
+      userScopeUpdateChains.delete(params.userId);
+    }
+  });
+  return run;
+}
+
+async function scopeUserPaymentNodeKeyToWallets(params: {
   userId: string;
   walletIds: Array<string | null | undefined>;
 }): Promise<void> {

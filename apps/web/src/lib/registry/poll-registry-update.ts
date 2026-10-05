@@ -68,11 +68,6 @@ export async function pollRegistryUpdate(
 ): Promise<{ agentIdentifier: string } | { error: string }> {
   const deadline = Date.now() + REGISTRY_UPDATE_POLL_TIMEOUT_MS;
   let consecutiveErrors = 0;
-  let lastEntry: Awaited<
-    ReturnType<
-      ReturnType<typeof createAdminPaymentNodeClient>["getRegistryById"]
-    >
-  > | null = null;
   let sawUpdateInFlight = false;
 
   while (Date.now() < deadline) {
@@ -102,7 +97,6 @@ export async function pollRegistryUpdate(
     if (!entry) {
       return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
     }
-    lastEntry = entry;
 
     if (UPDATE_FAILURE_STATES.has(entry.state)) {
       return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
@@ -158,14 +152,6 @@ export async function pollRegistryUpdate(
     }
 
     await sleep(REGISTRY_UPDATE_POLL_INTERVAL_MS);
-  }
-
-  if (
-    lastEntry &&
-    (lastEntry.state === "UpdateRequested" ||
-      lastEntry.state === "UpdateInitiated")
-  ) {
-    return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
   }
 
   return { error: REGISTRY_UPDATE_USER_FACING_ERROR };
