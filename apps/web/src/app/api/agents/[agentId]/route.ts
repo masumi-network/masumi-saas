@@ -258,11 +258,20 @@ app.openapi(
       updateCreditMetadata = creditMetadata;
       updateCreditNetwork = network;
 
-      const result = await updateAgentDetails({
-        userId: authContext.user.id,
-        agentId,
-        body,
-      });
+      let result: Awaited<ReturnType<typeof updateAgentDetails>>;
+      try {
+        result = await updateAgentDetails({
+          userId: authContext.user.id,
+          agentId,
+          body,
+        });
+      } catch (updateError) {
+        // updateAgentDetails reports every failure before the registry update
+        // as a result. A throw means the update was already sent and will
+        // still apply on-chain, so the credit stays consumed.
+        shouldRefundUpdateCredit = false;
+        throw updateError;
+      }
 
       if (!result.success) {
         await refundConsumedCredit({
