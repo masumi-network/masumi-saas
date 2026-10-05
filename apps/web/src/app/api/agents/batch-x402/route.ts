@@ -12,11 +12,11 @@ import {
   security,
   stdResponses,
 } from "@/lib/swagger/saas-app-openapi";
+import { mapWithConcurrency } from "@/lib/utils/map-with-concurrency";
 import {
   canonicalX402ResourceUrl,
   resourceUrlDuplicateKey,
 } from "@/lib/x402/resource-url-duplicate-key";
-import { mapWithConcurrency } from "@/lib/utils/map-with-concurrency";
 import {
   BATCH_X402_PROBE_TIMEOUT_MS,
   BATCH_X402_REGISTRATION_CONCURRENCY,
