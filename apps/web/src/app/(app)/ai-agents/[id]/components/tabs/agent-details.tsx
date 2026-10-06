@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
-import { MasumiCursorGlowCard } from "@/components/ui/masumi-cursor-glow-card";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -336,7 +335,7 @@ export function AgentDetails({
         data-agent-details-grid
       >
         <div className="flex min-w-0 flex-col gap-6 lg:col-start-1 lg:row-start-1">
-          <MasumiCursorGlowCard className="gap-0 py-0">
+          <Card className="gap-0 py-0">
             <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
               <CardTitle className="text-base font-semibold">
                 {t("overview")}
@@ -558,7 +557,7 @@ export function AgentDetails({
                 </>
               ) : null}
             </CardContent>
-          </MasumiCursorGlowCard>
+          </Card>
         </div>
 
         <AgentDetailsPinnedAside className="lg:col-start-2 lg:row-start-1 lg:row-span-2">

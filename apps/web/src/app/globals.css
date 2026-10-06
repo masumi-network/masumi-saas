@@ -147,36 +147,6 @@
     background-image: var(--gradient-masumi-header);
   }
 
-  /* Horizontal cursor glow for Masumi cards ( --masumi-glow-x: 0%–100% ) */
-  .masumi-card-cursor-glow {
-    --masumi-glow-x: 50%;
-    background-image:
-      radial-gradient(
-        ellipse 42% 95% at var(--masumi-glow-x) -8%,
-        color-mix(in srgb, var(--color-masumi-iris-flower) 14%, transparent),
-        transparent 62%
-      ),
-      radial-gradient(
-        ellipse 28% 70% at var(--masumi-glow-x) 0%,
-        color-mix(in srgb, var(--color-masumi-crimson-purple) 10%, transparent),
-        transparent 58%
-      );
-  }
-
-  .dark .masumi-card-cursor-glow {
-    background-image:
-      radial-gradient(
-        ellipse 42% 95% at var(--masumi-glow-x) -8%,
-        color-mix(in srgb, var(--color-masumi-electric-pink) 18%, transparent),
-        transparent 62%
-      ),
-      radial-gradient(
-        ellipse 28% 70% at var(--masumi-glow-x) 0%,
-        color-mix(in srgb, var(--color-masumi-crimson-purple) 14%, transparent),
-        transparent 58%
-      );
-  }
-
   .app-canvas-glow-layer {
     pointer-events: none;
     position: absolute;
