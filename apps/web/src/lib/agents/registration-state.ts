@@ -376,3 +376,21 @@ export function isAgentBulkActionSelectable(params: {
 }): boolean {
   return isAgentDeletable(params) || isAgentDeregisterable(params);
 }
+
+/** Set once when the agent first enters RegistrationInitiated (not on every sync). */
+export function registrationInitiatedAtForAgentUpdate(params: {
+  registrationState: string;
+  previousState: string;
+  existingRegistrationInitiatedAt: Date | null | undefined;
+}): Date | undefined {
+  if (params.existingRegistrationInitiatedAt) {
+    return undefined;
+  }
+  if (params.registrationState !== "RegistrationInitiated") {
+    return undefined;
+  }
+  if (params.previousState === "RegistrationInitiated") {
+    return undefined;
+  }
+  return new Date();
+}

@@ -447,7 +447,8 @@ model Agent {
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   // Registration
-  registrationState RegistrationState @default(RegistrationConfirmed)
+  registrationState         RegistrationState @default(RegistrationConfirmed)
+  registrationInitiatedAt   DateTime?
 
   // Runtime provider
   runtimeProvider         AgentRuntimeProvider   @default(DIRECT_MIP)

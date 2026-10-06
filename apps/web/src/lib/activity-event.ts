@@ -28,6 +28,22 @@ export async function recordAgentActivityEvent(
       console.error("[Activity] Agent not found for event:", type, agentId);
       return;
     }
+
+    const idempotentMilestoneTypes: AgentActivityEventType[] = [
+      "RegistrationConfirmed",
+      "RegistrationFailed",
+      "DeregistrationConfirmed",
+    ];
+    if (idempotentMilestoneTypes.includes(type)) {
+      const existing = await prisma.agentActivityEvent.findFirst({
+        where: { agentId, type },
+        select: { id: true },
+      });
+      if (existing) {
+        return;
+      }
+    }
+
     await prisma.agentActivityEvent.create({
       data: {
         agentId,

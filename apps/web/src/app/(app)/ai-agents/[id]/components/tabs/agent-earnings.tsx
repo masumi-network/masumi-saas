@@ -131,7 +131,7 @@ export function AgentEarnings({ agent }: AgentEarningsProps) {
   const hasNoEarnings = txCount === 0;
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-3">
+    <div className="w-full space-y-3">
       {error && dataToShow && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
           <p className="text-destructive">{error}</p>
