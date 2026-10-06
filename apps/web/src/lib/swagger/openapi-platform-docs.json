@@ -20794,6 +20794,295 @@
         }
       }
     },
+    "/api/public/x402/sokosumi-compatibility": {
+      "post": {
+        "tags": [
+          "x402"
+        ],
+        "summary": "Check Sokosumi buy-side compatibility for an x402 HTTP resource",
+        "description": "Public, unauthenticated live probe. GETs the resource URL, parses the 402 payment requirements for the requested EVM network (default Base mainnet `eip155:8453`), and returns Sokosumi hire gate results. Does not register an agent or consume credits.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resourceUrl": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "format": "uri"
+                  },
+                  "evmNetwork": {
+                    "type": "string",
+                    "enum": [
+                      "eip155:8453",
+                      "eip155:84532"
+                    ]
+                  }
+                },
+                "required": [
+                  "resourceUrl"
+                ],
+                "example": {
+                  "resourceUrl": "https://api.example.com/paid-endpoint",
+                  "evmNetwork": "eip155:8453"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Probe completed (resource may still be incompatible)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "sokosumiCompatible": {
+                      "type": "boolean"
+                    },
+                    "incompatibleReason": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "checks": {
+                      "type": "object",
+                      "properties": {
+                        "schemeExact": {
+                          "type": "boolean"
+                        },
+                        "transferMethodEip3009OrAbsent": {
+                          "type": "boolean"
+                        },
+                        "trustedEip712Domain": {
+                          "type": "boolean"
+                        },
+                        "samePairEntriesAgree": {
+                          "type": "boolean"
+                        },
+                        "hasTimeoutWindow": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "schemeExact",
+                        "transferMethodEip3009OrAbsent",
+                        "trustedEip712Domain",
+                        "samePairEntriesAgree",
+                        "hasTimeoutWindow"
+                      ]
+                    },
+                    "resourceUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "evmNetwork": {
+                      "type": "string"
+                    },
+                    "accept": {
+                      "type": "object",
+                      "properties": {
+                        "scheme": {
+                          "type": "string"
+                        },
+                        "asset": {
+                          "type": "string"
+                        },
+                        "payTo": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "maxTimeoutSeconds": {
+                          "type": "number",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "scheme",
+                        "asset",
+                        "payTo",
+                        "amount",
+                        "maxTimeoutSeconds"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "sokosumiCompatible",
+                    "incompatibleReason",
+                    "checks",
+                    "resourceUrl",
+                    "evmNetwork",
+                    "accept"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — valid session or API key required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — insufficient role or feature not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/register/email": {
       "post": {
         "tags": [

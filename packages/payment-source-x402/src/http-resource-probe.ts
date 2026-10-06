@@ -163,11 +163,15 @@ function inferDecimals(network: string, assetLower: string): number {
   return 6;
 }
 
+/** Max upstream 402 body buffered during live probe (public endpoint abuse guard). */
+export const MAX_PROBE_RESPONSE_BODY_BYTES = 256 * 1024;
+
 export type ProbeX402HttpResourceOptions = {
   resourceUrl: string;
   evmNetwork: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  maxResponseBodyBytes?: number;
 };
 
 export type ProbeX402HttpResourceResult =
@@ -182,15 +186,92 @@ export type ProbeX402HttpResourceResult =
       httpStatus?: number;
     };
 
+const SOKOSUMI_INCOMPATIBLE_REASON =
+  "This resource is not Sokosumi-compatible (scheme, transfer method, USDC domain, or conflicting accepts).";
+
+const PROBE_BODY_TOO_LARGE =
+  "Probe response body exceeds the allowed size limit.";
+
+async function readResponseTextWithLimit(
+  res: Response,
+  maxBytes: number,
+): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  const contentLength = res.headers.get("content-length");
+  if (contentLength != null) {
+    const len = Number(contentLength);
+    if (Number.isFinite(len) && len > maxBytes) {
+      return { ok: false, error: PROBE_BODY_TOO_LARGE };
+    }
+  }
+
+  if (!res.body) {
+    const text = await res.text();
+    if (text.length > maxBytes) {
+      return { ok: false, error: PROBE_BODY_TOO_LARGE };
+    }
+    return { ok: true, text };
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let total = 0;
+  let text = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel();
+        return { ok: false, error: PROBE_BODY_TOO_LARGE };
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
+    return { ok: true, text };
+  } catch {
+    return { ok: false, error: "Failed to read probe response body." };
+  }
+}
+
+type ProbeX402HttpResourceCoreResult =
+  | {
+      ok: true;
+      row: X402HttpProbeRow;
+      compatibility: SokosumiCompatibilityResult;
+      httpStatus: number;
+    }
+  | {
+      ok: false;
+      error: string;
+      httpStatus?: number;
+    };
+
+export type EvaluateX402SokosumiCompatibilityResult =
+  | {
+      ok: true;
+      sokosumiCompatible: boolean;
+      incompatibleReason: string | null;
+      checks: SokosumiCompatibilityResult["checks"];
+      row: X402HttpProbeRow;
+    }
+  | {
+      ok: false;
+      error: string;
+      httpStatus?: number;
+    };
+
 /**
  * GET the resource URL without payment; require 402 (or JSON with accepts).
  */
-export async function probeX402HttpResource(
+async function probeX402HttpResourceCore(
   options: ProbeX402HttpResourceOptions,
-): Promise<ProbeX402HttpResourceResult> {
+): Promise<ProbeX402HttpResourceCoreResult> {
   const { resourceUrl, evmNetwork } = options;
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 60_000;
+  const maxResponseBodyBytes =
+    options.maxResponseBodyBytes ?? MAX_PROBE_RESPONSE_BODY_BYTES;
 
   let parsed: URL;
   try {
@@ -218,7 +299,11 @@ export async function probeX402HttpResource(
 
   const paymentHeader =
     res.headers.get("payment-required") ?? res.headers.get("PAYMENT-REQUIRED");
-  const body = await res.text();
+  const bodyRead = await readResponseTextWithLimit(res, maxResponseBodyBytes);
+  if (!bodyRead.ok) {
+    return { ok: false, error: bodyRead.error, httpStatus: res.status };
+  }
+  const body = bodyRead.text;
   const bodyDoc = tryParseJson(body);
   const headerDoc = parsePaymentRequiredHeader(paymentHeader);
   const doc = hasAccepts(bodyDoc)
@@ -299,14 +384,45 @@ export async function probeX402HttpResource(
     probedAt: new Date().toISOString(),
   };
 
-  if (!compatibility.compatible) {
+  return { ok: true, row, compatibility, httpStatus: res.status };
+}
+
+export async function probeX402HttpResource(
+  options: ProbeX402HttpResourceOptions,
+): Promise<ProbeX402HttpResourceResult> {
+  const core = await probeX402HttpResourceCore(options);
+  if (!core.ok) {
+    return core;
+  }
+  if (!core.compatibility.compatible) {
     return {
       ok: false,
-      error:
-        "This resource is not Sokosumi-compatible (scheme, transfer method, USDC domain, or conflicting accepts).",
-      httpStatus: res.status,
+      error: SOKOSUMI_INCOMPATIBLE_REASON,
+      httpStatus: core.httpStatus,
     };
   }
+  return {
+    ok: true,
+    row: core.row,
+    compatibility: core.compatibility,
+  };
+}
 
-  return { ok: true, row, compatibility };
+/** Live 402 probe that always returns Sokosumi gate results when payment data parses. */
+export async function evaluateX402SokosumiCompatibility(
+  options: ProbeX402HttpResourceOptions,
+): Promise<EvaluateX402SokosumiCompatibilityResult> {
+  const core = await probeX402HttpResourceCore(options);
+  if (!core.ok) {
+    return core;
+  }
+  return {
+    ok: true,
+    sokosumiCompatible: core.compatibility.compatible,
+    incompatibleReason: core.compatibility.compatible
+      ? null
+      : SOKOSUMI_INCOMPATIBLE_REASON,
+    checks: core.compatibility.checks,
+    row: core.row,
+  };
 }
