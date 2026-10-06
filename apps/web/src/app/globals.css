@@ -759,6 +759,52 @@ input[type="number"] {
   }
 }
 
+/* Agent registration status timeline (same rail pattern as masumi.network register) */
+@keyframes agent-status-rail-travel-down {
+  0% {
+    background-position: 0 -60%;
+  }
+  100% {
+    background-position: 0 160%;
+  }
+}
+
+@keyframes agent-status-progress-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, hsl(var(--primary)) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, hsl(var(--primary)) 0%, transparent);
+  }
+}
+
+.agent-status-progress-rail {
+  background: hsl(var(--border));
+}
+
+.agent-status-progress-rail--done {
+  background: hsl(var(--primary));
+}
+
+.agent-status-progress-rail--active {
+  background-color: hsl(var(--border));
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    hsl(var(--primary)) 45%,
+    hsl(var(--primary)) 55%,
+    transparent 100%
+  );
+  background-size: 100% 35%;
+  background-repeat: no-repeat;
+  animation: agent-status-rail-travel-down 1.8s linear infinite;
+}
+
+.agent-status-progress-pulse {
+  animation: agent-status-progress-pulse 2.2s ease-in-out infinite;
+}
+
 /* QR Code Container Styling for Veridian Wallet */
 #veridian-qr-container {
   div {
@@ -788,5 +834,10 @@ input[type="number"] {
   .animate-badge-blink {
     animation: none !important;
     opacity: 1 !important;
+  }
+
+  .agent-status-progress-rail--active,
+  .agent-status-progress-pulse {
+    animation: none !important;
   }
 }

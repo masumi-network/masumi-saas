@@ -32,6 +32,14 @@ import {
 
 interface AgentPageContentProps {
   agent: Agent;
+  /** ISO timestamp from the server-side registry sync before this page rendered. */
+  registrationSyncedAt?: string;
+}
+
+function parseRegistrationSyncedAt(iso: string | undefined): Date | null {
+  if (!iso) return null;
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 const DEFAULT_TAB = "details";
@@ -46,6 +54,7 @@ function isValidNetwork(
 
 export function AgentPageContent({
   agent: initialAgent,
+  registrationSyncedAt,
 }: AgentPageContentProps) {
   const t = useTranslations("App.Agents.Details");
   const tTabs = useTranslations("App.Agents");
@@ -64,6 +73,17 @@ export function AgentPageContent({
     string | null
   >(null);
   const [pendingBannerRefreshKey, setPendingBannerRefreshKey] = useState(0);
+  /** Last payment-node registry sync (client clock), not agent.updatedAt. */
+  const [lastRegistrationSyncedAt, setLastRegistrationSyncedAt] =
+    useState<Date | null>(() =>
+      parseRegistrationSyncedAt(registrationSyncedAt),
+    );
+  const [
+    isInitialRegistrationSyncPending,
+    setIsInitialRegistrationSyncPending,
+  ] = useState(() => !parseRegistrationSyncedAt(registrationSyncedAt));
+  const registrationSyncedAtRef = useRef(registrationSyncedAt);
+  registrationSyncedAtRef.current = registrationSyncedAt;
   const initialAgentRef = useRef(initialAgent);
   initialAgentRef.current = initialAgent;
   const [networkDialogDismissed, setNetworkDialogDismissed] = useState(false);
@@ -74,6 +94,12 @@ export function AgentPageContent({
     setAgent(initialAgentRef.current);
     setResumePendingCredentialId(null);
     setNetworkDialogDismissed(false);
+    setLastRegistrationSyncedAt(
+      parseRegistrationSyncedAt(registrationSyncedAtRef.current),
+    );
+    setIsInitialRegistrationSyncPending(
+      !parseRegistrationSyncedAt(registrationSyncedAtRef.current),
+    );
     switchingNetworkRef.current = false;
   }, [initialAgent.id]);
 
@@ -122,6 +148,7 @@ export function AgentPageContent({
     await syncAgentRegistrationStatusAction(agent.id);
     const result = await agentApiClient.getAgent(agent.id);
     if (result.success && result.data) setAgent(result.data);
+    setLastRegistrationSyncedAt(new Date());
   }, [agent.id]);
 
   const syncAndRefetchRef = useRef(syncAndRefetch);
@@ -141,7 +168,22 @@ export function AgentPageContent({
   useEffect(() => {
     if (mountSyncAgentIdRef.current === agent.id) return;
     mountSyncAgentIdRef.current = agent.id;
-    void syncAndRefetchRef.current();
+    let cancelled = false;
+    void (async () => {
+      if (!parseRegistrationSyncedAt(registrationSyncedAtRef.current)) {
+        setIsInitialRegistrationSyncPending(true);
+      }
+      try {
+        await syncAndRefetchRef.current();
+      } finally {
+        if (!cancelled) {
+          setIsInitialRegistrationSyncPending(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [agent.id]);
 
   // Poll while pending: one run then chain next every 12s.
@@ -319,12 +361,11 @@ export function AgentPageContent({
 
   return (
     <>
-      <div className="flex flex-col gap-8 pb-3 pt-1">
+      <div className="flex w-full flex-col gap-8 pb-3 pt-1">
         <AgentPageHeader
           agent={agent}
           backHref={backHref}
           backLabel={backLabel}
-          onRefreshRegistrationStatus={syncAndRefetch}
         />
         {agentVerificationUiEnabled ? (
           <PendingWalletAcceptanceBanner
@@ -347,6 +388,9 @@ export function AgentPageContent({
           }
           onAgentUpdated={setAgent}
           onViewVerificationTab={() => handleTabChange(VERIFICATION_TAB)}
+          onSyncAgent={syncAndRefetch}
+          lastRegistrationSyncedAt={lastRegistrationSyncedAt}
+          isInitialRegistrationSyncPending={isInitialRegistrationSyncPending}
         />
       )}
 

@@ -32,6 +32,8 @@ export type Agent = {
     | "UpdateInitiated"
     | "UpdateConfirmed"
     | "UpdateFailed";
+  /** When the agent first entered RegistrationInitiated (stable across sync). */
+  registrationInitiatedAt: Date | string | null;
   verificationStatus: "PENDING" | "VERIFIED" | "REVOKED" | "EXPIRED" | null;
   createdAt: Date;
   updatedAt: Date;
