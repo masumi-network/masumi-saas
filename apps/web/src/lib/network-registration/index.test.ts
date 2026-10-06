@@ -116,6 +116,32 @@ describe("buildNetworkRegistrationPayload", () => {
     });
     expect(parsed.mint.kyc).toBe("skip");
   });
+
+  it("accepts x402 HTTP resource registration without payout or payment", () => {
+    const { payment: _payment, ...withoutPayment } = base;
+    const parsed = networkRegisterBodySchema.parse({
+      ...withoutPayment,
+      registrationKind: "X402_HTTP",
+      mint: {
+        destination: "managed",
+      },
+    });
+    expect(parsed.registrationKind).toBe("X402_HTTP");
+    const payload = buildNetworkRegistrationPayload(parsed);
+    expect(payload.registrationKind).toBe("X402_HTTP");
+    expect(payload.payment).toBeUndefined();
+    expect(payload.effectiveDestination).toBe("managed");
+  });
+
+  it("rejects x402 HTTP registration with seller x402 payment block", () => {
+    expect(() =>
+      networkRegisterBodySchema.parse({
+        ...base,
+        registrationKind: "X402_HTTP",
+        mint: { destination: "managed" },
+      }),
+    ).toThrow();
+  });
 });
 
 describe("resolveNetworkRegistrationCommerce", () => {

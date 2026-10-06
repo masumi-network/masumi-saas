@@ -19900,6 +19900,14 @@
                       true
                     ]
                   },
+                  "registrationKind": {
+                    "type": "string",
+                    "enum": [
+                      "STANDARD",
+                      "X402_HTTP"
+                    ],
+                    "default": "STANDARD"
+                  },
                   "agent": {
                     "type": "object",
                     "properties": {
@@ -20236,6 +20244,181 @@
           },
           "429": {
             "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/network/register/probe": {
+      "post": {
+        "tags": [
+          "Network"
+        ],
+        "summary": "Probe an x402 HTTP resource for network registration",
+        "description": "Validates that a public HTTP URL returns a Sokosumi-compatible 402 for the selected Cardano registry network.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resourceUrl": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "format": "uri"
+                  },
+                  "cardanoNetwork": {
+                    "type": "string",
+                    "enum": [
+                      "Mainnet",
+                      "Preprod"
+                    ]
+                  }
+                },
+                "required": [
+                  "resourceUrl",
+                  "cardanoNetwork"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Probe succeeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "resourceUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "compatible": {
+                      "type": "boolean"
+                    },
+                    "checks": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "nullable": true
+                      }
+                    },
+                    "autofill": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "description",
+                        "tags"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "resourceUrl",
+                    "compatible",
+                    "checks",
+                    "autofill"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid URL or incompatible 402",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Probe failed",
             "content": {
               "application/json": {
                 "schema": {

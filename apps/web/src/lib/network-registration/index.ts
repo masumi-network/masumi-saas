@@ -23,6 +23,7 @@ import type { PaymentNodeNetwork } from "@/lib/payment-node";
 import { validatePayoutAddressForNetwork } from "@/lib/payment-node/payout-address";
 import { getNetworkRegisterCapabilities } from "@/lib/payment-node/registry-capabilities";
 import { assertAllowedAgentApiUrl } from "@/lib/security/outbound-url";
+import { startX402HttpAgentRegistration } from "@/lib/x402/start-x402-http-agent-registration";
 import { z } from "@/lib/zod-openapi";
 
 const DRAFT_TTL_MS = 1000 * 60 * 60 * 24; // 24h
@@ -36,10 +37,14 @@ type DraftStatus =
   | "FAILED"
   | "EXPIRED";
 
-export const networkRegisterBodySchema = z.object({
+const networkRegisterBodyCoreSchema = z.object({
   name: z.string().min(1).max(120),
   email: z.string().email(),
   termsAccepted: z.literal(true),
+  registrationKind: z
+    .enum(["STANDARD", "X402_HTTP"])
+    .optional()
+    .default("STANDARD"),
   agent: z.object({
     name: z.string().min(1).max(250),
     description: z.string().max(250).optional().or(z.literal("")),
@@ -80,7 +85,44 @@ export const networkRegisterBodySchema = z.object({
   cardanoNetwork: z.enum(["Preprod", "Mainnet"]).default("Preprod"),
 });
 
-export type NetworkRegisterBody = z.infer<typeof networkRegisterBodySchema>;
+function refineNetworkRegisterBody(
+  body: z.infer<typeof networkRegisterBodyCoreSchema>,
+  ctx: z.RefinementCtx,
+) {
+  const kind = body.registrationKind ?? "STANDARD";
+  if (kind === "X402_HTTP") {
+    if (body.payment) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "x402 HTTP resource registration builds EVM payment rails from the live 402 response.",
+        path: ["payment"],
+      });
+    }
+    if (body.mint.destination !== "managed") {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "x402 HTTP resource registration requires a Masumi-managed wallet.",
+        path: ["mint", "destination"],
+      });
+    }
+    return;
+  }
+
+  if (body.mint.destination === "managed" && !body.mint.payoutAddress?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Cardano payout address is required for managed registration.",
+      path: ["mint", "payoutAddress"],
+    });
+  }
+}
+
+export const networkRegisterBodySchema =
+  networkRegisterBodyCoreSchema.superRefine(refineNetworkRegisterBody);
+
+export type NetworkRegisterBody = z.infer<typeof networkRegisterBodyCoreSchema>;
 
 export const networkRegisterAccountBodySchema = z.object({
   name: z.string().min(1).max(120),
@@ -92,16 +134,18 @@ export type NetworkRegisterAccountBody = z.infer<
   typeof networkRegisterAccountBodySchema
 >;
 
-export const networkRegisterCompleteBodySchema =
-  networkRegisterBodySchema.extend({
+export const networkRegisterCompleteBodySchema = networkRegisterBodyCoreSchema
+  .extend({
     registrationToken: z.string().min(1),
-  });
+  })
+  .superRefine(refineNetworkRegisterBody);
 
 export type NetworkRegisterCompleteBody = z.infer<
   typeof networkRegisterCompleteBodySchema
 >;
 
 export type NetworkRegistrationPayload = {
+  registrationKind: "STANDARD" | "X402_HTTP";
   agent: NetworkRegisterBody["agent"];
   payment?: NetworkRegisterBody["payment"];
   mint: NetworkRegisterBody["mint"];
@@ -154,6 +198,22 @@ export function buildNetworkRegistrationPayload(
 ): NetworkRegistrationPayload {
   const notes: string[] = [];
   const destination = body.mint.destination;
+  const registrationKind = body.registrationKind ?? "STANDARD";
+
+  if (registrationKind === "X402_HTTP") {
+    notes.push(
+      "Masumi probes your HTTP endpoint, hosts an x402 manifest, and mints a registry agent with type X402.",
+    );
+    notes.push("Your agent NFT is minted into a Masumi-managed wallet.");
+    return {
+      registrationKind,
+      agent: body.agent,
+      mint: body.mint,
+      cardanoNetwork: body.cardanoNetwork,
+      effectiveDestination: "managed",
+      notes,
+    };
+  }
 
   if (body.mint.kyc === "kyc" && !isKycVerificationEnabled()) {
     throw new Error(
@@ -170,6 +230,7 @@ export function buildNetworkRegistrationPayload(
       notes.push("Your agent NFT is minted into a Masumi-managed wallet.");
     }
     return {
+      registrationKind,
       agent: body.agent,
       ...(body.payment ? { payment: body.payment } : {}),
       mint: body.mint,
@@ -199,6 +260,7 @@ export function buildNetworkRegistrationPayload(
       "Your connected Cardano address receives the registry NFT and min-UTXO. Mint fees are sponsored in this PoC.",
     );
     return {
+      registrationKind,
       agent: body.agent,
       ...(body.payment ? { payment: body.payment } : {}),
       mint: body.mint,
@@ -219,6 +281,7 @@ export function buildNetworkRegistrationPayload(
     "After KYC, your Cardano address receives the registry NFT and min-UTXO.",
   );
   return {
+    registrationKind,
     agent: body.agent,
     ...(body.payment ? { payment: body.payment } : {}),
     mint: body.mint,
@@ -1006,36 +1069,7 @@ export async function fulfillNetworkRegistrationDraft(params: {
 
   try {
     const network = payload.cardanoNetwork;
-    const { agentPricing, supportedPaymentSources } =
-      resolveNetworkRegistrationCommerce(payload);
-
-    const preflight = await validateAgentRegistrationPaymentSourcesPreflight(
-      network,
-      supportedPaymentSources,
-      agentPricing,
-    );
-    if (!preflight.ok) {
-      throw new Error(preflight.error);
-    }
-
-    let payoutAddress = "";
-    let registryNftRecipientAddress: string | undefined;
-
-    if (payload.effectiveDestination === "managed") {
-      const managedPayout = payload.mint.payoutAddress?.trim() ?? "";
-      const payoutError = validatePayoutAddressForNetwork(
-        managedPayout,
-        network,
-      );
-      if (payoutError) throw new Error(payoutError);
-      payoutAddress = managedPayout;
-    } else {
-      const dest = payload.mint.cardanoAddress?.trim() ?? "";
-      const destError = validatePayoutAddressForNetwork(dest, network);
-      if (destError) throw new Error(destError);
-      registryNftRecipientAddress = dest;
-      payoutAddress = dest;
-    }
+    const isX402Http = (payload.registrationKind ?? "STANDARD") === "X402_HTTP";
 
     const tags = payload.agent.tags
       .split(",")
@@ -1098,71 +1132,147 @@ export async function fulfillNetworkRegistrationDraft(params: {
 
     await assertClaimHeld();
 
-    const started = await startAgentRegistration(
-      {
-        user: params.user,
-        activeOrganizationId: params.activeOrganizationId,
-        network,
-      },
-      {
-        id: draft.id,
-        name: payload.agent.name,
-        description: payload.agent.description?.trim() || null,
-        apiUrl: payload.agent.apiUrl,
-        tags,
-        icon: null,
-        agentPricing,
-        exampleOutputs: [],
-        capabilityName: tags[0] || "Masumi",
-        capabilityVersion: "1.0",
-        supportedPaymentSources,
-        payoutAddress,
-        registryNftRecipientAddress,
-      },
-    );
+    let startedAgentId: string;
 
-    if (!started.success) {
-      doRuntimeDebugLog("network-register", "startAgentRegistration failed", {
+    if (isX402Http) {
+      const started = await startX402HttpAgentRegistration({
+        ctx: {
+          user: params.user,
+          activeOrganizationId: params.activeOrganizationId,
+          network,
+        },
+        resourceUrl: payload.agent.apiUrl,
+        name: payload.agent.name,
+        description: payload.agent.description?.trim() || undefined,
+        tags,
+        agentId: draft.id,
+        skipCreditConsumption: true,
+        authMethod: "network-site",
+        useProbeMetadataAutofill: false,
+      });
+      if (!started.ok) {
+        doRuntimeDebugLog(
+          "network-register",
+          "startX402HttpAgentRegistration failed",
+          {
+            draftId: draft.id,
+            userId: params.user.id,
+            network,
+            error: started.error,
+          },
+        );
+        throw new Error(started.error);
+      }
+      startedAgentId = started.agentId;
+      doRuntimeDebugLog(
+        "network-register",
+        "startX402HttpAgentRegistration ok",
+        {
+          draftId: draft.id,
+          userId: params.user.id,
+          agentId: startedAgentId,
+          network,
+        },
+      );
+    } else {
+      const { agentPricing, supportedPaymentSources } =
+        resolveNetworkRegistrationCommerce(payload);
+
+      const preflight = await validateAgentRegistrationPaymentSourcesPreflight(
+        network,
+        supportedPaymentSources,
+        agentPricing,
+      );
+      if (!preflight.ok) {
+        throw new Error(preflight.error);
+      }
+
+      let payoutAddress = "";
+      let registryNftRecipientAddress: string | undefined;
+
+      if (payload.effectiveDestination === "managed") {
+        const managedPayout = payload.mint.payoutAddress?.trim() ?? "";
+        const payoutError = validatePayoutAddressForNetwork(
+          managedPayout,
+          network,
+        );
+        if (payoutError) throw new Error(payoutError);
+        payoutAddress = managedPayout;
+      } else {
+        const dest = payload.mint.cardanoAddress?.trim() ?? "";
+        const destError = validatePayoutAddressForNetwork(dest, network);
+        if (destError) throw new Error(destError);
+        registryNftRecipientAddress = dest;
+        payoutAddress = dest;
+      }
+
+      const started = await startAgentRegistration(
+        {
+          user: params.user,
+          activeOrganizationId: params.activeOrganizationId,
+          network,
+        },
+        {
+          id: draft.id,
+          name: payload.agent.name,
+          description: payload.agent.description?.trim() || null,
+          apiUrl: payload.agent.apiUrl,
+          tags,
+          icon: null,
+          agentPricing,
+          exampleOutputs: [],
+          capabilityName: tags[0] || "Masumi",
+          capabilityVersion: "1.0",
+          supportedPaymentSources,
+          payoutAddress,
+          registryNftRecipientAddress,
+        },
+      );
+
+      if (!started.success) {
+        doRuntimeDebugLog("network-register", "startAgentRegistration failed", {
+          draftId: draft.id,
+          userId: params.user.id,
+          network,
+          error: started.error,
+        });
+        throw new Error(started.error);
+      }
+
+      startedAgentId = started.agentId;
+      doRuntimeDebugLog("network-register", "startAgentRegistration ok", {
         draftId: draft.id,
         userId: params.user.id,
+        agentId: startedAgentId,
         network,
-        error: started.error,
       });
-      throw new Error(started.error);
     }
-
-    doRuntimeDebugLog("network-register", "startAgentRegistration ok", {
-      draftId: draft.id,
-      userId: params.user.id,
-      agentId: started.agentId,
-      network,
-    });
 
     if (params.deferOnChainPolling) {
       await prisma.networkRegistrationDraft.update({
         where: { id: draft.id },
         data: {
-          agentId: started.agentId,
+          agentId: startedAgentId,
           status: "PROCESSING",
           error: null,
           userId: params.user.id,
         },
       });
       return buildFulfilledOkResult({
-        agentId: started.agentId,
+        agentId: startedAgentId,
         status: "pending",
         notes: payload.notes,
         payload,
       });
     }
 
-    const complete = await pollComplete(started.agentId, params.user.id);
+    const complete = await pollComplete(startedAgentId, params.user.id);
 
     if (!complete.ok) {
       await prisma.networkRegistrationDraft.update({
         where: { id: draft.id },
         data: {
-          agentId: started.agentId,
+          agentId: startedAgentId,
           status: "FAILED",
           error: complete.error,
           userId: params.user.id,
@@ -1172,7 +1282,7 @@ export async function fulfillNetworkRegistrationDraft(params: {
     }
 
     const fulfilled = await buildFulfilledOkResult({
-      agentId: started.agentId,
+      agentId: startedAgentId,
       status: complete.status,
       notes: payload.notes,
       payload,
@@ -1180,7 +1290,7 @@ export async function fulfillNetworkRegistrationDraft(params: {
     await prisma.networkRegistrationDraft.update({
       where: { id: draft.id },
       data: {
-        agentId: started.agentId,
+        agentId: startedAgentId,
         status: fulfilled.status === "registered" ? "COMPLETED" : "PROCESSING",
         error: null,
         userId: params.user.id,
