@@ -1,3 +1,9 @@
+import prisma from "@masumi/database/client";
+
+import {
+  filterAgentTransactionsOnOrAfterCutoff,
+  resolveAgentActivityTransactionCutoff,
+} from "@/lib/agents/agent-activity-transaction-cutoff";
 import { getWalletOwnedAgentForUser } from "@/lib/agents/wallet-ownership";
 import { resolveAgentPaymentRail } from "@/lib/earnings/agent-income";
 import type { PaymentOrPurchaseItem } from "@/lib/payment-node/client";
@@ -57,18 +63,33 @@ export async function getAgentTransactionsForUser(params: {
     agent.agentReference?.networkIdentifier ?? agent.networkIdentifier,
   );
 
+  const registrationInitiatedEvents = await prisma.agentActivityEvent.findMany({
+    where: { agentId: params.agentId, type: "RegistrationInitiated" },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: { createdAt: true },
+  });
+  const transactionCutoff = resolveAgentActivityTransactionCutoff({
+    agentCreatedAt: agent.createdAt,
+    registrationInitiatedAt: agent.registrationInitiatedAt,
+    registrationInitiatedEventsNewestFirst: registrationInitiatedEvents.map(
+      (e) => e.createdAt,
+    ),
+  });
+
   if (resolveAgentPaymentRail(agent) === "x402") {
     const end = new Date();
-    const start = new Date();
-    start.setFullYear(2020, 0, 1);
     const activity = await client.getX402AgentPaymentActivity({
       network,
       agentIdentifier: agent.agentIdentifier,
-      startDate: start.toISOString().slice(0, 10),
+      startDate: transactionCutoff.toISOString().slice(0, 10),
       endDate: end.toISOString().slice(0, 10),
       take: 50,
     });
-    return mapX402AgentPaymentActivityToTransactions(activity);
+    return filterAgentTransactionsOnOrAfterCutoff(
+      mapX402AgentPaymentActivityToTransactions(activity),
+      transactionCutoff,
+    );
   }
 
   const smartContractAddress = await getSmartContractAddressForConfiguredSource(
@@ -101,7 +122,7 @@ export async function getAgentTransactionsForUser(params: {
     (p: PaymentOrPurchaseItem) => p.agentIdentifier === agentIdVal,
   );
 
-  return [
+  const rows = [
     ...payments.map((p: PaymentOrPurchaseItem) =>
       mapItem(p, "payment", network),
     ),
@@ -111,4 +132,6 @@ export async function getAgentTransactionsForUser(params: {
   ].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
+
+  return filterAgentTransactionsOnOrAfterCutoff(rows, transactionCutoff);
 }
