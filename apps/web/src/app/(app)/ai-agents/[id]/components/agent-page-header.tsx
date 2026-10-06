@@ -5,17 +5,26 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { AgentIcon } from "@/components/agent-icon";
-import { AgentVerificationShieldIndicator } from "@/components/agent-verification-shield-indicator";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { isRegistrationUiPending } from "@/lib/agents/registration-state";
+import {
+  isRegistrationConfirmedOnNetwork,
+  isRegistrationUiPending,
+} from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
+import { cn } from "@/lib/utils";
 
 import { AgentRegistryVersionBadge } from "../../components/agent-registry-version-badge";
+import {
+  getRegistrationStatusBadgeClassName,
+  getRegistrationStatusBadgeVariant,
+  getRegistrationStatusDisplayKey,
+} from "../../components/agent-utils";
 
 interface AgentPageHeaderProps {
   agent: Agent;
@@ -29,6 +38,7 @@ export function AgentPageHeader({
   backLabel,
 }: AgentPageHeaderProps) {
   const tDetails = useTranslations("App.Agents.Details");
+  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const tSidebar = useTranslations("App.Sidebar.MenuItems");
 
   const label = backLabel ?? tDetails("backToAgents");
@@ -38,6 +48,12 @@ export function AgentPageHeader({
   const registrationStatusPending = isRegistrationUiPending(
     agent.registrationState,
   );
+  const isRegistrationConfirmed = isRegistrationConfirmedOnNetwork(
+    agent.registrationState,
+  );
+  const registrationBadgeVariant = isRegistrationConfirmed
+    ? ("success" as const)
+    : getRegistrationStatusBadgeVariant(agent.registrationState);
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,18 +91,20 @@ export function AgentPageHeader({
             <h1 className="min-w-0 max-w-full truncate text-page-title font-semibold tracking-tight">
               {agent.name}
             </h1>
+            <Badge
+              variant={registrationBadgeVariant}
+              className={cn(
+                "shrink-0 text-xs",
+                getRegistrationStatusBadgeClassName(agent.registrationState),
+              )}
+            >
+              {tRegistrationStatus(
+                getRegistrationStatusDisplayKey(agent.registrationState),
+              )}
+            </Badge>
             <AgentRegistryVersionBadge
               agentIdentifier={agent.agentIdentifier}
             />
-            {agent.verificationStatus === "VERIFIED" ? (
-              <AgentVerificationShieldIndicator
-                agentId={agent.id}
-                dbVerificationStatus={agent.verificationStatus}
-                registered={agent.registrationState === "RegistrationConfirmed"}
-                size="md"
-                className="-mt-0.5 shrink-0"
-              />
-            ) : null}
           </div>
           {registrationStatusPending ? (
             <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">

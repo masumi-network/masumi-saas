@@ -3,7 +3,6 @@
 import { CircleHelp } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import {
@@ -12,15 +11,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useFormatDate } from "@/hooks/use-format-date";
-import { isRegistrationConfirmedOnNetwork } from "@/lib/agents/registration-state";
 import { type Agent } from "@/lib/api/agent.client";
-import { cn } from "@/lib/utils";
 
-import {
-  getRegistrationStatusBadgeClassName,
-  getRegistrationStatusBadgeVariant,
-  getRegistrationStatusDisplayKey,
-} from "../../components/agent-utils";
 import { AgentRecentActivityFeed } from "./agent-recent-activity-feed";
 
 type AgentChangelogCardProps = {
@@ -39,15 +31,7 @@ export function AgentChangelogCard({
   onSyncAgent,
 }: AgentChangelogCardProps) {
   const t = useTranslations("App.Agents.Details");
-  const tRegistrationStatus = useTranslations("App.Agents.registrationStatus");
   const { formatDateTime, formatRelativeDate } = useFormatDate();
-
-  const isRegistrationConfirmed = isRegistrationConfirmedOnNetwork(
-    agent.registrationState,
-  );
-  const registrationBadgeVariant = isRegistrationConfirmed
-    ? ("success" as const)
-    : getRegistrationStatusBadgeVariant(agent.registrationState);
 
   const handleSync = async () => {
     if (!onSyncAgent) return;
@@ -61,6 +45,24 @@ export function AgentChangelogCard({
     agent.registrationInitiatedAt ?? "",
     lastRegistrationSyncedAt?.toISOString() ?? "",
   ].join("|");
+
+  const lastSyncedValue =
+    showLastSyncedPending || lastRegistrationSyncedAt == null ? (
+      <span className="text-xs font-medium tabular-nums text-muted-foreground">
+        {t("syncInProgress")}
+      </span>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="text-xs font-medium tabular-nums text-foreground">
+            {formatRelativeDate(lastRegistrationSyncedAt)}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" align="end">
+          {formatDateTime(lastRegistrationSyncedAt)}
+        </TooltipContent>
+      </Tooltip>
+    );
 
   return (
     <Card className="overflow-hidden gap-0 py-0">
@@ -83,20 +85,10 @@ export function AgentChangelogCard({
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-border/40 bg-muted/20 px-5 py-2.5">
           <span className="text-xs font-medium text-muted-foreground">
-            {t("registryStatusLabel")}
+            {t("lastSynced")}
           </span>
           <div className="flex shrink-0 items-center gap-0.5">
-            <Badge
-              variant={registrationBadgeVariant}
-              className={cn(
-                "text-xs",
-                getRegistrationStatusBadgeClassName(agent.registrationState),
-              )}
-            >
-              {tRegistrationStatus(
-                getRegistrationStatusDisplayKey(agent.registrationState),
-              )}
-            </Badge>
+            {lastSyncedValue}
             {onSyncAgent ? (
               <RefreshButton
                 onRefresh={handleSync}
@@ -111,35 +103,11 @@ export function AgentChangelogCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-0 p-0">
-        <div className="px-5 pt-4 pb-0">
+        <div className="px-5 pt-4 pb-4">
           <AgentRecentActivityFeed
             agentId={agent.id}
             refreshKey={activityRefreshKey}
           />
-        </div>
-        <div className="flex items-center justify-between gap-3 border-t border-border/40 bg-muted/10 px-5 py-3">
-          <span className="text-xs text-muted-foreground">
-            {t("lastSynced")}
-          </span>
-          {showLastSyncedPending || lastRegistrationSyncedAt == null ? (
-            <span className="text-xs font-medium tabular-nums text-muted-foreground">
-              {t("syncInProgress")}
-            </span>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className="text-xs font-medium tabular-nums text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
-                >
-                  {formatRelativeDate(lastRegistrationSyncedAt)}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="end">
-                {formatDateTime(lastRegistrationSyncedAt)}
-              </TooltipContent>
-            </Tooltip>
-          )}
         </div>
       </CardContent>
     </Card>
