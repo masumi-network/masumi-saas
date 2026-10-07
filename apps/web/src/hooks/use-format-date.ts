@@ -1,11 +1,12 @@
 "use client";
 
-import { useFormatter, useNow } from "next-intl";
+import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 export function useFormatDate() {
   const format = useFormatter();
-  const now = useNow();
+  const now = useNow({ updateInterval: 1000 });
+  const t = useTranslations("Common");
 
   return useMemo(() => {
     const toDate = (date: Date | string) =>
@@ -18,8 +19,21 @@ export function useFormatDate() {
           dateStyle: "short",
           timeStyle: "short",
         }),
-      formatRelativeDate: (date: Date | string) =>
-        format.relativeTime(toDate(date), { now }),
+      formatRelativeDate: (date: Date | string) => {
+        const target = toDate(date);
+        const intlNow = now instanceof Date ? now : new Date(now);
+        // useNow can lag behind the client clock (SSR/hydration).
+        const referenceMs = Math.max(intlNow.getTime(), Date.now());
+        const referenceNow = new Date(referenceMs);
+        const targetMs = target.getTime();
+        // If the server clock is slightly ahead, treat age as 0 until client time catches up
+        // (avoids "in X seconds") without pinning the label to "Just now" forever.
+        const ageMs = Math.max(0, referenceMs - targetMs);
+        if (ageMs < 2_000) {
+          return t("justNow");
+        }
+        return format.relativeTime(new Date(targetMs), { now: referenceNow });
+      },
     };
-  }, [format, now]);
+  }, [format, now, t]);
 }

@@ -21,135 +21,163 @@ function DetailsTabSkeleton() {
   const agentVerificationUiEnabled = isAgentVerificationFlowEnabled();
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8">
-      <div className="flex flex-col gap-2">
-        <Card className="overflow-hidden gap-0 py-0">
-          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-5 w-24 rounded-full shrink-0" />
-          </CardHeader>
-          <CardContent className="space-y-6 p-6">
-            {/* Description */}
-            <div className="flex gap-3">
-              <Skeleton className="h-4 w-4 shrink-0 rounded" />
-              <div className="min-w-0 flex-1 space-y-1">
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-4 w-full max-w-md" />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* API URL */}
-            <div className="flex gap-3 min-w-0">
-              <Skeleton className="h-4 w-4 shrink-0 rounded" />
-              <div className="flex-1 min-w-0 space-y-1">
-                <Skeleton className="h-3 w-14" />
-                <div className="flex items-center gap-2 min-w-0">
-                  <Skeleton className="h-4 w-48 max-w-full" />
-                  <Skeleton className="h-7 w-7 shrink-0 rounded" />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Agent ID */}
-            <div className="flex gap-3 min-w-0">
-              <Skeleton className="h-4 w-4 shrink-0 rounded" />
-              <div className="flex-1 min-w-0 space-y-1">
-                <Skeleton className="h-3 w-16" />
-                <div className="flex items-center gap-2 min-w-0">
-                  <Skeleton className="h-4 w-40 max-w-full font-mono" />
-                  <Skeleton className="h-7 w-7 shrink-0 rounded" />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Price */}
-            <div className="flex gap-3 min-w-0">
-              <Skeleton className="h-4 w-4 shrink-0 rounded" />
-              <div className="flex-1 min-w-0 space-y-1">
-                <Skeleton className="h-3 w-12" />
+    <div className="w-full space-y-8">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(16rem,22rem)]">
+        <div className="flex min-w-0 flex-col gap-8">
+          <div className="flex flex-col gap-2">
+            <Card className="overflow-hidden gap-0 py-0">
+              <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
                 <Skeleton className="h-4 w-20" />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Tags */}
-            <div className="flex gap-3">
-              <Skeleton className="h-4 w-4 shrink-0 rounded" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-3 w-10" />
-                <div className="flex flex-wrap gap-2">
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                  <Skeleton className="h-5 w-14 rounded-full" />
-                </div>
-              </div>
-            </div>
-
-            {agentVerificationUiEnabled && (
-              <>
-                <Separator />
-                <div className="flex gap-3 items-center justify-between">
-                  <div className="flex gap-3 items-center min-w-0">
-                    <Skeleton className="h-4 w-4 shrink-0 rounded" />
-                    <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-5 w-24 rounded-full shrink-0" />
+              </CardHeader>
+              <CardContent className="space-y-6 p-6">
+                {/* Description */}
+                <div className="flex gap-3">
+                  <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-4 w-full max-w-md" />
                   </div>
-                  <Skeleton className="h-9 w-40 shrink-0 rounded-md" />
                 </div>
-              </>
-            )}
+
+                <Separator />
+
+                {/* API URL */}
+                <div className="flex gap-3 min-w-0">
+                  <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <Skeleton className="h-3 w-14" />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Skeleton className="h-4 w-48 max-w-full" />
+                      <Skeleton className="h-7 w-7 shrink-0 rounded" />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Agent ID */}
+                <div className="flex gap-3 min-w-0">
+                  <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <Skeleton className="h-3 w-16" />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Skeleton className="h-4 w-40 max-w-full font-mono" />
+                      <Skeleton className="h-7 w-7 shrink-0 rounded" />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Price */}
+                <div className="flex gap-3 min-w-0">
+                  <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Tags */}
+                <div className="flex gap-3">
+                  <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-3 w-10" />
+                    <div className="flex flex-wrap gap-2">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+
+                {agentVerificationUiEnabled && (
+                  <>
+                    <Separator />
+                    <div className="flex gap-3 items-center justify-between">
+                      <div className="flex gap-3 items-center min-w-0">
+                        <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="h-9 w-40 shrink-0 rounded-md" />
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Additional Details */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-4">
+              <Separator className="flex-1" />
+              <Skeleton className="h-3 w-28" />
+              <Separator className="flex-1" />
+            </div>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-4 w-20" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <aside className="min-w-0 lg:self-start">
+          <Card className="overflow-hidden gap-0 py-0">
+            <CardHeader className="gap-0 space-y-0 border-b border-border/50 p-0">
+              <div className="px-5 py-4">
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-border/40 bg-muted/20 px-5 py-2.5">
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-5 w-24 rounded-full" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-0 p-0">
+              <div className="space-y-4 px-5 py-4">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+              <div className="flex justify-between border-t border-border/40 bg-muted/10 px-5 py-3">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-4">
+          <Separator className="flex-1" />
+          <Skeleton className="h-3 w-24" />
+          <Separator className="flex-1" />
+        </div>
+        <Card className="border-destructive/60 bg-destructive/5">
+          <CardContent>
+            <div className="flex flex-col gap-4 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-1">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+              <Skeleton className="h-10 w-full min-w-[120px] shrink-0 sm:w-auto rounded-md" />
+            </div>
           </CardContent>
         </Card>
-
-        {/* Additional Details */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-4">
-            <Separator className="flex-1" />
-            <Skeleton className="h-3 w-28" />
-            <Separator className="flex-1" />
-          </div>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-4 w-20" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <div className="flex justify-between">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Danger Zone */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-4">
-            <Separator className="flex-1" />
-            <Skeleton className="h-3 w-24" />
-            <Separator className="flex-1" />
-          </div>
-          <Card className="border-destructive/60 bg-destructive/5">
-            <CardContent>
-              <div className="flex flex-col gap-4 py-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-48" />
-                </div>
-                <Skeleton className="h-10 w-full min-w-[120px] shrink-0 sm:w-auto rounded-md" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
@@ -157,7 +185,7 @@ function DetailsTabSkeleton() {
 
 function EarningsTabSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="w-full">
       <Card className="overflow-hidden gap-0 py-0">
         <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/50 bg-masumi-gradient rounded-t-xl pt-6 p-6">
           <div className="flex items-center gap-2.5">

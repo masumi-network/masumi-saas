@@ -29,6 +29,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
   // Reconcile with payment-node before render so stale RegistrationConfirmed
   // does not flash while the client mounts.
   await syncAgentRegistrationStatusAction(id);
+  const registrationSyncedAt = new Date().toISOString();
   const result = await getAgent(id);
 
   if (!result.success || !result.data) {
@@ -36,8 +37,11 @@ export default async function AgentPage({ params }: AgentPageProps) {
   }
 
   return (
-    <div className="w-full animate-page-in space-y-6">
-      <AgentPageContent agent={result.data} />
+    <div className="w-full space-y-6">
+      <AgentPageContent
+        agent={result.data}
+        registrationSyncedAt={registrationSyncedAt}
+      />
     </div>
   );
 }

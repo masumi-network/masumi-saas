@@ -571,10 +571,7 @@ describe("credit service", () => {
   it("reports whether a stripe top-up would exceed the balance cap", () => {
     const topUpUnits = displayCreditsToStorageUnits(10);
     expect(
-      wouldExceedCreditBalanceCap(
-        MAX_USER_CREDITS_REMAINING - topUpUnits,
-        10,
-      ),
+      wouldExceedCreditBalanceCap(MAX_USER_CREDITS_REMAINING - topUpUnits, 10),
     ).toBe(false);
     expect(
       wouldExceedCreditBalanceCap(

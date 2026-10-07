@@ -43,6 +43,10 @@ export type StartX402HttpAgentRegistrationInput = {
   /** When false, name/description/tags ignore probe-derived autofill defaults. */
   useProbeMetadataAutofill?: boolean;
   probeTimeoutMs?: number;
+  /** Reuse a predetermined agent id (network registration drafts). */
+  agentId?: string;
+  /** Caller already debited registration credit (masumi.network register). */
+  skipCreditConsumption?: boolean;
 };
 
 export type StartX402HttpAgentRegistrationResult =
@@ -228,6 +232,7 @@ export async function startX402HttpAgentRegistration(
     };
   }
 
+  const skipCredit = input.skipCreditConsumption === true;
   const creditReference = createCreditReference("agent-register");
   const creditMetadata = {
     name: resolvedName,
@@ -238,27 +243,29 @@ export async function startX402HttpAgentRegistration(
     registrationKind: "X402_HTTP",
   };
 
-  try {
-    await consumeCreditIfRequired({
-      userId: user.id,
-      reason: "agent_register",
-      reference: creditReference,
-      network,
-      metadata: creditMetadata,
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Insufficient credits.";
-    return {
-      ok: false,
-      resourceUrl: prepared.data.resourceUrl,
-      code: "credits",
-      error: message,
-    };
+  if (!skipCredit) {
+    try {
+      await consumeCreditIfRequired({
+        userId: user.id,
+        reason: "agent_register",
+        reference: creditReference,
+        network,
+        metadata: creditMetadata,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Insufficient credits.";
+      return {
+        ok: false,
+        resourceUrl: prepared.data.resourceUrl,
+        code: "credits",
+        error: message,
+      };
+    }
   }
 
   // Fix the id up front so a throw can tell whether the agent was persisted.
-  const registrationAgentId = randomUUID();
+  const registrationAgentId = input.agentId?.trim() || randomUUID();
   try {
     const result = await startAgentRegistration(ctx, {
       id: registrationAgentId,
@@ -284,13 +291,15 @@ export async function startX402HttpAgentRegistration(
     });
 
     if (!result.success) {
-      await refundConsumedCredit({
-        userId: user.id,
-        reason: "agent_register",
-        reference: creditReference,
-        network,
-        metadata: creditMetadata,
-      });
+      if (!skipCredit) {
+        await refundConsumedCredit({
+          userId: user.id,
+          reason: "agent_register",
+          reference: creditReference,
+          network,
+          metadata: creditMetadata,
+        });
+      }
       return {
         ok: false,
         resourceUrl: prepared.data.resourceUrl,
@@ -315,13 +324,15 @@ export async function startX402HttpAgentRegistration(
         resourceUrl: prepared.data.resourceUrl,
       };
     }
-    await refundConsumedCredit({
-      userId: user.id,
-      reason: "agent_register",
-      reference: creditReference,
-      network,
-      metadata: creditMetadata,
-    });
+    if (!skipCredit) {
+      await refundConsumedCredit({
+        userId: user.id,
+        reason: "agent_register",
+        reference: creditReference,
+        network,
+        metadata: creditMetadata,
+      });
+    }
     const message =
       error instanceof Error ? error.message : "Registration failed.";
     return {

@@ -3749,6 +3749,7 @@ export const AgentScalarFieldEnum = {
   userId: "userId",
   organizationId: "organizationId",
   registrationState: "registrationState",
+  registrationInitiatedAt: "registrationInitiatedAt",
   runtimeProvider: "runtimeProvider",
   integrationConnectionId: "integrationConnectionId",
   providerConfig: "providerConfig",

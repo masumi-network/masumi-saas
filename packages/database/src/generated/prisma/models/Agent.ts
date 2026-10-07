@@ -32,6 +32,7 @@ export type AgentMinAggregateOutputType = {
   userId: string | null;
   organizationId: string | null;
   registrationState: $Enums.RegistrationState | null;
+  registrationInitiatedAt: Date | null;
   runtimeProvider: $Enums.AgentRuntimeProvider | null;
   integrationConnectionId: string | null;
   verificationStatus: $Enums.VerificationStatus | null;
@@ -55,6 +56,7 @@ export type AgentMaxAggregateOutputType = {
   userId: string | null;
   organizationId: string | null;
   registrationState: $Enums.RegistrationState | null;
+  registrationInitiatedAt: Date | null;
   runtimeProvider: $Enums.AgentRuntimeProvider | null;
   integrationConnectionId: string | null;
   verificationStatus: $Enums.VerificationStatus | null;
@@ -78,6 +80,7 @@ export type AgentCountAggregateOutputType = {
   userId: number;
   organizationId: number;
   registrationState: number;
+  registrationInitiatedAt: number;
   runtimeProvider: number;
   integrationConnectionId: number;
   providerConfig: number;
@@ -105,6 +108,7 @@ export type AgentMinAggregateInputType = {
   userId?: true;
   organizationId?: true;
   registrationState?: true;
+  registrationInitiatedAt?: true;
   runtimeProvider?: true;
   integrationConnectionId?: true;
   verificationStatus?: true;
@@ -128,6 +132,7 @@ export type AgentMaxAggregateInputType = {
   userId?: true;
   organizationId?: true;
   registrationState?: true;
+  registrationInitiatedAt?: true;
   runtimeProvider?: true;
   integrationConnectionId?: true;
   verificationStatus?: true;
@@ -151,6 +156,7 @@ export type AgentCountAggregateInputType = {
   userId?: true;
   organizationId?: true;
   registrationState?: true;
+  registrationInitiatedAt?: true;
   runtimeProvider?: true;
   integrationConnectionId?: true;
   providerConfig?: true;
@@ -257,6 +263,7 @@ export type AgentGroupByOutputType = {
   userId: string;
   organizationId: string | null;
   registrationState: $Enums.RegistrationState;
+  registrationInitiatedAt: Date | null;
   runtimeProvider: $Enums.AgentRuntimeProvider;
   integrationConnectionId: string | null;
   providerConfig: runtime.JsonValue | null;
@@ -303,6 +310,11 @@ export type AgentWhereInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFilter<"Agent">
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.DateTimeNullableFilter<"Agent">
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFilter<"Agent">
     | $Enums.AgentRuntimeProvider;
@@ -359,6 +371,7 @@ export type AgentOrderByWithRelationInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  registrationInitiatedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   runtimeProvider?: Prisma.SortOrder;
   integrationConnectionId?: Prisma.SortOrderInput | Prisma.SortOrder;
   providerConfig?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -400,6 +413,11 @@ export type AgentWhereUniqueInput = Prisma.AtLeast<
     registrationState?:
       | Prisma.EnumRegistrationStateFilter<"Agent">
       | $Enums.RegistrationState;
+    registrationInitiatedAt?:
+      | Prisma.DateTimeNullableFilter<"Agent">
+      | Date
+      | string
+      | null;
     runtimeProvider?:
       | Prisma.EnumAgentRuntimeProviderFilter<"Agent">
       | $Enums.AgentRuntimeProvider;
@@ -461,6 +479,7 @@ export type AgentOrderByWithAggregationInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrderInput | Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  registrationInitiatedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
   runtimeProvider?: Prisma.SortOrder;
   integrationConnectionId?: Prisma.SortOrderInput | Prisma.SortOrder;
   providerConfig?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -505,6 +524,11 @@ export type AgentScalarWhereWithAggregatesInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateWithAggregatesFilter<"Agent">
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.DateTimeNullableWithAggregatesFilter<"Agent">
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderWithAggregatesFilter<"Agent">
     | $Enums.AgentRuntimeProvider;
@@ -556,6 +580,7 @@ export type AgentCreateInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -590,6 +615,7 @@ export type AgentUncheckedCreateInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -622,6 +648,11 @@ export type AgentUpdateInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -685,6 +716,11 @@ export type AgentUncheckedUpdateInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -744,6 +780,7 @@ export type AgentCreateManyInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -770,6 +807,11 @@ export type AgentUpdateManyMutationInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -824,6 +866,11 @@ export type AgentUncheckedUpdateManyInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -887,6 +934,7 @@ export type AgentCountOrderByAggregateInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  registrationInitiatedAt?: Prisma.SortOrder;
   runtimeProvider?: Prisma.SortOrder;
   integrationConnectionId?: Prisma.SortOrder;
   providerConfig?: Prisma.SortOrder;
@@ -913,6 +961,7 @@ export type AgentMaxOrderByAggregateInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  registrationInitiatedAt?: Prisma.SortOrder;
   runtimeProvider?: Prisma.SortOrder;
   integrationConnectionId?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
@@ -936,6 +985,7 @@ export type AgentMinOrderByAggregateInput = {
   userId?: Prisma.SortOrder;
   organizationId?: Prisma.SortOrder;
   registrationState?: Prisma.SortOrder;
+  registrationInitiatedAt?: Prisma.SortOrder;
   runtimeProvider?: Prisma.SortOrder;
   integrationConnectionId?: Prisma.SortOrder;
   verificationStatus?: Prisma.SortOrder;
@@ -1408,6 +1458,7 @@ export type AgentCreateWithoutUserInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1440,6 +1491,7 @@ export type AgentUncheckedCreateWithoutUserInput = {
   apiUrl: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -1518,6 +1570,11 @@ export type AgentScalarWhereInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFilter<"Agent">
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.DateTimeNullableFilter<"Agent">
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFilter<"Agent">
     | $Enums.AgentRuntimeProvider;
@@ -1554,6 +1611,7 @@ export type AgentCreateWithoutOrganizationInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1586,6 +1644,7 @@ export type AgentUncheckedCreateWithoutOrganizationInput = {
   apiUrl: string;
   userId: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -1659,6 +1718,7 @@ export type AgentCreateWithoutIntegrationConnectionInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1692,6 +1752,7 @@ export type AgentUncheckedCreateWithoutIntegrationConnectionInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1764,6 +1825,7 @@ export type AgentCreateWithoutMipJobsInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -1797,6 +1859,7 @@ export type AgentUncheckedCreateWithoutMipJobsInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -1856,6 +1919,11 @@ export type AgentUpdateWithoutMipJobsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -1918,6 +1986,11 @@ export type AgentUncheckedUpdateWithoutMipJobsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -1974,6 +2047,7 @@ export type AgentCreateWithoutActivityEventsInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -2007,6 +2081,7 @@ export type AgentUncheckedCreateWithoutActivityEventsInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -2066,6 +2141,11 @@ export type AgentUpdateWithoutActivityEventsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2128,6 +2208,11 @@ export type AgentUncheckedUpdateWithoutActivityEventsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2184,6 +2269,7 @@ export type AgentCreateWithoutAgentReferenceInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -2217,6 +2303,7 @@ export type AgentUncheckedCreateWithoutAgentReferenceInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -2276,6 +2363,11 @@ export type AgentUpdateWithoutAgentReferenceInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2338,6 +2430,11 @@ export type AgentUncheckedUpdateWithoutAgentReferenceInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2394,6 +2491,7 @@ export type AgentCreateWithoutVeridianCredentialsInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -2427,6 +2525,7 @@ export type AgentUncheckedCreateWithoutVeridianCredentialsInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -2486,6 +2585,11 @@ export type AgentUpdateWithoutVeridianCredentialsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2548,6 +2652,11 @@ export type AgentUncheckedUpdateWithoutVeridianCredentialsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2604,6 +2713,7 @@ export type AgentCreateWithoutSupportedPaymentSourcesInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -2637,6 +2747,7 @@ export type AgentUncheckedCreateWithoutSupportedPaymentSourcesInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -2696,6 +2807,11 @@ export type AgentUpdateWithoutSupportedPaymentSourcesInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2758,6 +2874,11 @@ export type AgentUncheckedUpdateWithoutSupportedPaymentSourcesInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2814,6 +2935,7 @@ export type AgentCreateWithoutX402PaymentAttemptsInput = {
   description?: string | null;
   apiUrl: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -2847,6 +2969,7 @@ export type AgentUncheckedCreateWithoutX402PaymentAttemptsInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -2906,6 +3029,11 @@ export type AgentUpdateWithoutX402PaymentAttemptsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -2968,6 +3096,11 @@ export type AgentUncheckedUpdateWithoutX402PaymentAttemptsInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3025,6 +3158,7 @@ export type AgentCreateManyUserInput = {
   apiUrl: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -3051,6 +3185,11 @@ export type AgentUpdateWithoutUserInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3112,6 +3251,11 @@ export type AgentUncheckedUpdateWithoutUserInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3175,6 +3319,11 @@ export type AgentUncheckedUpdateManyWithoutUserInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3227,6 +3376,7 @@ export type AgentCreateManyOrganizationInput = {
   apiUrl: string;
   userId: string;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   integrationConnectionId?: string | null;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -3253,6 +3403,11 @@ export type AgentUpdateWithoutOrganizationInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3311,6 +3466,11 @@ export type AgentUncheckedUpdateWithoutOrganizationInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3371,6 +3531,11 @@ export type AgentUncheckedUpdateManyWithoutOrganizationInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3424,6 +3589,7 @@ export type AgentCreateManyIntegrationConnectionInput = {
   userId: string;
   organizationId?: string | null;
   registrationState?: $Enums.RegistrationState;
+  registrationInitiatedAt?: Date | string | null;
   runtimeProvider?: $Enums.AgentRuntimeProvider;
   providerConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   verificationStatus?: $Enums.VerificationStatus | null;
@@ -3449,6 +3615,11 @@ export type AgentUpdateWithoutIntegrationConnectionInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3511,6 +3682,11 @@ export type AgentUncheckedUpdateWithoutIntegrationConnectionInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3571,6 +3747,11 @@ export type AgentUncheckedUpdateManyWithoutIntegrationConnectionInput = {
   registrationState?:
     | Prisma.EnumRegistrationStateFieldUpdateOperationsInput
     | $Enums.RegistrationState;
+  registrationInitiatedAt?:
+    | Prisma.NullableDateTimeFieldUpdateOperationsInput
+    | Date
+    | string
+    | null;
   runtimeProvider?:
     | Prisma.EnumAgentRuntimeProviderFieldUpdateOperationsInput
     | $Enums.AgentRuntimeProvider;
@@ -3716,6 +3897,7 @@ export type AgentSelect<
     userId?: boolean;
     organizationId?: boolean;
     registrationState?: boolean;
+    registrationInitiatedAt?: boolean;
     runtimeProvider?: boolean;
     integrationConnectionId?: boolean;
     providerConfig?: boolean;
@@ -3766,6 +3948,7 @@ export type AgentSelectCreateManyAndReturn<
     userId?: boolean;
     organizationId?: boolean;
     registrationState?: boolean;
+    registrationInitiatedAt?: boolean;
     runtimeProvider?: boolean;
     integrationConnectionId?: boolean;
     providerConfig?: boolean;
@@ -3803,6 +3986,7 @@ export type AgentSelectUpdateManyAndReturn<
     userId?: boolean;
     organizationId?: boolean;
     registrationState?: boolean;
+    registrationInitiatedAt?: boolean;
     runtimeProvider?: boolean;
     integrationConnectionId?: boolean;
     providerConfig?: boolean;
@@ -3836,6 +4020,7 @@ export type AgentSelectScalar = {
   userId?: boolean;
   organizationId?: boolean;
   registrationState?: boolean;
+  registrationInitiatedAt?: boolean;
   runtimeProvider?: boolean;
   integrationConnectionId?: boolean;
   providerConfig?: boolean;
@@ -3865,6 +4050,7 @@ export type AgentOmit<
   | "userId"
   | "organizationId"
   | "registrationState"
+  | "registrationInitiatedAt"
   | "runtimeProvider"
   | "integrationConnectionId"
   | "providerConfig"
@@ -3948,6 +4134,7 @@ export type $AgentPayload<
       userId: string;
       organizationId: string | null;
       registrationState: $Enums.RegistrationState;
+      registrationInitiatedAt: Date | null;
       runtimeProvider: $Enums.AgentRuntimeProvider;
       integrationConnectionId: string | null;
       providerConfig: runtime.JsonValue | null;
@@ -4679,6 +4866,7 @@ export interface AgentFieldRefs {
   readonly userId: Prisma.FieldRef<"Agent", "String">;
   readonly organizationId: Prisma.FieldRef<"Agent", "String">;
   readonly registrationState: Prisma.FieldRef<"Agent", "RegistrationState">;
+  readonly registrationInitiatedAt: Prisma.FieldRef<"Agent", "DateTime">;
   readonly runtimeProvider: Prisma.FieldRef<"Agent", "AgentRuntimeProvider">;
   readonly integrationConnectionId: Prisma.FieldRef<"Agent", "String">;
   readonly providerConfig: Prisma.FieldRef<"Agent", "Json">;

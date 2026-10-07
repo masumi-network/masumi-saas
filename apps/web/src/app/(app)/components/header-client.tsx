@@ -45,6 +45,7 @@ export function HeaderClient({
   return (
     <>
       <header
+        data-app-header
         className={`sticky top-0 z-20 h-14 shrink-0 border-b border-border/80 bg-background/85 backdrop-blur-lg sm:h-16 ${className || ""}`}
       >
         <div className="mx-auto h-full w-full max-w-container">
