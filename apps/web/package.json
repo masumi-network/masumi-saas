@@ -2,7 +2,7 @@
   "name": "web",
   "version": "0.1.0",
   "engines": {
-    "node": "24.x"
+    "node": ">=24.22.1 <25"
   },
   "private": true,
   "scripts": {
