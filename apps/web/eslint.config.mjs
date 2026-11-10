@@ -35,6 +35,9 @@ const config = [
       "@typescript-eslint/no-explicit-any": "error",
       // Next.js specific rules
       "@next/next/no-html-link-for-pages": "off",
+      // New in @next/eslint-plugin-next 16.4. The flagged calls are intentional full
+      // reloads; kept off so the Next.js upgrade does not change lint policy.
+      "@next/next/no-location-assign-relative-destination": "off",
       // i18n: Prevent hardcoded strings in JSX
       // This rule flags hardcoded text in JSX elements to ensure all user-facing strings are translated
       "react/jsx-no-literals": [
