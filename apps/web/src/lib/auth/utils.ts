@@ -1,5 +1,6 @@
 import "server-only";
 
+import prisma from "@masumi/database/client";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { cache } from "react";
@@ -9,7 +10,6 @@ import { normalizeScopeList } from "@/lib/config/oidc-scopes.config";
 import { InsufficientCreditsError } from "@/lib/credits/service";
 
 import { auth } from "./auth";
-import { findOauthAccessTokenByAccessToken } from "./auth-storage";
 import { isAdminUser } from "./config";
 import {
   getBetterAuthInnerSession,
@@ -90,29 +90,40 @@ async function resolveOidcAccessTokenContext(
     return null;
   }
 
-  const accessToken = await findOauthAccessTokenByAccessToken(bearerToken, {
-    include: { user: true },
-  });
+  const payload = (await auth.api.masumiValidateOidcAccessToken({
+    body: { token: bearerToken },
+  })) as {
+    active?: unknown;
+    sub?: unknown;
+    client_id?: unknown;
+    scope?: unknown;
+  };
 
   if (
-    !accessToken?.user ||
-    accessToken.accessTokenExpiresAt <= new Date() ||
-    // Reject tokens for banned / soft-deleted accounts. The /token issuance
-    // path already checks this, but pre-existing access tokens are otherwise
-    // valid until expiry — mirror the sign-in ban enforcement here.
-    accessToken.user.banned
+    payload.active !== true ||
+    typeof payload.sub !== "string" ||
+    typeof payload.client_id !== "string"
   ) {
+    return null;
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  // Reject tokens for banned / soft-deleted accounts. Access tokens stay valid
+  // until expiry otherwise, so mirror the sign-in ban enforcement here.
+  if (!user || user.banned) {
     return null;
   }
 
   return {
     headers: standardHeaders,
     session: null,
-    user: accessToken.user as NonNullable<AuthSessionFull["user"]>,
+    user: user as NonNullable<AuthSessionFull["user"]>,
     activeOrganizationId: null,
     authMethod: "oidcAccessToken",
-    oidcClientId: accessToken.clientId,
-    oidcScopes: normalizeScopeList(accessToken.scopes),
+    oidcClientId: payload.client_id,
+    oidcScopes: normalizeScopeList(
+      typeof payload.scope === "string" ? payload.scope : "",
+    ),
   };
 }
 

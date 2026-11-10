@@ -8,6 +8,7 @@ import {
 
 import prisma from "@masumi/database/client";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import type { DBAdapter, DBTransactionAdapter } from "better-auth/types";
 
 import { authEnvConfig } from "@/lib/config/auth.config";
 
@@ -24,9 +25,16 @@ const STORED_HASH_DIGEST_RE = /^[a-f0-9]{64}$/i;
 
 const HASHED_FIELDS = {
   session: new Set(["token"]),
-  oauthAccessToken: new Set(["accessToken", "refreshToken"]),
   deviceCode: new Set(["deviceCode", "userCode"]),
   verification: new Set(["identifier"]),
+} as const;
+
+/**
+ * Optional `string[]` fields that plugins write as `null`. Prisma list
+ * columns cannot be null, so `null` is stored as an empty list.
+ */
+const NULLABLE_LIST_FIELDS = {
+  deviceCode: new Set(["resources"]),
 } as const;
 
 const ENCRYPTED_FIELDS = {
@@ -214,8 +222,15 @@ async function transformStoredData(
   data: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   const nextData: Record<string, unknown> = { ...data };
+  const listFields =
+    NULLABLE_LIST_FIELDS[model as keyof typeof NULLABLE_LIST_FIELDS];
 
   for (const [field, value] of Object.entries(nextData)) {
+    if (value === null && listFields?.has(field)) {
+      nextData[field] = [];
+      continue;
+    }
+
     if (typeof value !== "string" || value.length === 0) {
       continue;
     }
@@ -317,111 +332,191 @@ function restoreWriteResult<T>(
   return restored as T;
 }
 
+/**
+ * A read that matched a hashed field by its raw value gets that raw value
+ * back instead of the stored digest. Callers such as the device plugin
+ * compare the returned field with the value they looked up.
+ */
+function restoreMatchedWhereValues<T>(
+  model: string,
+  where: AdapterWhere[] | undefined,
+  result: T,
+): T {
+  if (!result || typeof result !== "object" || !where?.length) {
+    return result;
+  }
+
+  const rawValues = new Map<string, string>();
+  for (const clause of where) {
+    if (
+      typeof clause.value === "string" &&
+      isHashedField(model, clause.field) &&
+      (clause.operator === undefined || clause.operator === "eq") &&
+      (clause.connector === undefined || clause.connector === "AND")
+    ) {
+      rawValues.set(clause.field, clause.value);
+    }
+  }
+  if (rawValues.size === 0) {
+    return result;
+  }
+
+  const restoreRow = (row: unknown) => {
+    if (!row || typeof row !== "object") return row;
+    const restored = { ...(row as Record<string, unknown>) };
+    for (const [field, raw] of rawValues) {
+      if (
+        restored[field] ===
+        hashAuthLookupValue(raw, getFieldLabel(model, field))
+      ) {
+        restored[field] = raw;
+      }
+    }
+    return restored;
+  };
+
+  return (
+    Array.isArray(result) ? result.map(restoreRow) : restoreRow(result)
+  ) as T;
+}
+
+type SecureAdapter = DBTransactionAdapter & {
+  transaction?: DBAdapter["transaction"];
+};
+
+function isRecordNotFound(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "P2025"
+  );
+}
+
+/**
+ * Wraps every adapter entry point that reads or writes hashed/encrypted
+ * fields. better-auth 1.7 runs many flows (verification consume, sign-up,
+ * update-user) inside `transaction`, which hands the callback a fresh
+ * transaction-scoped adapter, so that adapter must be wrapped as well or the
+ * lookups bypass the hashing and miss.
+ */
+function wrapSecureAdapter<A extends SecureAdapter>(adapter: A): A {
+  const wrapped: SecureAdapter = {
+    ...adapter,
+    async create(args) {
+      const data = await transformStoredData(args.model, args.data);
+      const result = await adapter.create({ ...args, data });
+      return restoreWriteResult(args.model, result, args.data);
+    },
+    async findOne(args) {
+      const result = await adapter.findOne({
+        ...args,
+        where: transformStoredWhere(args.model, args.where),
+      });
+      return restoreMatchedWhereValues(
+        args.model,
+        args.where,
+        await restoreReadResult(args.model, result),
+      );
+    },
+    async findMany(args) {
+      const result = await adapter.findMany({
+        ...args,
+        where: transformStoredWhere(args.model, args.where),
+      });
+      return restoreMatchedWhereValues(
+        args.model,
+        args.where,
+        await restoreReadResult(args.model, result),
+      );
+    },
+    async count(args) {
+      return adapter.count({
+        ...args,
+        where: transformStoredWhere(args.model, args.where),
+      });
+    },
+    async update(args) {
+      const update = await transformStoredData(args.model, args.update);
+      const result = await adapter.update({
+        ...args,
+        where: transformStoredWhere(args.model, args.where, true),
+        update,
+      });
+      return restoreWriteResult(args.model, result, args.update);
+    },
+    async updateMany(args) {
+      return adapter.updateMany({
+        ...args,
+        where: transformStoredWhere(args.model, args.where, true),
+        update: await transformStoredData(args.model, args.update),
+      });
+    },
+    async delete(args) {
+      try {
+        return await adapter.delete({
+          ...args,
+          where: transformStoredWhere(args.model, args.where, true),
+        });
+      } catch (error) {
+        // P2025: "Record to delete does not exist." Treat as success — the
+        // desired post-state (record absent) is already met. This avoids
+        // crashes when better-auth deletes a session whose token was hashed
+        // under a previous BETTER_AUTH_SECRET and can no longer be matched.
+        if (isRecordNotFound(error)) {
+          return;
+        }
+        throw error;
+      }
+    },
+    async deleteMany(args) {
+      return adapter.deleteMany({
+        ...args,
+        where: transformStoredWhere(args.model, args.where, true),
+      });
+    },
+    // Single-use destructive read (verification tokens, codes): always
+    // re-hash, like the other read paths.
+    async consumeOne(args) {
+      const result = await adapter.consumeOne({
+        ...args,
+        where: transformStoredWhere(args.model, args.where),
+      });
+      return restoreMatchedWhereValues(
+        args.model,
+        args.where,
+        await restoreReadResult(args.model, result),
+      );
+    },
+    async incrementOne(args) {
+      const set = args.set
+        ? await transformStoredData(args.model, args.set)
+        : args.set;
+      const result = await adapter.incrementOne({
+        ...args,
+        where: transformStoredWhere(args.model, args.where, true),
+        set,
+      });
+      return restoreWriteResult(args.model, result, args.set ?? {});
+    },
+  };
+
+  if (adapter.transaction) {
+    const baseTransaction = adapter.transaction;
+    wrapped.transaction = (callback) =>
+      baseTransaction((trx) => callback(wrapSecureAdapter(trx)));
+  }
+
+  return wrapped as A;
+}
+
 export function securePrismaAuthAdapter(
   client: typeof prisma,
   config: Parameters<typeof prismaAdapter>[1],
 ) {
   const baseFactory = prismaAdapter(client, config);
 
-  return (options: Parameters<ReturnType<typeof prismaAdapter>>[0]) => {
-    const adapter = baseFactory(options);
-
-    return {
-      ...adapter,
-      async create(args: {
-        model: string;
-        data: Record<string, unknown>;
-        select?: string[];
-      }) {
-        const data = await transformStoredData(args.model, args.data);
-        const result = await adapter.create({ ...args, data });
-        return restoreWriteResult(args.model, result, args.data);
-      },
-      async findOne(args: {
-        model: string;
-        where?: AdapterWhere[];
-        select?: string[];
-        join?: AdapterJoinOption;
-      }) {
-        const result = await adapter.findOne({
-          ...args,
-          where: transformStoredWhere(args.model, args.where),
-        });
-        return await restoreReadResult(args.model, result);
-      },
-      async findMany(args: {
-        model: string;
-        where?: AdapterWhere[];
-        limit?: number;
-        offset?: number;
-        sortBy?: { field: string; direction: "asc" | "desc" };
-        join?: AdapterJoinOption;
-      }) {
-        const result = await adapter.findMany({
-          ...args,
-          where: transformStoredWhere(args.model, args.where),
-        });
-        return await restoreReadResult(args.model, result);
-      },
-      async count(args: { model: string; where?: AdapterWhere[] }) {
-        return adapter.count({
-          ...args,
-          where: transformStoredWhere(args.model, args.where),
-        });
-      },
-      async update(args: {
-        model: string;
-        where: AdapterWhere[];
-        update: Record<string, unknown>;
-      }) {
-        const update = await transformStoredData(args.model, args.update);
-        const result = await adapter.update({
-          ...args,
-          where: transformStoredWhere(args.model, args.where, true),
-          update,
-        });
-        return restoreWriteResult(args.model, result, args.update);
-      },
-      async updateMany(args: {
-        model: string;
-        where: AdapterWhere[];
-        update: Record<string, unknown>;
-      }) {
-        return adapter.updateMany({
-          ...args,
-          where: transformStoredWhere(args.model, args.where, true),
-          update: await transformStoredData(args.model, args.update),
-        });
-      },
-      async delete(args: { model: string; where: AdapterWhere[] }) {
-        try {
-          return await adapter.delete({
-            ...args,
-            where: transformStoredWhere(args.model, args.where, true),
-          });
-        } catch (error) {
-          // P2025: "Record to delete does not exist." Treat as success — the
-          // desired post-state (record absent) is already met. This avoids
-          // crashes when better-auth deletes a session whose token was hashed
-          // under a previous BETTER_AUTH_SECRET and can no longer be matched.
-          if (
-            typeof error === "object" &&
-            error !== null &&
-            (error as { code?: unknown }).code === "P2025"
-          ) {
-            return null;
-          }
-          throw error;
-        }
-      },
-      async deleteMany(args: { model: string; where: AdapterWhere[] }) {
-        return adapter.deleteMany({
-          ...args,
-          where: transformStoredWhere(args.model, args.where, true),
-        });
-      },
-    };
-  };
+  return (options: Parameters<ReturnType<typeof prismaAdapter>>[0]) =>
+    wrapSecureAdapter(baseFactory(options));
 }
 
 export function createMagicLinkTokenHasher() {
@@ -521,176 +616,6 @@ export async function findDeviceCodeByUserCode<
     },
     select,
   }) as Promise<Prisma.DeviceCodeGetPayload<{ select: T }> | null>;
-}
-
-type OauthAccessTokenLookupArgs = Omit<
-  Prisma.OauthAccessTokenFindUniqueArgs,
-  "where"
->;
-
-function buildStoredOauthAccessTokenWhere(
-  field: "accessToken",
-  token: string,
-): { accessToken: string };
-function buildStoredOauthAccessTokenWhere(
-  field: "refreshToken",
-  token: string,
-): { refreshToken: string };
-function buildStoredOauthAccessTokenWhere(
-  field: "accessToken" | "refreshToken",
-  token: string,
-) {
-  const hashed = hashAuthLookupValue(
-    token,
-    getFieldLabel("oauthAccessToken", field),
-  );
-
-  if (field === "accessToken") {
-    return { accessToken: hashed };
-  }
-
-  return { refreshToken: hashed };
-}
-
-export async function findOauthAccessTokenByAccessToken<
-  T extends OauthAccessTokenLookupArgs,
->(accessToken: string, args: T) {
-  return prisma.oauthAccessToken.findUnique({
-    ...args,
-    where: buildStoredOauthAccessTokenWhere(
-      "accessToken",
-      accessToken,
-    ) as Prisma.OauthAccessTokenWhereUniqueInput,
-  }) as Promise<Prisma.OauthAccessTokenGetPayload<T> | null>;
-}
-
-export async function findOauthAccessTokenByRefreshToken<
-  T extends OauthAccessTokenLookupArgs,
->(refreshToken: string, args: T) {
-  return prisma.oauthAccessToken.findUnique({
-    ...args,
-    where: buildStoredOauthAccessTokenWhere(
-      "refreshToken",
-      refreshToken,
-    ) as Prisma.OauthAccessTokenWhereUniqueInput,
-  }) as Promise<Prisma.OauthAccessTokenGetPayload<T> | null>;
-}
-
-type CreateOauthAccessTokenArgs = {
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresAt: Date;
-  refreshTokenExpiresAt: Date;
-  oidcSessionId?: string | null;
-  clientId: string;
-  userId: string | null;
-  scopes: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export async function createStoredOauthAccessToken(
-  data: CreateOauthAccessTokenArgs,
-) {
-  const record = await prisma.oauthAccessToken.create({
-    data: {
-      ...data,
-      accessToken: hashAuthLookupValue(
-        data.accessToken,
-        getFieldLabel("oauthAccessToken", "accessToken"),
-      ),
-      refreshToken: hashAuthLookupValue(
-        data.refreshToken,
-        getFieldLabel("oauthAccessToken", "refreshToken"),
-      ),
-    },
-    include: {
-      user: true,
-    },
-  });
-
-  return {
-    ...record,
-    accessToken: data.accessToken,
-    refreshToken: data.refreshToken,
-  };
-}
-
-export function createOidcSessionId(options?: {
-  authTime?: unknown;
-  tokenId?: string | null;
-  userId?: string | null;
-}): string {
-  if (
-    options?.userId &&
-    (typeof options.authTime === "number" ||
-      typeof options.authTime === "string")
-  ) {
-    return createHmac("sha256", getHashKey())
-      .update("oidc-session-id", "utf8")
-      .update("\0")
-      .update(options.userId, "utf8")
-      .update("\0")
-      .update(String(options.authTime), "utf8")
-      .digest("base64url");
-  }
-
-  if (options?.tokenId) {
-    return createHmac("sha256", getHashKey())
-      .update("oidc-session-id-token", "utf8")
-      .update("\0")
-      .update(options.tokenId, "utf8")
-      .digest("base64url");
-  }
-
-  return randomBytes(32).toString("base64url");
-}
-
-type OauthAccessTokenOidcSessionSource = {
-  id: string;
-  oidcSessionId: string | null;
-};
-
-function resolveOauthAccessTokenOidcSessionId(
-  token: OauthAccessTokenOidcSessionSource | null,
-): string | null {
-  if (!token) {
-    return null;
-  }
-
-  return token.oidcSessionId ?? createOidcSessionId({ tokenId: token.id });
-}
-
-export async function getOauthAccessTokenOidcSessionIdForRefreshToken(
-  refreshToken: string,
-): Promise<string | null> {
-  const token = await findOauthAccessTokenByRefreshToken(refreshToken, {
-    select: {
-      id: true,
-      oidcSessionId: true,
-    },
-  });
-
-  return resolveOauthAccessTokenOidcSessionId(token);
-}
-
-export async function carryForwardOauthAccessTokenOidcSessionId(options: {
-  previousOidcSessionId: string | null;
-  rotatedRefreshToken: string;
-}): Promise<string | null> {
-  if (!options.previousOidcSessionId) {
-    return null;
-  }
-
-  await prisma.oauthAccessToken.updateMany({
-    where: buildStoredOauthAccessTokenWhere(
-      "refreshToken",
-      options.rotatedRefreshToken,
-    ),
-    data: { oidcSessionId: options.previousOidcSessionId },
-  });
-
-  return options.previousOidcSessionId;
 }
 
 export async function deleteSessionByRawToken(token: string) {

@@ -2,6 +2,12 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# eslint-config-next 16.4 pulls eslint-plugin-react-hooks 7.1, which reports
+# more set-state-in-effect/refs/memoization hits than 7.0.1 did on main.
+# Pinned so the Next.js upgrade does not change lint results; lift separately.
+overrides:
+  eslint-plugin-react-hooks: 7.0.1
+
 ignoredBuiltDependencies:
   - "@prisma/client"
   - "@prisma/engines"
@@ -30,4 +36,3 @@ publicHoistPattern:
   - pg-pool
   - eslint
   - prettier
-

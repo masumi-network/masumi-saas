@@ -1,4 +1,4 @@
-import type { OIDCMetadata } from "better-auth/plugins/oidc-provider";
+import type { OIDCMetadata } from "@better-auth/oauth-provider";
 
 import { authEnvConfig } from "./auth.config";
 import {
@@ -26,18 +26,22 @@ const DEFAULT_CLI_REDIRECT_URLS = ["http://127.0.0.1:43110/callback"];
 // SpacetimeDB rejects Better Auth's default EdDSA tokens in local testing.
 export const OIDC_ID_TOKEN_SIGNING_ALG = "ES256" as const;
 
-const OIDC_SUPPORTED_CLAIMS = [
+// ID-token / userinfo claims this provider emits. `jti` is gone since the
+// better-auth 1.7 oauth-provider no longer sets it on ID tokens.
+export const OIDC_SUPPORTED_CLAIMS = [
   "sub",
   "iss",
   "aud",
   "exp",
-  "nbf",
   "iat",
-  "jti",
+  "auth_time",
   "sid",
+  "azp",
   "email",
   "email_verified",
   "name",
+  "given_name",
+  "family_name",
   "picture",
 ];
 
@@ -131,34 +135,31 @@ export function getTrustedOidcOrigins(): string[] {
   return [...origins];
 }
 
+// Every advertised URL must map to an endpoint mounted by the auth handler
+// (`/api/auth/*`) or by an app route (`/jwks`, `/.well-known/*`).
 export function getPublicOidcMetadata(): Partial<OIDCMetadata> {
+  const authBase = `${oidcEnvConfig.issuer}/api/auth`;
   return {
     issuer: oidcEnvConfig.issuer,
-    authorization_endpoint: `${oidcEnvConfig.issuer}/api/auth/oauth2/authorize`,
-    token_endpoint: `${oidcEnvConfig.issuer}/api/auth/oauth2/token`,
-    userinfo_endpoint: `${oidcEnvConfig.issuer}/api/auth/oauth2/userinfo`,
+    authorization_endpoint: `${authBase}/oauth2/authorize`,
+    token_endpoint: `${authBase}/oauth2/token`,
+    userinfo_endpoint: `${authBase}/oauth2/userinfo`,
     jwks_uri: `${oidcEnvConfig.issuer}/jwks`,
-    registration_endpoint: `${oidcEnvConfig.issuer}/api/auth/oauth2/register`,
-    end_session_endpoint: `${oidcEnvConfig.issuer}/api/auth/oauth2/endsession`,
+    end_session_endpoint: `${authBase}/oauth2/end-session`,
+    revocation_endpoint: `${authBase}/oauth2/revoke`,
+    introspection_endpoint: `${authBase}/oauth2/introspect`,
     scopes_supported: [...OIDC_SUPPORTED_SCOPES],
-    response_types_supported: ["code"] as ["code"],
-    response_modes_supported: ["query"] as ["query"],
-    grant_types_supported: ["authorization_code", "refresh_token"] as [
-      "authorization_code",
-      ..."refresh_token"[],
-    ],
-    acr_values_supported: [
-      "urn:mace:incommon:iap:silver",
-      "urn:mace:incommon:iap:bronze",
-    ],
-    subject_types_supported: ["public"] as ["public"],
+    response_types_supported: ["code"],
+    response_modes_supported: ["query"],
+    grant_types_supported: ["authorization_code", "refresh_token"],
+    subject_types_supported: ["public"],
     id_token_signing_alg_values_supported: [OIDC_ID_TOKEN_SIGNING_ALG],
     token_endpoint_auth_methods_supported: [
       "client_secret_basic",
       "client_secret_post",
       "none",
-    ] as ["client_secret_basic", "client_secret_post", "none"],
-    code_challenge_methods_supported: ["S256"] as ["S256"],
+    ],
+    code_challenge_methods_supported: ["S256"],
     claims_supported: [...OIDC_SUPPORTED_CLAIMS],
   };
 }

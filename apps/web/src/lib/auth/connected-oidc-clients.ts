@@ -42,12 +42,12 @@ function pickLater(a: Date | null, b: Date | null): Date | null {
 
 /**
  * Lists every OIDC client the user has ever authorized, aggregating data from
- * OauthConsent (consent-given records), OauthAccessToken (issued tokens), and
- * OidcUserGrant (per-user granular scope memory).
+ * OauthConsent (consent records), OauthAccessToken / OauthRefreshToken (issued
+ * tokens), and OidcUserGrant (per-user granular scope memory).
  *
  * First-party clients (spacetime web/cli, defined in oidc.config) are resolved
- * against their config name/icon; dynamically registered clients fall back to
- * OauthApplication metadata.
+ * against their config name/icon; other clients fall back to OauthClient
+ * metadata.
  */
 export async function listConnectedOidcClients(
   userId: string,
@@ -78,9 +78,9 @@ export async function listConnectedOidcClients(
     return fresh;
   };
 
-  const [consents, accessTokens, grants] = await Promise.all([
+  const [consents, accessTokens, refreshTokens, grants] = await Promise.all([
     prisma.oauthConsent.findMany({
-      where: { userId, consentGiven: true },
+      where: { userId },
       select: {
         clientId: true,
         scopes: true,
@@ -94,8 +94,19 @@ export async function listConnectedOidcClients(
         clientId: true,
         scopes: true,
         createdAt: true,
-        accessTokenExpiresAt: true,
-        refreshTokenExpiresAt: true,
+        expiresAt: true,
+        revoked: true,
+        refreshId: true,
+      },
+    }),
+    prisma.oauthRefreshToken.findMany({
+      where: { userId },
+      select: {
+        clientId: true,
+        scopes: true,
+        createdAt: true,
+        expiresAt: true,
+        revoked: true,
       },
     }),
     prisma.oidcUserGrant.findMany({
@@ -106,10 +117,7 @@ export async function listConnectedOidcClients(
 
   for (const consent of consents) {
     const entry = upsertBucket(consent.clientId);
-    entry.scopes = mergeScopes(
-      entry.scopes,
-      (consent.scopes ?? "").split(/\s+/),
-    );
+    entry.scopes = mergeScopes(entry.scopes, consent.scopes);
     entry.firstConnectedAt = pickEarlier(
       entry.firstConnectedAt,
       consent.createdAt,
@@ -117,9 +125,15 @@ export async function listConnectedOidcClients(
     entry.lastConnectedAt = pickLater(entry.lastConnectedAt, consent.updatedAt);
   }
 
-  for (const token of accessTokens) {
+  // A live refresh token keeps the connection active; an access token counts
+  // on its own only when no refresh token backs it.
+  const tokens = [
+    ...accessTokens,
+    ...refreshTokens.map((token) => ({ ...token, refreshId: null })),
+  ];
+  for (const token of tokens) {
     const entry = upsertBucket(token.clientId);
-    entry.scopes = mergeScopes(entry.scopes, (token.scopes ?? "").split(/\s+/));
+    entry.scopes = mergeScopes(entry.scopes, token.scopes);
     entry.firstConnectedAt = pickEarlier(
       entry.firstConnectedAt,
       token.createdAt,
@@ -129,9 +143,7 @@ export async function listConnectedOidcClients(
       entry.lastTokenIssuedAt,
       token.createdAt,
     );
-    const refreshAlive = token.refreshTokenExpiresAt > now;
-    const accessAlive = token.accessTokenExpiresAt > now;
-    if (refreshAlive || accessAlive) {
+    if (!token.refreshId && !token.revoked && token.expiresAt > now) {
       entry.activeTokenCount += 1;
     }
   }
@@ -151,7 +163,7 @@ export async function listConnectedOidcClients(
     (clientId) => resolveOidcClientKey(clientId) === null,
   );
   const dynamicClients = dynamicClientIds.length
-    ? await prisma.oauthApplication.findMany({
+    ? await prisma.oauthClient.findMany({
         where: { clientId: { in: dynamicClientIds } },
         select: { clientId: true, name: true, icon: true },
       })
@@ -191,7 +203,7 @@ export async function listConnectedOidcClients(
 
 /**
  * Terminates every OIDC connection the user has with `clientId`:
- *   - Deletes issued access/refresh tokens (kills silent refresh)
+ *   - Deletes issued access and refresh tokens (kills silent refresh)
  *   - Deletes the stored consent record (forces re-consent next sign-in)
  *   - Deletes granular scope grants (resets remembered permissions)
  *
@@ -206,14 +218,17 @@ export async function revokeOidcClientConnection(
   deletedConsents: number;
   deletedGrants: number;
 }> {
-  const [tokens, consents, grants] = await prisma.$transaction([
-    prisma.oauthAccessToken.deleteMany({ where: { userId, clientId } }),
-    prisma.oauthConsent.deleteMany({ where: { userId, clientId } }),
-    prisma.oidcUserGrant.deleteMany({ where: { userId, clientId } }),
-  ]);
+  // Access tokens reference refresh tokens, so they go first.
+  const [accessTokens, refreshTokens, consents, grants] =
+    await prisma.$transaction([
+      prisma.oauthAccessToken.deleteMany({ where: { userId, clientId } }),
+      prisma.oauthRefreshToken.deleteMany({ where: { userId, clientId } }),
+      prisma.oauthConsent.deleteMany({ where: { userId, clientId } }),
+      prisma.oidcUserGrant.deleteMany({ where: { userId, clientId } }),
+    ]);
 
   return {
-    deletedTokens: tokens.count,
+    deletedTokens: accessTokens.count + refreshTokens.count,
     deletedConsents: consents.count,
     deletedGrants: grants.count,
   };

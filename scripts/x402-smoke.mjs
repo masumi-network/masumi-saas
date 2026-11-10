@@ -34,7 +34,7 @@ function skip(step, detail) {
 
 async function ensureApiKey(prisma, userId) {
   const existing = await prisma.apikey.findFirst({
-    where: { userId, name: "x402-smoke-key" },
+    where: { referenceId: userId, name: "x402-smoke-key" },
     select: { id: true },
   });
   if (existing) return existing.id;
@@ -47,7 +47,7 @@ async function ensureApiKey(prisma, userId) {
       prefix: "x402smok",
       start: rawKey.slice(0, 8),
       key: rawKey,
-      userId,
+      referenceId: userId,
       enabled: true,
     },
     select: { id: true },

@@ -1,22 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const adapterMethods = {
+  consumeOne: vi.fn(),
   count: vi.fn(),
   create: vi.fn(),
   delete: vi.fn(),
   deleteMany: vi.fn(),
   findMany: vi.fn(),
   findOne: vi.fn(),
+  incrementOne: vi.fn(),
+  transaction: vi.fn(),
   update: vi.fn(),
   updateMany: vi.fn(),
 };
 
-const prismaMock = {
-  oauthAccessToken: {
-    findUnique: vi.fn(),
-    updateMany: vi.fn(),
-  },
-};
+const prismaMock = {};
 
 vi.mock("@masumi/database/client", () => ({
   Prisma: {},
@@ -52,8 +50,6 @@ describe("securePrismaAuthAdapter", () => {
   beforeEach(() => {
     process.env.BETTER_AUTH_SECRET = "test-auth-secret";
     Object.values(adapterMethods).forEach((mock) => mock.mockReset());
-    prismaMock.oauthAccessToken.findUnique.mockReset();
-    prismaMock.oauthAccessToken.updateMany.mockReset();
   });
 
   afterEach(() => {
@@ -154,49 +150,6 @@ describe("securePrismaAuthAdapter", () => {
     expect(created.privateKey).toBe("super-secret-private-key");
   });
 
-  it("resolves an OIDC session id from a raw refresh token before rotation", async () => {
-    const authStorageModule = await import("./auth-storage");
-    prismaMock.oauthAccessToken.findUnique.mockResolvedValue({
-      id: "oauth-token-1",
-      oidcSessionId: "stable-sid",
-    });
-
-    await expect(
-      authStorageModule.getOauthAccessTokenOidcSessionIdForRefreshToken(
-        "raw-refresh-token",
-      ),
-    ).resolves.toBe("stable-sid");
-
-    expect(prismaMock.oauthAccessToken.findUnique).toHaveBeenCalledWith({
-      select: {
-        id: true,
-        oidcSessionId: true,
-      },
-      where: {
-        refreshToken: authStorageModule.hashAuthLookupValue(
-          "raw-refresh-token",
-          "oauthAccessToken.refreshToken",
-        ),
-      },
-    });
-  });
-
-  it("falls back to a deterministic OIDC session id for older token records", async () => {
-    const authStorageModule = await import("./auth-storage");
-    prismaMock.oauthAccessToken.findUnique.mockResolvedValue({
-      id: "oauth-token-1",
-      oidcSessionId: null,
-    });
-
-    await expect(
-      authStorageModule.getOauthAccessTokenOidcSessionIdForRefreshToken(
-        "raw-refresh-token",
-      ),
-    ).resolves.toBe(
-      authStorageModule.createOidcSessionId({ tokenId: "oauth-token-1" }),
-    );
-  });
-
   it("does not double-hash session tokens already loaded from storage on update", async () => {
     const authStorageModule = await import("./auth-storage");
     const storedToken = authStorageModule.hashAuthLookupValue(
@@ -270,25 +223,109 @@ describe("securePrismaAuthAdapter", () => {
     );
   });
 
-  it("writes a resolved OIDC session id to the rotated refresh token record", async () => {
+  it("returns the raw value of a hashed field matched by the lookup", async () => {
     const authStorageModule = await import("./auth-storage");
-    prismaMock.oauthAccessToken.updateMany.mockResolvedValue({ count: 1 });
+    // The device plugin compares `record.userCode` with the code it looked up.
+    adapterMethods.findOne.mockImplementation(async ({ where }) => ({
+      id: "device-1",
+      userCode: where[0].value,
+      deviceCode: authStorageModule.hashAuthLookupValue(
+        "raw-device-code",
+        "deviceCode.deviceCode",
+      ),
+    }));
 
-    await expect(
-      authStorageModule.carryForwardOauthAccessTokenOidcSessionId({
-        previousOidcSessionId: "stable-sid",
-        rotatedRefreshToken: "rotated-refresh-token",
-      }),
-    ).resolves.toBe("stable-sid");
+    const adapter = authStorageModule.securePrismaAuthAdapter({} as never, {
+      provider: "postgresql",
+    })({} as never);
 
-    expect(prismaMock.oauthAccessToken.updateMany).toHaveBeenCalledWith({
-      where: {
-        refreshToken: authStorageModule.hashAuthLookupValue(
-          "rotated-refresh-token",
-          "oauthAccessToken.refreshToken",
-        ),
-      },
-      data: { oidcSessionId: "stable-sid" },
+    const record = await adapter.findOne<{
+      userCode: string;
+      deviceCode: string;
+    }>({
+      model: "deviceCode",
+      where: [{ field: "userCode", value: "ABCDEFGH" }],
     });
+
+    expect(record?.userCode).toBe("ABCDEFGH");
+    // Fields that were not part of the lookup stay hashed.
+    expect(record?.deviceCode).not.toBe("raw-device-code");
+  });
+
+  it("stores a null device-code resources list as an empty list", async () => {
+    const authStorageModule = await import("./auth-storage");
+    adapterMethods.create.mockImplementation(async ({ data }) => data);
+
+    const adapter = authStorageModule.securePrismaAuthAdapter({} as never, {
+      provider: "postgresql",
+    })({} as never);
+
+    // Prisma rejects null for a String[] column (device/code returned 500).
+    await adapter.create({
+      model: "deviceCode",
+      data: { deviceCode: "dc", userCode: "uc", resources: null },
+    });
+
+    expect(adapterMethods.create.mock.calls[0][0].data.resources).toEqual([]);
+  });
+
+  it("hashes consumeOne lookups so single-use codes resolve", async () => {
+    const authStorageModule = await import("./auth-storage");
+    adapterMethods.consumeOne.mockImplementation(async ({ where }) => ({
+      id: "verification-1",
+      identifier: where[0].value,
+    }));
+
+    const adapter = authStorageModule.securePrismaAuthAdapter({} as never, {
+      provider: "postgresql",
+    })({} as never);
+
+    const consumed = await adapter.consumeOne<{ identifier: string }>({
+      model: "verification",
+      where: [{ field: "identifier", value: "magic-link-token" }],
+    });
+
+    expect(adapterMethods.consumeOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: [
+          {
+            field: "identifier",
+            value: authStorageModule.hashAuthLookupValue(
+              "magic-link-token",
+              "verification.identifier",
+            ),
+          },
+        ],
+      }),
+    );
+    expect(consumed?.identifier).toBe("magic-link-token");
+  });
+
+  it("wraps the transaction-scoped adapter so writes inside a transaction are hashed", async () => {
+    const authStorageModule = await import("./auth-storage");
+    adapterMethods.transaction.mockImplementation(
+      async (callback: (trx: typeof adapterMethods) => Promise<unknown>) =>
+        callback(adapterMethods),
+    );
+    adapterMethods.create.mockImplementation(async ({ data }) => data);
+
+    const adapter = authStorageModule.securePrismaAuthAdapter({} as never, {
+      provider: "postgresql",
+    })({} as never);
+
+    await adapter.transaction!(async (trx) =>
+      trx.create({ model: "session", data: { token: "raw-session-token" } }),
+    );
+
+    expect(adapterMethods.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          token: authStorageModule.hashAuthLookupValue(
+            "raw-session-token",
+            "session.token",
+          ),
+        },
+      }),
+    );
   });
 });

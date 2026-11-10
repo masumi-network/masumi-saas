@@ -573,7 +573,7 @@ export async function getApiKeysAction(): Promise<
   try {
     const { user } = await getAuthenticatedOrThrow();
     const keys = await prisma.apikey.findMany({
-      where: { userId: user.id },
+      where: { referenceId: user.id },
       select: {
         id: true,
         name: true,

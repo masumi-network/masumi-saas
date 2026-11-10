@@ -26,8 +26,9 @@ model User {
   members                Member[]
   invitations            Invitation[]
   apikeys                Apikey[]
-  oauthApplications      OauthApplication[]
+  oauthClients           OauthClient[]
   oauthAccessTokens      OauthAccessToken[]
+  oauthRefreshTokens     OauthRefreshToken[]
   oauthConsents          OauthConsent[]
   oidcUserGrants         OidcUserGrant[]
   creditLedgerEntries    CreditLedgerEntry[]
@@ -75,13 +76,17 @@ model User {
 }
 
 model TwoFactor {
-  id          String @id @default(cuid())
-  secret      String
-  backupCodes String
-  userId      String
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String    @id @default(cuid())
+  secret                  String
+  backupCodes             String
+  userId                  String
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified                Boolean?  @default(true)
+  failedVerificationCount Int?      @default(0)
+  lockedUntil             DateTime?
 
   @@unique([userId])
+  @@index([secret])
   @@map("twoFactor")
 }
 
@@ -100,6 +105,9 @@ model Session {
   activeOrganization   Organization? @relation(fields: [activeOrganizationId], references: [id], onDelete: SetNull)
 
   impersonatedBy String?
+
+  oauthAccessTokens  OauthAccessToken[]
+  oauthRefreshTokens OauthRefreshToken[]
 
   @@unique([token])
   @@map("session")
@@ -212,13 +220,16 @@ model Invitation {
 }
 
 model Apikey {
-  id                  String    @id
+  id                  String               @id
+  configId            String               @default("default")
   name                String?
   start               String?
   prefix              String?
   key                 String
-  userId              String
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Better Auth apiKey plugin (v1.5+): owner reference. Points at the user
+  // that owns the key (the plugin's default `references: "user"`).
+  referenceId         String
+  user                User                 @relation(fields: [referenceId], references: [id], onDelete: Cascade)
   refillInterval      Int?
   refillAmount        Int?
   lastRefillAt        DateTime?
@@ -232,61 +243,184 @@ model Apikey {
   expiresAt           DateTime?
   permissions         String? // Better Auth apiKey plugin (v1.4+)
   metadata            String? // Better Auth apiKey plugin (enableMetadata: true)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   x402WalletBudgets   X402WalletBudget[]
   x402PaymentAttempts X402PaymentAttempt[]
 
+  @@index([configId])
+  @@index([referenceId])
+  @@index([key])
   @@map("apikey")
 }
 
-model OauthApplication {
-  id           String   @id @default(cuid())
-  clientId     String   @unique
-  clientSecret String?
-  type         String
-  name         String
-  icon         String?
-  metadata     String?  @db.Text
-  redirectUrls String   @db.Text
-  disabled     Boolean  @default(false)
-  userId       String?
-  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+// OAuth 2.1 / OIDC provider tables (@better-auth/oauth-provider 1.7).
+// JSON-typed plugin fields are stored as text: the Prisma adapter serialises
+// them (supportsJSON is false).
+model OauthClient {
+  id                               String    @id @default(cuid())
+  clientId                         String    @unique
+  clientSecret                     String?
+  clientDiscoveryId                String?
+  disabled                         Boolean?  @default(false)
+  skipConsent                      Boolean?
+  enableEndSession                 Boolean?
+  subjectType                      String?
+  scopes                           String[]
+  clientCredentialsScopes          String[]  @default([])
+  userId                           String?
+  user                             User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                        DateTime? @default(now())
+  updatedAt                        DateTime? @updatedAt
+  name                             String?
+  uri                              String?
+  icon                             String?
+  contacts                         String[]
+  tos                              String?
+  policy                           String?
+  softwareId                       String?
+  softwareVersion                  String?
+  softwareStatement                String?
+  redirectUris                     String[]
+  postLogoutRedirectUris           String[]
+  backchannelLogoutUri             String?
+  backchannelLogoutSessionRequired Boolean?
+  tokenEndpointAuthMethod          String?
+  applicationType                  String?
+  jwks                             String?   @db.Text
+  jwksUri                          String?
+  grantTypes                       String[]
+  responseTypes                    String[]
+  requirePKCE                      Boolean?
+  dpopBoundAccessTokens            Boolean?  @default(false)
+  referenceId                      String?
+  metadata                         String?   @db.Text
+
+  accessTokens    OauthAccessToken[]
+  refreshTokens   OauthRefreshToken[]
+  consents        OauthConsent[]
+  clientResources OauthClientResource[]
 
   @@index([userId])
-  @@map("oauthApplication")
+  @@map("oauthClient")
+}
+
+model OauthResource {
+  id                            String    @id @default(cuid())
+  identifier                    String    @unique
+  name                          String
+  accessTokenTtl                Int?
+  refreshTokenTtl               Int?
+  signingAlgorithm              String?
+  signingKeyId                  String?
+  allowedScopes                 String[]
+  customClaims                  String?   @db.Text
+  dpopBoundAccessTokensRequired Boolean?  @default(false)
+  disabled                      Boolean?  @default(false)
+  createdAt                     DateTime? @default(now())
+  updatedAt                     DateTime? @updatedAt
+  policyVersion                 Int?      @default(1)
+  metadata                      String?   @db.Text
+
+  clientResources OauthClientResource[]
+
+  @@map("oauthResource")
+}
+
+model OauthClientResource {
+  id         String        @id @default(cuid())
+  clientId   String
+  client     OauthClient   @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  resourceId String
+  resource   OauthResource @relation(fields: [resourceId], references: [identifier], onDelete: Cascade)
+  metadata   String?       @db.Text
+  createdAt  DateTime?     @default(now())
+
+  @@index([clientId])
+  @@index([resourceId])
+  @@map("oauthClientResource")
+}
+
+model OauthClientAssertion {
+  id        String   @id
+  expiresAt DateTime
+
+  @@map("oauthClientAssertion")
+}
+
+model OauthRefreshToken {
+  id                      String      @id @default(cuid())
+  token                   String      @unique
+  clientId                String
+  client                  OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               String?
+  session                 Session?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  String
+  user                    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  expiresAt               DateTime
+  createdAt               DateTime    @default(now())
+  revoked                 DateTime?
+  rotatedAt               DateTime?
+  rotationReplayResponse  String?     @db.Text
+  rotationReplayExpiresAt DateTime?
+  authTime                DateTime?
+  confirmation            String?     @db.Text
+  scopes                  String[]
+
+  accessTokens OauthAccessToken[]
+
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+  @@map("oauthRefreshToken")
 }
 
 model OauthAccessToken {
-  id                    String   @id @default(cuid())
-  accessToken           String   @unique
-  refreshToken          String   @unique
-  accessTokenExpiresAt  DateTime
-  refreshTokenExpiresAt DateTime
-  oidcSessionId         String?
-  clientId              String
-  userId                String?
-  user                  User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scopes                String   @db.Text
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                      String             @id @default(cuid())
+  token                   String             @unique
+  clientId                String
+  client                  OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               String?
+  session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  String?
+  user                    User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  refreshId               String?
+  refresh                 OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
+  expiresAt               DateTime
+  createdAt               DateTime           @default(now())
+  revoked                 DateTime?
+  confirmation            String?            @db.Text
+  scopes                  String[]
 
   @@index([clientId])
+  @@index([sessionId])
   @@index([userId])
+  @@index([authorizationCodeId])
+  @@index([refreshId])
   @@map("oauthAccessToken")
 }
 
 model OauthConsent {
-  id           String   @id @default(cuid())
-  clientId     String
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scopes       String   @db.Text
-  consentGiven Boolean
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                      String      @id @default(cuid())
+  clientId                String
+  client                  OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId                  String?
+  user                    User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  scopes                  String[]
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
 
   @@index([clientId])
   @@index([userId])
@@ -336,6 +470,9 @@ model DeviceCode {
   pollingInterval Int?
   clientId        String?
   scope           String?
+  // @better-auth/oauth-provider device grant fields.
+  oauthClientId   String?
+  resources       String[]
 
   @@index([userId])
   @@index([clientId])
@@ -348,6 +485,8 @@ model Jwks {
   privateKey String    @db.Text
   createdAt  DateTime  @default(now())
   expiresAt  DateTime?
+  alg        String?
+  crv        String?
 
   @@map("jwks")
 }
