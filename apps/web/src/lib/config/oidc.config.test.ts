@@ -38,12 +38,12 @@ describe("getPublicOidcMetadata", () => {
     ).toEqual([OIDC_ID_TOKEN_SIGNING_ALG]);
   });
 
-  it("advertises token and session identifier claims", async () => {
+  it("advertises the session identifier claim but not jti", async () => {
     process.env.BETTER_AUTH_URL = "https://saas.example.com";
     const { getPublicOidcMetadata } = await import("./oidc.config");
 
-    expect(getPublicOidcMetadata().claims_supported).toEqual(
-      expect.arrayContaining(["jti", "sid"]),
-    );
+    const claims = getPublicOidcMetadata().claims_supported;
+    expect(claims).toContain("sid");
+    expect(claims).not.toContain("jti");
   });
 });

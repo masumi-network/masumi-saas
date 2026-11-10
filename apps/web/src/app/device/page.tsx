@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { auth } from "@/lib/auth/auth";
 import { findDeviceCodeByUserCode } from "@/lib/auth/auth-storage";
 import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
@@ -96,6 +98,18 @@ export default async function DevicePage({ searchParams }: DevicePageProps) {
         redirect(
           `/signin?callbackUrl=${encodeURIComponent(`/device?user_code=${normalizedUserCode}`)}`,
         );
+      }
+
+      // better-auth 1.7 only lets the user who viewed (claimed) a code approve
+      // or deny it. The verify endpoint claims a pending, unclaimed code for
+      // the signed-in user.
+      try {
+        await auth.api.deviceVerify({
+          query: { user_code: normalizedUserCode },
+          headers: await headers(),
+        });
+      } catch (error) {
+        console.error("[device] Failed to claim device code", error);
       }
 
       isResolvedRequest = true;

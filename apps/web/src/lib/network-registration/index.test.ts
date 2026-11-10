@@ -16,6 +16,7 @@ const base = {
   name: "Ada",
   email: "ada@example.com",
   termsAccepted: true as const,
+  registrationKind: "STANDARD" as const,
   agent: {
     name: "Agent",
     apiUrl: "https://example.com",

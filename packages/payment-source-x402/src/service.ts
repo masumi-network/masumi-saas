@@ -221,7 +221,7 @@ export async function setX402WalletBudget(
       select: { caip2Id: true, userId: true, id: true },
     }),
     prisma.apikey.findFirst({
-      where: { id: input.apiKeyId, userId: input.userId },
+      where: { id: input.apiKeyId, referenceId: input.userId },
       select: { id: true },
     }),
   ]);

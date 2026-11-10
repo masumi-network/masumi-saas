@@ -61,11 +61,11 @@ export async function getDashboardOverview(
     }),
     getKycStatusAction(),
     prisma.apikey.findMany({
-      where: { userId },
+      where: { referenceId: userId },
       select: { id: true, name: true, prefix: true, start: true },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.apikey.count({ where: { userId } }),
+    prisma.apikey.count({ where: { referenceId: userId } }),
     prisma.agent.count({ where: baseAgentWhere }),
     prisma.agent.count({
       where: { ...baseAgentWhere, verificationStatus: "VERIFIED" },

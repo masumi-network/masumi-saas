@@ -251,51 +251,30 @@ async function startInteractiveWebConsentFlow(options: {
       expect(consentPageRes.status).toBe(200);
       consentHtml = await consentPageRes.text();
     } else {
-      const consentCode = extractHiddenInputValue(consentHtml, "consentCode");
-      expect(consentCode).toBeTruthy();
-
-      consentUrl = new URL("/oidc/consent", BASE_URL);
-      consentUrl.searchParams.set("consent_code", consentCode as string);
-
-      const clientId = extractHiddenInputValue(consentHtml, "clientId");
-      if (clientId) {
-        consentUrl.searchParams.set("client_id", clientId);
-      }
-
-      const scope = extractHiddenInputValue(consentHtml, "scope");
-      if (scope) {
-        consentUrl.searchParams.set("scope", scope);
-      }
-
-      const continueUrl = extractHiddenInputValue(consentHtml, "continueUrl");
-      if (continueUrl) {
-        consentUrl.searchParams.set("continueUrl", continueUrl);
-      }
+      throw new Error("authorize did not redirect to the consent page");
     }
   }
+
+  const oauthQuery = extractHiddenInputValue(consentHtml, "oauth_query");
+  expect(oauthQuery).toBeTruthy();
 
   return {
     codeVerifier,
     consentHtml,
     consentUrl,
+    oauthQuery: oauthQuery as string,
     state,
   };
 }
 
 async function submitInteractiveWebConsent(options: {
   jar: import("../helpers").CookieJar;
-  consentUrl: URL;
+  oauthQuery: string;
   codeVerifier: string;
   accept: boolean;
 }) {
-  const consentCode = options.consentUrl.searchParams.get("consent_code");
-  expect(consentCode).toBeTruthy();
-
   const form = new URLSearchParams({
-    consentCode: consentCode as string,
-    clientId: options.consentUrl.searchParams.get("client_id") ?? WEB_CLIENT_ID,
-    scope: options.consentUrl.searchParams.get("scope") ?? "",
-    continueUrl: options.consentUrl.searchParams.get("continueUrl") ?? "",
+    oauth_query: options.oauthQuery,
     accept: options.accept ? "true" : "false",
   });
 
@@ -406,7 +385,15 @@ function extractHiddenInputValue(html: string, name: string): string | null {
     ),
   );
 
-  return match?.[1] ?? null;
+  return (
+    // Decode &amp; last, so "&amp;lt;" stays "&lt;" and is not unescaped twice.
+    match?.[1]
+      ?.replace(/&quot;/g, '"')
+      .replace(/&#x27;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&") ?? null
+  );
 }
 
 describe("SMOKE — OIDC discovery", () => {
@@ -422,9 +409,9 @@ describe("SMOKE — OIDC discovery", () => {
     expect(body.token_endpoint).toBe(`${ISSUER_URL}/api/auth/oauth2/token`);
     expect(body.jwks_uri).toBe(`${ISSUER_URL}/jwks`);
     expect(body.id_token_signing_alg_values_supported).toContain("ES256");
-    expect(body.claims_supported).toEqual(
-      expect.arrayContaining(["jti", "sid"]),
-    );
+    // better-auth 1.7 ID tokens carry sid but no jti.
+    expect(body.claims_supported).toContain("sid");
+    expect(body.claims_supported).not.toContain("jti");
   });
 
   it("GET /.well-known/oauth-authorization-server returns OAuth metadata", async () => {
@@ -589,7 +576,7 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
     expect(payload.iss).toBe(ISSUER_URL);
     expect(payload.sub).toBeDefined();
     expect(payload.aud).toBe(WEB_CLIENT_ID);
-    expect(typeof payload.jti).toBe("string");
+    expect(payload.jti).toBeUndefined();
     expect(typeof payload.sid).toBe("string");
   });
 
@@ -617,7 +604,7 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
 
     const initialPayload = decodeJwtPayload(token.id_token as string);
     expect(initialPayload.email_verified).toBe(true);
-    expect(typeof initialPayload.jti).toBe("string");
+    expect(initialPayload.jti).toBeUndefined();
     expect(typeof initialPayload.sid).toBe("string");
 
     await prisma.user.update({
@@ -646,25 +633,36 @@ describe("SMOKE — OIDC Spacetime bridge", () => {
     expect(refreshedPayload.email_verified).toBe(false);
     expect(refreshedPayload.aud).toBe(WEB_CLIENT_ID);
     expect(refreshedPayload.sid).toBe(initialPayload.sid);
-    expect(typeof refreshedPayload.jti).toBe("string");
-    expect(refreshedPayload.jti).not.toBe(initialPayload.jti);
+    expect(refreshedPayload.jti).toBeUndefined();
+    // Without jti, freshness shows in iat/exp and the signature.
+    expect(refreshedToken.id_token).not.toBe(token.id_token);
+  });
+
+  it("OIDC consent page rejects an unsigned consent URL", async () => {
+    const { jar } = await signUpAndSignIn();
+    const res = await fetch(
+      `${BASE_URL}/oidc/consent?client_id=${WEB_CLIENT_ID}&scope=openid&sig=forged`,
+      {
+        headers: { Accept: "text/html", Cookie: jar.header() },
+        redirect: "manual",
+      },
+    );
+
+    expect([303, 307, 308]).toContain(res.status);
+    expect(
+      new URL(res.headers.get("location") as string, BASE_URL).pathname,
+    ).toBe("/");
   });
 
   it("OIDC consent page shows email verification gate for unverified users", async () => {
     const { jar } = await signUpAndSignIn();
-    const res = await request(
-      `/oidc/consent?consent_code=test-consent&client_id=${WEB_CLIENT_ID}&scope=${encodeURIComponent("openid profile email offline_access")}`,
-      {
-        jar,
-        headers: {
-          Accept: "text/html",
-        },
-      },
-    );
+    const consentFlow = await startInteractiveWebConsentFlow({
+      jar,
+      scope: "openid profile email offline_access",
+    });
 
-    expect(res.status).toBe(200);
-    expect(String(res.body)).toContain("Verify your email to continue");
-    expect(String(res.body)).toContain("Switch account");
+    expect(consentFlow.consentHtml).toContain("Verify your email to continue");
+    expect(consentFlow.consentHtml).toContain("Switch account");
   });
 
   it("verify-email link callback preserves the OIDC continuation", async () => {
@@ -734,7 +732,7 @@ describe("SMOKE — OIDC API scopes", () => {
 
     const result = await submitInteractiveWebConsent({
       jar,
-      consentUrl: consentFlow.consentUrl,
+      oauthQuery: consentFlow.oauthQuery,
       codeVerifier: consentFlow.codeVerifier,
       accept: true,
     });
@@ -763,7 +761,7 @@ describe("SMOKE — OIDC API scopes", () => {
 
     const result = await submitInteractiveWebConsent({
       jar,
-      consentUrl: consentFlow.consentUrl,
+      oauthQuery: consentFlow.oauthQuery,
       codeVerifier: consentFlow.codeVerifier,
       accept: false,
     });
@@ -790,7 +788,7 @@ describe("SMOKE — OIDC API scopes", () => {
 
     const result = await submitInteractiveWebConsent({
       jar,
-      consentUrl: consentFlow.consentUrl,
+      oauthQuery: consentFlow.oauthQuery,
       codeVerifier: consentFlow.codeVerifier,
       accept: true,
     });
@@ -996,8 +994,9 @@ describe("SMOKE — OIDC device flow", () => {
     expect(payload.iss).toBe(ISSUER_URL);
     expect(payload.aud).toBe("masumi-spacetime-cli");
     expect(payload.sub).toBeDefined();
-    expect(typeof payload.jti).toBe("string");
-    expect(typeof payload.sid).toBe("string");
+    // 1.7 device-grant ID tokens are not bound to a browser session.
+    expect(payload.jti).toBeUndefined();
+    expect(payload.sid).toBeUndefined();
   });
 
   it("device approval upgrades stored grants and returns newly approved API scopes", async () => {
