@@ -20,7 +20,7 @@ export async function resolveX402ApiKeyId(
   }
 
   const apiKey = await prisma.apikey.findFirst({
-    where: { id: bodyApiKeyId, userId: authContext.user.id },
+    where: { id: bodyApiKeyId, referenceId: authContext.user.id },
     select: { id: true },
   });
   if (apiKey == null) {

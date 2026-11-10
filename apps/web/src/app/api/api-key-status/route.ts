@@ -58,7 +58,7 @@ app.openapi(
 
       if (isApiKeyAuth && typeof sess?.id === "string") {
         const keyRow = await prisma.apikey.findFirst({
-          where: { id: sess.id, userId: authContext.user.id },
+          where: { id: sess.id, referenceId: authContext.user.id },
           select: {
             id: true,
             name: true,

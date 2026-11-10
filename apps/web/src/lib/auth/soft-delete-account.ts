@@ -101,11 +101,13 @@ export async function softDeleteUserAccount(userId: string): Promise<void> {
     });
 
     await tx.apikey.updateMany({
-      where: { userId },
+      where: { referenceId: userId },
       data: { enabled: false },
     });
 
+    // Access tokens reference refresh tokens, so they go first.
     await tx.oauthAccessToken.deleteMany({ where: { userId } });
+    await tx.oauthRefreshToken.deleteMany({ where: { userId } });
 
     await tx.session.deleteMany({ where: { userId } });
   });

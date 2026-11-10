@@ -1,13 +1,10 @@
+import { isAPIError } from "better-auth/api";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { addCorsHeaders, handleCorsPreflightResponse } from "@/lib/api/cors";
-import {
-  createSessionForwardedAuthHeaders,
-  exchangeAuthForOidcTokenSet,
-  OIDC_NO_STORE_HEADERS,
-  OidcTokenExchangeError,
-} from "@/lib/auth/oidc-flow";
+import { auth } from "@/lib/auth/auth";
+import { OIDC_NO_STORE_HEADERS } from "@/lib/auth/oidc/constants";
 import { getAuthenticatedOrThrow, handleAuthError } from "@/lib/auth/utils";
 import { getTrustedOidcOrigins, oidcEnvConfig } from "@/lib/config/oidc.config";
 import { createApiApp } from "@/server/hono/app";
@@ -35,6 +32,27 @@ function jsonWithCors(
   );
 }
 
+/**
+ * Only the browser session cookie may authenticate the token request.
+ * Bearer and API-key headers would let the bearer or api-key plugins swap in
+ * a different session, so they are not forwarded.
+ */
+const SESSION_BRIDGE_FORWARDED_HEADERS = [
+  "cookie",
+  "origin",
+  "referer",
+  "user-agent",
+] as const;
+
+function createSessionForwardedHeaders(request: Request): Headers {
+  const headers = new Headers();
+  for (const key of SESSION_BRIDGE_FORWARDED_HEADERS) {
+    const value = request.headers.get(key);
+    if (value) headers.set(key, value);
+  }
+  return headers;
+}
+
 const app = createApiApp("/api/oidc/spacetimedb/token");
 
 app.options("/", (c) => {
@@ -49,7 +67,12 @@ app.options("/", (c) => {
 app.post("/", async (c) => {
   const request = c.req.raw;
   try {
-    const authContext = await getAuthenticatedOrThrow(request);
+    // Authenticate with the same cookie-only headers that mint the tokens, so
+    // the checks below apply to the user the tokens are issued for.
+    const sessionHeaders = createSessionForwardedHeaders(request);
+    const authContext = await getAuthenticatedOrThrow(
+      new Request(request.url, { headers: sessionHeaders }),
+    );
 
     if (authContext.authMethod !== "session") {
       return jsonWithCors(
@@ -87,11 +110,9 @@ app.post("/", async (c) => {
       );
     }
 
-    const exchange = await exchangeAuthForOidcTokenSet({
-      requestUrl: request.url,
-      clientKey: parsed.data.client,
-      authHeaders: createSessionForwardedAuthHeaders(request),
-      scopes: ["openid", "profile", "email", "offline_access"],
+    const exchange = await auth.api.masumiIssueOidcSessionTokens({
+      headers: sessionHeaders,
+      body: { client: parsed.data.client },
     });
 
     return jsonWithCors(
@@ -107,15 +128,15 @@ app.post("/", async (c) => {
       },
     );
   } catch (error) {
-    if (error instanceof OidcTokenExchangeError) {
+    if (isAPIError(error)) {
       return jsonWithCors(
         request,
         {
           success: false,
           error: error.message,
-          details: error.details,
+          details: error.body,
         },
-        { status: error.status },
+        { status: error.statusCode },
       );
     }
 

@@ -1,3 +1,4 @@
+import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
 import gravatarUrl from "gravatar-url";
 import {
   AlertCircle,
@@ -16,8 +17,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
+import {
+  buildAuthorizeUrlFromSignedQuery,
+  extractSignedOAuthQuery,
+} from "@/lib/auth/oidc/signed-query";
 import { getStoredOidcGrantScopes } from "@/lib/auth/oidc-user-grants";
 import { getSession } from "@/lib/auth/utils";
+import { authEnvConfig } from "@/lib/config/auth.config";
 import { getTrustedOidcClients } from "@/lib/config/oidc.config";
 import {
   getGroupedOidcApiPermissionItems,
@@ -49,13 +55,19 @@ const PAGE_COPY = {
 } as const;
 
 interface OidcConsentPageProps {
-  searchParams: Promise<{
-    consent_code?: string;
-    client_id?: string;
-    scope?: string;
-    continueUrl?: string;
-    error?: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function toUrlSearchParams(
+  searchParams: Record<string, string | string[] | undefined>,
+): URLSearchParams {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(searchParams)) {
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (typeof item === "string") params.append(key, item);
+    }
+  }
+  return params;
 }
 
 function normalizeScopes(value: string | undefined): string[] {
@@ -78,31 +90,6 @@ function getClientLabel(clientId: string | undefined): string {
   return client?.name ?? "Masumi Agent Messenger";
 }
 
-function buildConsentCallbackUrl(searchParams: {
-  consent_code?: string;
-  client_id?: string;
-  scope?: string;
-  continueUrl?: string;
-}): string {
-  const params = new URLSearchParams();
-  if (searchParams.consent_code) {
-    params.set("consent_code", searchParams.consent_code);
-  }
-  if (searchParams.client_id) {
-    params.set("client_id", searchParams.client_id);
-  }
-  if (searchParams.scope) {
-    params.set("scope", searchParams.scope);
-  }
-  const safeContinueUrl = sanitizeCallbackUrl(searchParams.continueUrl);
-  if (safeContinueUrl) {
-    params.set("continueUrl", safeContinueUrl);
-  }
-
-  const query = params.toString();
-  return query ? `/oidc/consent?${query}` : "/oidc/consent";
-}
-
 function getInitial(name: string | null | undefined, email: string): string {
   const source = name?.trim() || email;
   return source.charAt(0).toUpperCase();
@@ -111,30 +98,34 @@ function getInitial(name: string | null | undefined, email: string): string {
 export default async function OidcConsentPage({
   searchParams,
 }: OidcConsentPageProps) {
-  const resolvedSearchParams = await searchParams;
-  const consentCode = resolvedSearchParams.consent_code?.trim();
-
-  if (!consentCode) {
+  const pageParams = toUrlSearchParams(await searchParams);
+  // The provider redirects here with a signed authorize query. Only a query
+  // that still verifies (signature and expiry) may be shown or submitted.
+  const oauthQuery = extractSignedOAuthQuery(pageParams);
+  if (
+    !oauthQuery ||
+    !(await verifyOAuthQueryParams(oauthQuery, authEnvConfig.secret))
+  ) {
     redirect("/");
   }
 
+  const consentPageUrl = `/oidc/consent?${oauthQuery}`;
   const session = await getSession();
   if (!session?.user) {
-    redirect(
-      `/signin?callbackUrl=${encodeURIComponent(buildConsentCallbackUrl(resolvedSearchParams))}`,
-    );
+    redirect(`/signin?callbackUrl=${encodeURIComponent(consentPageUrl)}`);
   }
 
-  const clientLabel = getClientLabel(resolvedSearchParams.client_id);
-  const scopes = normalizeScopes(resolvedSearchParams.scope);
-  const errorMessage = resolvedSearchParams.error?.trim();
-  const continueUrl = sanitizeCallbackUrl(resolvedSearchParams.continueUrl);
+  const signedParams = new URLSearchParams(oauthQuery);
+  const clientId = signedParams.get("client_id") ?? undefined;
+  const clientLabel = getClientLabel(clientId);
+  const scopes = normalizeScopes(signedParams.get("scope") ?? undefined);
+  const errorMessage = pageParams.get("error")?.trim();
+  const continueUrl = sanitizeCallbackUrl(
+    buildAuthorizeUrlFromSignedQuery(oauthQuery),
+  );
   const emailVerified = session.user.emailVerified === true;
-  const grantedApiScopes = resolvedSearchParams.client_id
-    ? await getStoredOidcGrantScopes(
-        session.user.id,
-        resolvedSearchParams.client_id,
-      )
+  const grantedApiScopes = clientId
+    ? await getStoredOidcGrantScopes(session.user.id, clientId)
     : [];
   const grantedApiScopeSet = new Set(grantedApiScopes);
   const requestedIdentityScopes = scopes.filter((scope) =>
@@ -154,8 +145,7 @@ export default async function OidcConsentPage({
   const existingApiPermissionGroups = getGroupedOidcApiPermissionItems(
     alreadyGrantedApiScopes,
   );
-  const switchAccountCallbackUrl =
-    continueUrl ?? buildConsentCallbackUrl(resolvedSearchParams);
+  const switchAccountCallbackUrl = continueUrl ?? consentPageUrl;
   return (
     <AuthorizationRequestCard
       icon={<MessageSquare className="h-6 w-6 text-primary" />}
@@ -168,18 +158,7 @@ export default async function OidcConsentPage({
             method="post"
             className="flex w-full flex-col gap-3 sm:flex-row"
           >
-            <input type="hidden" name="consentCode" value={consentCode} />
-            <input
-              type="hidden"
-              name="clientId"
-              value={resolvedSearchParams.client_id ?? ""}
-            />
-            <input
-              type="hidden"
-              name="scope"
-              value={resolvedSearchParams.scope ?? ""}
-            />
-            <input type="hidden" name="continueUrl" value={continueUrl ?? ""} />
+            <input type="hidden" name="oauth_query" value={oauthQuery} />
             {emailVerified ? (
               <Button
                 type="submit"

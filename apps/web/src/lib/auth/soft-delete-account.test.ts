@@ -6,6 +6,7 @@ const prismaMock = {
   user: { update: vi.fn() },
   apikey: { updateMany: vi.fn() },
   oauthAccessToken: { deleteMany: vi.fn() },
+  oauthRefreshToken: { deleteMany: vi.fn() },
   session: { deleteMany: vi.fn() },
   member: { findMany: vi.fn(), count: vi.fn() },
 };
@@ -30,6 +31,7 @@ beforeEach(() => {
   prismaMock.user.update.mockResolvedValue({});
   prismaMock.apikey.updateMany.mockResolvedValue({ count: 0 });
   prismaMock.oauthAccessToken.deleteMany.mockResolvedValue({ count: 0 });
+  prismaMock.oauthRefreshToken.deleteMany.mockResolvedValue({ count: 0 });
   prismaMock.session.deleteMany.mockResolvedValue({ count: 0 });
   prismaMock.member.findMany.mockResolvedValue([]);
   prismaMock.member.count.mockResolvedValue(0);
@@ -118,12 +120,16 @@ describe("softDeleteUserAccount", () => {
     // API keys mint sessions that bypass the sign-in ban check, so they must be
     // disabled explicitly.
     expect(prismaMock.apikey.updateMany).toHaveBeenCalledWith({
-      where: { userId: "user-1" },
+      where: { referenceId: "user-1" },
       data: { enabled: false },
     });
     // OIDC access tokens are validated by expiry only, so outstanding tokens
     // must be revoked or a soft-deleted user keeps API access until they expire.
     expect(prismaMock.oauthAccessToken.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+    });
+    // Refresh tokens would otherwise mint fresh access tokens.
+    expect(prismaMock.oauthRefreshToken.deleteMany).toHaveBeenCalledWith({
       where: { userId: "user-1" },
     });
     expect(prismaMock.session.deleteMany).toHaveBeenCalledWith({
