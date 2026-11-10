@@ -386,12 +386,13 @@ function extractHiddenInputValue(html: string, name: string): string | null {
   );
 
   return (
+    // Decode &amp; last, so "&amp;lt;" stays "&lt;" and is not unescaped twice.
     match?.[1]
-      ?.replace(/&amp;/g, "&")
-      .replace(/&quot;/g, '"')
+      ?.replace(/&quot;/g, '"')
       .replace(/&#x27;/g, "'")
       .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">") ?? null
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&") ?? null
   );
 }
 
