@@ -1,298 +1,72 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  authHandlerGet: vi.fn(),
-  authHandlerPost: vi.fn(),
-  carryForwardOauthAccessTokenOidcSessionId: vi.fn(),
-  createIdTokenForRefreshToken: vi.fn(),
-  exchangeAuthForOidcTokenSet: vi.fn(),
-  findDeviceCodeByDeviceCode: vi.fn(),
-  getOauthAccessTokenOidcSessionIdForRefreshToken: vi.fn(),
-  getSessionForHeaders: vi.fn(),
-  handleMasumiAuthorizationCodeGrant: vi.fn(),
-  handleMasumiOidcAuthorizeRequest: vi.fn(),
-  logOidcScopeResolution: vi.fn(),
-  persistApprovedDeviceScopes: vi.fn(),
-  resolveOidcClientKey: vi.fn(),
-  resolveOidcScopeGrantSet: vi.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/auth-storage", () => ({
-  carryForwardOauthAccessTokenOidcSessionId:
-    mocks.carryForwardOauthAccessTokenOidcSessionId,
-  findDeviceCodeByDeviceCode: mocks.findDeviceCodeByDeviceCode,
-  getOauthAccessTokenOidcSessionIdForRefreshToken:
-    mocks.getOauthAccessTokenOidcSessionIdForRefreshToken,
+vi.mock("@/lib/auth/auth", () => ({ auth: {} }));
+vi.mock("better-auth/next-js", () => ({
+  toNextJsHandler: () => ({ GET: mocks.get, POST: mocks.post }),
 }));
 
-vi.mock("@/lib/auth/oidc-flow", () => ({
-  OidcTokenExchangeError: class OidcTokenExchangeError extends Error {
-    constructor(
-      message: string,
-      public readonly status: number,
-      public readonly details?: unknown,
-    ) {
-      super(message);
-      this.name = "OidcTokenExchangeError";
-    }
-  },
-  exchangeAuthForOidcTokenSet: mocks.exchangeAuthForOidcTokenSet,
-}));
+import { GET, POST } from "./route";
 
-vi.mock("@/lib/auth/oidc-id-token", () => ({
-  createIdTokenForRefreshToken: mocks.createIdTokenForRefreshToken,
-}));
+const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
-vi.mock("@/lib/auth/oidc-route-helpers", () => ({
-  OIDC_ACCESS_DENIED: "access_denied",
-  OIDC_EMAIL_VERIFICATION_REQUIRED: "email_verification_required",
-  OIDC_NO_STORE_HEADERS: {
-    "Cache-Control": "no-store",
-    Pragma: "no-cache",
-  },
-  authHandler: {
-    GET: mocks.authHandlerGet,
-    POST: mocks.authHandlerPost,
-  },
-  createJsonRequest: (
-    request: Request,
-    url: string,
-    body: Record<string, string>,
-  ) => {
-    const headers = new Headers(request.headers);
-    headers.set("content-type", "application/json");
-    headers.delete("content-length");
+function formRequest(path: string, fields: Record<string, string>) {
+  return new Request(`http://localhost:3000${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(fields).toString(),
+  });
+}
 
-    return new Request(url, {
-      method: request.method,
-      headers,
-      body: JSON.stringify(body),
-    });
-  },
-  getSessionForHeaders: mocks.getSessionForHeaders,
-  handleMasumiAuthorizationCodeGrant: mocks.handleMasumiAuthorizationCodeGrant,
-  handleMasumiOidcAuthorizeRequest: mocks.handleMasumiOidcAuthorizeRequest,
-  hasContentType: (request: Request, value: string) =>
-    request.headers.get("content-type")?.includes(value) ?? false,
-  logOidcScopeResolution: mocks.logOidcScopeResolution,
-  persistApprovedDeviceScopes: mocks.persistApprovedDeviceScopes,
-  readBodyFields: async (request: Request) => {
-    if (
-      request.headers.get("content-type")?.includes("x-www-form-urlencoded")
-    ) {
-      const formData = await request.clone().formData();
-      return Object.fromEntries(
-        Array.from(formData.entries()).map(([key, value]) => [
-          key,
-          typeof value === "string" ? value : value.name,
-        ]),
-      );
-    }
-
-    if (request.headers.get("content-type")?.includes("application/json")) {
-      return (await request.clone().json()) as Record<string, string>;
-    }
-
-    return null;
-  },
-}));
-
-vi.mock("@/lib/auth/oidc-user-grants", () => ({
-  resolveOidcScopeGrantSet: mocks.resolveOidcScopeGrantSet,
-}));
-
-vi.mock("@/lib/config/oidc.config", () => ({
-  oidcEnvConfig: {
-    cli: {
-      clientId: "masumi-spacetime-cli",
-    },
-  },
-  resolveOidcClientKey: mocks.resolveOidcClientKey,
-}));
-
-vi.mock("@/lib/config/oidc-scopes.config", () => ({
-  OIDC_STANDARD_SCOPES: ["openid", "profile", "email"],
-  serializeScopeList: (scopes: string[]) => scopes.join(" "),
-}));
-
-describe("/api/auth/oauth2/token", () => {
+describe("/api/auth/[...all]", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mocks.get.mockReset();
+    mocks.post.mockReset();
+    mocks.post.mockResolvedValue(new Response("{}"));
   });
 
-  it("reads the previous OIDC session id before refresh-token rotation", async () => {
-    const order: string[] = [];
-    mocks.getOauthAccessTokenOidcSessionIdForRefreshToken.mockImplementation(
-      async (refreshToken: string) => {
-        order.push(`lookup:${refreshToken}`);
-        return "stable-sid";
-      },
-    );
-    mocks.authHandlerPost.mockImplementation(async (request: Request) => {
-      order.push("rotate");
-      const formData = await request.clone().formData();
-      expect(formData.get("refresh_token")).toBe("old-refresh-token");
-
-      return Response.json({
-        access_token: "rotated-access-token",
-        refresh_token: "rotated-refresh-token",
-        token_type: "Bearer",
-      });
-    });
-    mocks.carryForwardOauthAccessTokenOidcSessionId.mockImplementation(
-      async (options: {
-        previousOidcSessionId: string | null;
-        rotatedRefreshToken: string;
-      }) => {
-        order.push("carry");
-        expect(options).toEqual({
-          previousOidcSessionId: "stable-sid",
-          rotatedRefreshToken: "rotated-refresh-token",
-        });
-        return "stable-sid";
-      },
-    );
-    mocks.createIdTokenForRefreshToken.mockImplementation(
-      async (refreshToken: string) => {
-        order.push(`id-token:${refreshToken}`);
-        return "refreshed-id-token";
-      },
-    );
-
-    const { POST } = await import("./route");
-    const response = await POST(
-      new Request("https://saas.example.com/api/auth/oauth2/token", {
-        method: "POST",
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          client_id: "masumi-spacetime-cli",
-          grant_type: "refresh_token",
-          refresh_token: "old-refresh-token",
-        }),
+  it("forwards a legacy device_code poll to /oauth2/token with the same body", async () => {
+    await POST(
+      formRequest("/api/auth/device/token", {
+        grant_type: DEVICE_CODE_GRANT,
+        device_code: "dc",
+        client_id: "cli",
       }),
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      access_token: "rotated-access-token",
-      refresh_token: "rotated-refresh-token",
-      id_token: "refreshed-id-token",
-    });
-    expect(order).toEqual([
-      "lookup:old-refresh-token",
-      "rotate",
-      "carry",
-      "id-token:rotated-refresh-token",
-    ]);
+    const forwarded = mocks.post.mock.calls[0][0] as Request;
+    expect(new URL(forwarded.url).pathname).toBe("/api/auth/oauth2/token");
+    const body = new URLSearchParams(await forwarded.text());
+    expect(body.get("grant_type")).toBe(DEVICE_CODE_GRANT);
+    expect(body.get("device_code")).toBe("dc");
   });
 
-  it("still mints an id_token when OIDC session carry-forward fails", async () => {
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-
-    try {
-      mocks.getOauthAccessTokenOidcSessionIdForRefreshToken.mockResolvedValue(
-        "stable-sid",
-      );
-      mocks.authHandlerPost.mockResolvedValue(
-        Response.json({
-          access_token: "rotated-access-token",
-          refresh_token: "rotated-refresh-token",
-          token_type: "Bearer",
-        }),
-      );
-      mocks.carryForwardOauthAccessTokenOidcSessionId.mockRejectedValue(
-        new Error("temporary database failure"),
-      );
-      mocks.createIdTokenForRefreshToken.mockResolvedValue(
-        "refreshed-id-token",
-      );
-
-      const { POST } = await import("./route");
-      const response = await POST(
-        new Request("https://saas.example.com/api/auth/oauth2/token", {
-          method: "POST",
-          headers: {
-            "content-type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            client_id: "masumi-spacetime-cli",
-            grant_type: "refresh_token",
-            refresh_token: "old-refresh-token",
-          }),
-        }),
-      );
-
-      expect(response.status).toBe(200);
-      await expect(response.json()).resolves.toMatchObject({
-        access_token: "rotated-access-token",
-        refresh_token: "rotated-refresh-token",
-        id_token: "refreshed-id-token",
-      });
-      expect(mocks.createIdTokenForRefreshToken).toHaveBeenCalledWith(
-        "rotated-refresh-token",
-      );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[OIDC refresh grant] Failed to carry forward oidcSessionId",
-        expect.any(Error),
-      );
-    } finally {
-      consoleErrorSpy.mockRestore();
-    }
-  });
-});
-
-describe("/api/auth/oauth2/consent", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it("leaves other POSTs on their own path", async () => {
+    const request = formRequest("/api/auth/device/token", {
+      grant_type: "refresh_token",
+    });
+    await POST(request);
+    expect(mocks.post.mock.calls[0][0]).toBe(request);
   });
 
-  function createConsentRequest(): Request {
-    return new Request("https://saas.example.com/api/auth/oauth2/consent", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ accept: true, consent_code: "consent-code-1" }),
-    });
-  }
-
-  it("rejects unverified sessions before better-auth issues a code", async () => {
-    mocks.getSessionForHeaders.mockResolvedValue({
-      user: { id: "user-1", emailVerified: false },
-    });
-
-    const { POST } = await import("./route");
-    const response = await POST(createConsentRequest());
-
-    expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
-      error: "access_denied",
-      error_description: "email_verification_required",
-    });
-    expect(mocks.authHandlerPost).not.toHaveBeenCalled();
-  });
-
-  it("delegates verified sessions to better-auth", async () => {
-    mocks.getSessionForHeaders.mockResolvedValue({
-      user: { id: "user-1", emailVerified: true },
-    });
-    mocks.authHandlerPost.mockResolvedValue(
-      Response.json({
-        redirectURI: "https://web.example.com/auth/callback?code=code-1",
+  it("strips the body from GET redirects", async () => {
+    mocks.get.mockResolvedValue(
+      new Response("redirecting", {
+        status: 302,
+        headers: { location: "http://localhost:3000/signin" },
       }),
     );
-
-    const { POST } = await import("./route");
-    const response = await POST(createConsentRequest());
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      redirectURI: "https://web.example.com/auth/callback?code=code-1",
-    });
-    expect(mocks.authHandlerPost).toHaveBeenCalledTimes(1);
+    const response = await GET(
+      new Request("http://localhost:3000/api/auth/oauth2/authorize"),
+    );
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/signin",
+    );
+    expect(await response.text()).toBe("");
   });
 });

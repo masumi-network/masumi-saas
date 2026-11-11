@@ -95,10 +95,30 @@ export type Invitation = Prisma.InvitationModel;
  */
 export type Apikey = Prisma.ApikeyModel;
 /**
- * Model OauthApplication
+ * Model OauthClient
  *
  */
-export type OauthApplication = Prisma.OauthApplicationModel;
+export type OauthClient = Prisma.OauthClientModel;
+/**
+ * Model OauthResource
+ *
+ */
+export type OauthResource = Prisma.OauthResourceModel;
+/**
+ * Model OauthClientResource
+ *
+ */
+export type OauthClientResource = Prisma.OauthClientResourceModel;
+/**
+ * Model OauthClientAssertion
+ *
+ */
+export type OauthClientAssertion = Prisma.OauthClientAssertionModel;
+/**
+ * Model OauthRefreshToken
+ *
+ */
+export type OauthRefreshToken = Prisma.OauthRefreshTokenModel;
 /**
  * Model OauthAccessToken
  *

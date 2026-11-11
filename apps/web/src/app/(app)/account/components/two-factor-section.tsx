@@ -62,7 +62,9 @@ export function TwoFactorSection() {
         toast.error(error.message || t("errors.enableFailed"));
         return;
       }
-      if (data) {
+      // better-auth 1.7 returns a discriminated response; only the TOTP
+      // method carries the QR URI and backup codes.
+      if (data?.method === "totp") {
         setTotpURI(data.totpURI);
         setBackupCodes(data.backupCodes);
         setStep("qr");
