@@ -16,6 +16,7 @@ import {
   checkAndIncrementEmailSendLimit,
   resetEmailSendLimit,
 } from "@/lib/auth/email-send-rate-limit";
+import { generateNumericOtp } from "@/lib/auth/otp-code";
 import { authConfig } from "@/lib/config/auth.config";
 import { getPostmarkFromHeader } from "@/lib/config/email.config";
 import { grantInitialCreditsIfNeeded } from "@/lib/credits/service";
@@ -25,10 +26,6 @@ import { getEmailMessages } from "@/lib/email/messages";
 import { postmarkClient } from "@/lib/email/postmark";
 import { reactVerificationCodeEmail } from "@/lib/email/verification-code";
 import { ApiError } from "@/server/hono/errors";
-
-function generateEmailVerificationCode(length = 6): string {
-  return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
-}
 
 function isTruthyEnv(value: string | undefined): boolean {
   const normalized = value?.trim().toLowerCase();
@@ -52,7 +49,7 @@ function logDevCode(email: string, otp: string) {
 async function createSignInOtp(email: string): Promise<string> {
   const normalized = email.trim().toLowerCase();
   const identifier = `sign-in-otp-${normalized}`;
-  const otp = generateEmailVerificationCode();
+  const otp = generateNumericOtp();
 
   await deleteVerificationByIdentifier(identifier);
   await createVerificationValue({
