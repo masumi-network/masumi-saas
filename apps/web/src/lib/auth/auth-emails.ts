@@ -17,6 +17,7 @@ import {
   EMAIL_SEND_RATE_LIMIT_WINDOW_MS,
 } from "@/lib/auth/email-send-rate-limit";
 import { isOidcMagicLinkCallbackUrl } from "@/lib/auth/magic-link-callback";
+import { generateNumericOtp } from "@/lib/auth/otp-code";
 import { authConfig, authEnvConfig } from "@/lib/config/auth.config";
 import { emailConfig, getPostmarkFromHeader } from "@/lib/config/email.config";
 import { PRIVACY_POLICY_URL } from "@/lib/config/privacy-policy-url";
@@ -60,10 +61,6 @@ export async function enforceEmailSendRateLimit(email: string): Promise<void> {
   });
 }
 
-function generateEmailVerificationCode(length = 6): string {
-  return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
-}
-
 type EmailOtpType = "email-verification" | "sign-in";
 
 function logDevCode(label: string, email: string, otp: string) {
@@ -83,7 +80,7 @@ async function createEmailOtp(
   type: EmailOtpType,
 ): Promise<string> {
   const identifier = `${type}-otp-${email.toLowerCase()}`;
-  const otp = generateEmailVerificationCode();
+  const otp = generateNumericOtp();
 
   await deleteVerificationByIdentifier(identifier);
 
