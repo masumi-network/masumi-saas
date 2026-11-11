@@ -235,6 +235,22 @@ async function applyAuthorizePolicy(ctx: HookContext) {
   return { context: fromBody ? { body: query } : { query } };
 }
 
+/**
+ * The consent page hides its approve button for an unverified user and
+ * `/oidc/consent/submit` refuses the call, but the provider endpoint behind
+ * them accepts any session. Posting a consent straight to `/oauth2/consent`
+ * would return a real authorization code. Denying stays open, as on
+ * `/device/deny`, so an unverified user can still abandon the flow.
+ */
+async function guardConsentDecision(ctx: HookContext) {
+  if ((ctx.body as { accept?: unknown } | undefined)?.accept !== true) return;
+  const session = await getSessionFromCtx(ctx);
+  if (!session?.user) return;
+  if (session.user.emailVerified !== true) {
+    throw emailVerificationRequiredError();
+  }
+}
+
 async function applyDeviceCodeScopePolicy(ctx: HookContext) {
   const body = (ctx.body ?? {}) as Record<string, unknown>;
   const clientId = typeof body.client_id === "string" ? body.client_id : "";
@@ -332,6 +348,10 @@ export const masumiOidcPolicy = () =>
         {
           matcher: (ctx) => ctx.path === "/oauth2/authorize",
           handler: createAuthMiddleware(applyAuthorizePolicy),
+        },
+        {
+          matcher: (ctx) => ctx.path === "/oauth2/consent",
+          handler: createAuthMiddleware(guardConsentDecision),
         },
         {
           matcher: (ctx) => ctx.path === "/device/code",

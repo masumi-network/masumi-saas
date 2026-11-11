@@ -154,6 +154,43 @@ describe("SMOKE: OIDC consent submit origin", () => {
   });
 });
 
+describe("SMOKE: OIDC consent email gate", () => {
+  // The consent page only hides its approve button, and /oidc/consent/submit
+  // is not the only way in: the provider endpoint behind them takes any
+  // session, so an unverified user could post a consent straight to
+  // /oauth2/consent and receive a real authorization code.
+  it("refuses a direct consent POST from an unverified user", async () => {
+    const { jar } = await signUpAndSignIn();
+    const res = await request("/api/auth/oauth2/consent", {
+      method: "POST",
+      jar,
+      body: { accept: true },
+    });
+
+    expect(res.status).toBe(403);
+    expect((res.body as Record<string, unknown>).error_description).toBe(
+      "email_verification_required",
+    );
+    expect(JSON.stringify(res.body)).not.toContain("code=");
+  });
+
+  // The gate must not fire for a verified user: this request fails later, on
+  // the missing consent context, not on the email check.
+  it("does not gate a verified user", async () => {
+    const { jar, email } = await signUpAndSignIn();
+    await markEmailVerified(email);
+    const res = await request("/api/auth/oauth2/consent", {
+      method: "POST",
+      jar,
+      body: { accept: true },
+    });
+
+    expect((res.body as Record<string, unknown>).error_description).not.toBe(
+      "email_verification_required",
+    );
+  });
+});
+
 describe("SMOKE: OIDC JWT access tokens on the app API", () => {
   // A `resource` parameter makes the provider issue a stateless JWT access
   // token. Revoking the client cannot end it, so the app API must refuse it.

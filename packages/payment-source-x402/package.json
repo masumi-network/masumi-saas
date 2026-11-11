@@ -44,7 +44,7 @@
     "canonical-json": "0.2.0",
     "http-errors": "2.0.1",
     "viem": "2.52.2",
-    "zod": "4.1.13"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/http-errors": "2.0.4",
