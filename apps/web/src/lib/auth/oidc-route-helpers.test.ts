@@ -156,4 +156,55 @@ describe("handleMasumiAuthorizationCodeGrant", () => {
     expect(mocks.createStoredOauthAccessToken).not.toHaveBeenCalled();
     expect(mocks.createIdTokenForAccessTokenRecord).not.toHaveBeenCalled();
   });
+
+  it("rejects unverified emails before issuing OIDC tokens", async () => {
+    const codeVerifier = "test-code-verifier-123456789";
+    mocks.findVerificationByIdentifier.mockResolvedValue({
+      id: "verification-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      value: JSON.stringify({
+        authTime: 1234567890,
+        clientId: "masumi-spacetime-web",
+        codeChallenge: createPkceChallenge(codeVerifier),
+        codeChallengeMethod: "S256",
+        nonce: "nonce-1",
+        redirectURI: "https://web.example.com/auth/callback",
+        scope: "openid profile email offline_access",
+        userId: "user-1",
+      }),
+    });
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      banned: false,
+      email: "unverified@example.com",
+      emailVerified: false,
+      name: "Unverified User",
+      image: null,
+      updatedAt: new Date(),
+    });
+
+    const { handleMasumiAuthorizationCodeGrant } =
+      await import("./oidc-route-helpers");
+    const response = await handleMasumiAuthorizationCodeGrant(
+      new Request("https://saas.example.com/api/auth/oauth2/token", {
+        method: "POST",
+      }),
+      {
+        client_id: "masumi-spacetime-web",
+        code: "authorization-code",
+        code_verifier: codeVerifier,
+        grant_type: "authorization_code",
+        redirect_uri: "https://web.example.com/auth/callback",
+      },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "access_denied",
+      error_description: "email_verification_required",
+    });
+    expect(prismaMock.verification.deleteMany).not.toHaveBeenCalled();
+    expect(mocks.createStoredOauthAccessToken).not.toHaveBeenCalled();
+    expect(mocks.createIdTokenForAccessTokenRecord).not.toHaveBeenCalled();
+  });
 });

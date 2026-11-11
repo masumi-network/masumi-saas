@@ -431,6 +431,14 @@ export async function handleMasumiAuthorizationCodeGrant(
     return createOauthJsonErrorResponse(OIDC_ACCESS_DENIED, "user_banned", 403);
   }
 
+  if (user.emailVerified !== true) {
+    return createOauthJsonErrorResponse(
+      OIDC_ACCESS_DENIED,
+      OIDC_EMAIL_VERIFICATION_REQUIRED,
+      403,
+    );
+  }
+
   const deletedVerification = await prisma.verification.deleteMany({
     where: { id: verificationRecord.id },
   });

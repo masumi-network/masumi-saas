@@ -244,3 +244,55 @@ describe("/api/auth/oauth2/token", () => {
     }
   });
 });
+
+describe("/api/auth/oauth2/consent", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function createConsentRequest(): Request {
+    return new Request("https://saas.example.com/api/auth/oauth2/consent", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ accept: true, consent_code: "consent-code-1" }),
+    });
+  }
+
+  it("rejects unverified sessions before better-auth issues a code", async () => {
+    mocks.getSessionForHeaders.mockResolvedValue({
+      user: { id: "user-1", emailVerified: false },
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(createConsentRequest());
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "access_denied",
+      error_description: "email_verification_required",
+    });
+    expect(mocks.authHandlerPost).not.toHaveBeenCalled();
+  });
+
+  it("delegates verified sessions to better-auth", async () => {
+    mocks.getSessionForHeaders.mockResolvedValue({
+      user: { id: "user-1", emailVerified: true },
+    });
+    mocks.authHandlerPost.mockResolvedValue(
+      Response.json({
+        redirectURI: "https://web.example.com/auth/callback?code=code-1",
+      }),
+    );
+
+    const { POST } = await import("./route");
+    const response = await POST(createConsentRequest());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      redirectURI: "https://web.example.com/auth/callback?code=code-1",
+    });
+    expect(mocks.authHandlerPost).toHaveBeenCalledTimes(1);
+  });
+});

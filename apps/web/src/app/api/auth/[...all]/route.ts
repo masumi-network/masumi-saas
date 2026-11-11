@@ -32,6 +32,7 @@ import {
 const DEVICE_CODE_PATH = "/api/auth/device/code";
 const DEVICE_APPROVE_PATH = "/api/auth/device/approve";
 const DEVICE_TOKEN_PATH = "/api/auth/device/token";
+const OAUTH_CONSENT_PATH = "/api/auth/oauth2/consent";
 const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
 const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 const REFRESH_TOKEN_GRANT = "refresh_token";
@@ -358,6 +359,23 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     return response;
+  }
+
+  if (pathname === OAUTH_CONSENT_PATH) {
+    const session = await getSessionForHeaders(request.headers);
+
+    if (session?.user && session.user.emailVerified !== true) {
+      return Response.json(
+        {
+          error: OIDC_ACCESS_DENIED,
+          error_description: OIDC_EMAIL_VERIFICATION_REQUIRED,
+        },
+        {
+          status: 403,
+          headers: OIDC_NO_STORE_HEADERS,
+        },
+      );
+    }
   }
 
   if (pathname === DEVICE_TOKEN_PATH || pathname === OAUTH_TOKEN_PATH) {
